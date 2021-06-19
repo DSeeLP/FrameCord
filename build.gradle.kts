@@ -3,7 +3,7 @@
  * © Copyright by DSeeLP
  */
 
-val defaultGroupName = "de.dseelp.kotlincord"
+val defaultGroupName = "io.github.dseelp.kotlincord"
 val defaultVersion = "0.1"
 
 group = defaultGroupName
