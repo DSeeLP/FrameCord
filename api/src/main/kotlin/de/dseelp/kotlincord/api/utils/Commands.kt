@@ -21,7 +21,7 @@ object Commands : CordKoinComponent {
     internal val private: CommandDispatcher<Sender> by inject(qualifier("private"))
     internal val console: CommandDispatcher<Sender> by inject(qualifier("console"))
 
-    val pluginCommands = hashMapOf<Plugin, MutableList<Pair<CommandScope, String>>>()
+    val pluginCommands = hashMapOf<Plugin, MutableList<Pair<CommandScope, CommandNode<out Sender>>>>()
 
     fun unregister(plugin: Plugin) {
         for (pair in pluginCommands[plugin]!!) {
@@ -45,7 +45,7 @@ fun Plugin.register(node: CommandNode<out Sender>, vararg scopes: CommandScope) 
             PRIVATE -> Commands.private.register(node)
             CONSOLE -> Commands.console.register(node)
         }
-        Commands.pluginCommands.getOrPut(this) { mutableListOf() }.add(scope to node.name!!)
+        Commands.pluginCommands.getOrPut(this) { mutableListOf() }.add(scope to node)
     }
 }
 

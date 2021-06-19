@@ -33,10 +33,6 @@ dependencies {
     api("org.javassist:javassist:3.28.0-GA")
     api("io.github.classgraph:classgraph:4.8.108")
 }
-java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-}
 
 val implementationVersion = version
 

@@ -25,8 +25,10 @@ object CommandUtils {
         }
         if (cached == null) cache[hashCode, message] = parsed
 
-        parsed.execute(bypassAccess)
-        actions.success(parsed)
+        val throwable = parsed.execute(bypassAccess)?.apply { printStackTrace() }
+        if (throwable == null)
+            actions.success(parsed)
+        else actions.error(message, parsed)
     }
 
     interface Actions<T : Any> {

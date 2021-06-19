@@ -11,7 +11,6 @@ version = defaultVersion
 
 plugins {
     base
-
     java
     `maven-publish`
     signing
@@ -29,7 +28,6 @@ if (isDeployingToCentral) println("Deploying to central...")
 allprojects {
 
     group = defaultGroupName
-
     version = defaultVersion
 
     repositories {
@@ -48,6 +46,12 @@ allprojects {
     apply(plugin = "org.jetbrains.kotlin.jvm")
     apply(plugin = "signing")
     apply(plugin = "org.jetbrains.dokka")
+    apply(plugin = "java")
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
 
     val dokkaHtml by tasks.getting(org.jetbrains.dokka.gradle.DokkaTask::class)
 

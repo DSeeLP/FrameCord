@@ -25,7 +25,7 @@ dependencies {
     api("io.insert-koin:koin-logger-slf4j:$koinVersion")
     api("org.fusesource.jansi:jansi:2.3.2")
     api("com.uchuhimo:konf:1.1.2")
-    api("io.github.dseelp.kommon:command:0.2.3") {
+    api("io.github.dseelp.kommon:command:0.3.0") {
         isChanging = true
     }
     api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.1")
@@ -34,10 +34,6 @@ dependencies {
     api("org.spongepowered:configurate-yaml:$configurateVersion")
     api("org.spongepowered:configurate-extra-kotlin:$configurateVersion")
     api("org.jetbrains.kotlinx:kotlinx-datetime:$datetimeVersion")
-}
-java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
 }
 
 val implementationVersion = version

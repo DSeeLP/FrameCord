@@ -14,10 +14,6 @@ dependencies {
     implementation(kotlin("reflect"))
     api(project(":api"))
 }
-java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-}
 
 val implementationVersion = version
 
