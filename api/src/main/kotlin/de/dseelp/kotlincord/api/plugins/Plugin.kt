@@ -1,0 +1,111 @@
+/*
+ * Created by Dirk on 19.6.2021.
+ * © Copyright by DSeeLP
+ */
+
+package de.dseelp.kotlincord.api.plugins
+
+import de.dseelp.kommon.command.CommandNode
+import de.dseelp.kotlincord.api.InternalKotlinCordApi
+import de.dseelp.kotlincord.api.Version
+import de.dseelp.kotlincord.api.buttons.ButtonAction
+import de.dseelp.kotlincord.api.buttons.ButtonContext
+import de.dseelp.kotlincord.api.command.Command
+import de.dseelp.kotlincord.api.event.EventBus
+import de.dseelp.kotlincord.api.logging.logger
+import de.dseelp.kotlincord.api.utils.koin.KoinModules
+import de.dseelp.kotlincord.api.utils.register
+import org.koin.core.component.inject
+import org.koin.dsl.koinApplication
+import java.nio.file.Path
+import kotlin.reflect.full.createInstance
+
+@OptIn(InternalKotlinCordApi::class)
+abstract class Plugin : PluginComponent<Plugin> {
+
+    @InternalKotlinCordApi
+    override val plugin: Plugin
+        get() = this
+
+    private val _meta: PluginMeta? = null
+
+    val eventBus: EventBus by inject()
+
+    companion object {
+        /*private val koinField by lazy {
+            Koin::class.declaredMemberProperties.first { it.name == "modules" }.apply { isAccessible = true }
+        }
+
+        @OptIn(InternalKotlinCordApi::class)
+        private fun getModules() = CordKoinContext.app?.koin?.let { koin -> koinField.get(koin) as HashSet<Module> }!!*/
+    }
+
+    val koinApp = koinApplication {
+        //modules(getModules().toList())
+    }
+
+    init {
+        KoinModules.load(this)
+    }
+
+    val meta: PluginMeta
+        get() = _meta!!
+
+    val name: String
+        get() = meta.name
+    val version: Version
+        get() = meta.version
+    val dataFolder: Path
+        get() = meta.dataFolder
+
+    val logger by logger()
+
+    val buttonActions: Array<ButtonAction>
+        get() = _buttonActions.toTypedArray()
+
+    private val _buttonActions = mutableListOf<ButtonAction>()
+
+    fun registerButtonAction(name: String, nodes: Array<CommandNode<ButtonContext>>): ButtonAction {
+
+        val action = ButtonAction(this, name, nodes)
+        for (a in _buttonActions) {
+            if (a.name.equals(
+                    name,
+                    true
+                )
+            ) throw IllegalArgumentException("A button action with this name is already registered!")
+        }
+        _buttonActions.add(action)
+        return action
+    }
+
+    fun getButtonAction(name: String): ButtonAction? = _buttonActions.firstOrNull { it.name.equals(name, true) }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is Plugin) return false
+
+        if (meta.name.lowercase() != other.meta.name.lowercase()) return false
+
+        return true
+    }
+
+
+    inline fun <reified T : Any> registerListener(listener: T) = eventBus.addClassHandler(this, listener)
+    inline fun <reified T : Any> registerListener() = eventBus.addClassHandler<T>(this)
+
+    fun register(command: Command<*>) {
+        register(command.node, *command.scopes)
+    }
+
+    inline fun <reified T : Command<*>> register() {
+        val instance = (T::class.objectInstance ?: koinApp.koin.getOrNull()) ?: T::class.createInstance()
+        register(instance)
+    }
+
+    override fun hashCode(): Int {
+        return _meta?.hashCode() ?: 0
+    }
+
+
+}
