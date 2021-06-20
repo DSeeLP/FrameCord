@@ -18,9 +18,11 @@ import de.dseelp.kotlincord.api.logging.LogManager.ROOT
 import de.dseelp.kotlincord.api.logging.logger
 import de.dseelp.kotlincord.api.plugins.PluginLoader
 import de.dseelp.kotlincord.api.plugins.PluginManager
+import de.dseelp.kotlincord.api.utils.IReflectionUtils
 import de.dseelp.kotlincord.api.utils.koin.CordKoinContext
 import de.dseelp.kotlincord.core.plugin.PluginLoaderImpl
 import de.dseelp.kotlincord.core.plugin.PluginManagerImpl
+import de.dseelp.kotlincord.core.utils.ReflectionUtilsImpl
 import kotlinx.coroutines.runBlocking
 import org.koin.core.qualifier.qualifier
 import org.koin.dsl.koinApplication
@@ -45,6 +47,7 @@ object CordBootstrap {
         single<PluginLoader> { PluginLoaderImpl() }
         single<PluginManager> { PluginManagerImpl() }
         single<URLClassLoader>(qualifier("pluginClassLoader")) { URLClassLoader.newInstance(arrayOf()) }
+        single<IReflectionUtils> { ReflectionUtilsImpl() }
         single { version }
     }
 
