@@ -6,29 +6,79 @@
 package de.dseelp.kotlincord.api.event
 
 import de.dseelp.kotlincord.api.InternalKotlinCordApi
+import de.dseelp.kotlincord.api.events.PluginDisableEvent
+import de.dseelp.kotlincord.api.events.PluginEventType
+import de.dseelp.kotlincord.api.logging.logger
 import de.dseelp.kotlincord.api.plugins.Plugin
+import de.dseelp.kotlincord.api.plugins.PluginLoader
+import de.dseelp.kotlincord.api.utils.Criterion
+import de.dseelp.kotlincord.api.utils.ReflectionUtils
 import de.dseelp.kotlincord.api.utils.koin.CordKoinComponent
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.launch
+import org.koin.core.component.inject
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.Executors
 import kotlin.reflect.KClass
+import kotlin.reflect.KFunction
+import kotlin.reflect.KParameter
 import kotlin.reflect.full.declaredMemberFunctions
 import kotlin.reflect.full.hasAnnotation
 import kotlin.reflect.full.isSubclassOf
 
-class EventBus {
+@OptIn(InternalKotlinCordApi::class)
+@Listener
+class EventBus : CordKoinComponent {
     private val handlers = mutableListOf<Handler>()
 
-    fun call(event: Any) {
+    private val eventExecutorService = Executors.newFixedThreadPool(4)
+    val job = SupervisorJob()
+    val scope = CoroutineScope(job + eventExecutorService.asCoroutineDispatcher())
+
+    fun call(event: Any, async: Boolean = false) {
         val eventClass = event::class
-        for (index in 0..handlers.lastIndex) {
-            val handler = handlers.getOrNull(index) ?: continue
-            if (handler is Handler.ClassHandler<*>) handler.invoke(event)
-            else if (handler.clazz == eventClass || eventClass.isSubclassOf(handler.clazz)) handler.invoke(event)
+        val executeFunction = {
+            for (index in 0..handlers.lastIndex) {
+                val handler = handlers.getOrNull(index) ?: continue
+                if (handler is Handler.ClassHandler<*>) handler.invoke(event)
+                else if (handler.clazz == eventClass || eventClass.isSubclassOf(handler.clazz)) handler.invoke(event)
+            }
         }
+        if (async) scope.launch {
+            executeFunction.invoke()
+        } else {
+            executeFunction.invoke()
+        }
+
     }
 
     @InternalKotlinCordApi
     fun unregister(clazz: KClass<out Plugin>) {
         handlers.removeIf {
             it.plugin::class == clazz
+        }
+    }
+
+    private val pluginLoader: PluginLoader by inject()
+    private val log by logger<EventBus>()
+
+    fun searchPackage(packageName: String, plugin: Plugin? = null) {
+        ReflectionUtils.findClasses(packageName) {
+            Criterion.hasAnnotation<Listener>().assert()
+        }.onEach { clazz ->
+            val p = if (plugin != null) plugin
+            else {
+                val classLoader = clazz.java.classLoader
+                pluginLoader.loadedPlugins.firstOrNull { it.classLoader == classLoader }?.plugin
+            }
+            if (p == null) {
+                log.error("Failed to determine plugin for class ${clazz.qualifiedName}")
+                return
+            }
+            addHandler(Handler.ClassHandler(p, clazz))
+
         }
     }
 
@@ -54,6 +104,13 @@ class EventBus {
 
     fun removeHandlers(plugin: Plugin) {
         handlers.removeIf { it.plugin == plugin }
+    }
+
+    @EventHandle
+    @InternalKotlinCordApi
+    fun onPluginDisable(event: PluginDisableEvent) {
+        if (event.type != PluginEventType.POST) return
+        unregister(event.plugin::class)
     }
 
     sealed class Handler(val plugin: Plugin) {
@@ -98,7 +155,11 @@ class EventBus {
                     methods.filter { it.second.type.classifier == eventClass }
                 }.onEach {
                     val method = it.first
-                    kotlin.runCatching { method.call(clazzObj, event) }.exceptionOrNull()?.cause?.printStackTrace()
+                    try {
+                        method.call(clazzObj, event)
+                    } catch (e: Throwable) {
+                        e.printStackTrace()
+                    }
                 }
             }
         }

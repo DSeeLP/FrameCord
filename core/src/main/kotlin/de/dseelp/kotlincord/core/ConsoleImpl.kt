@@ -32,7 +32,7 @@ object ConsoleImpl : Console {
     private val _lastWrittenMessages = object : ArrayList<String>() {
         override fun add(element: String): Boolean {
             if (size > 200) {
-                println("removed ${removeAt(0)}")
+                removeAt(0)
             }
             return super.add(element)
         }
@@ -73,7 +73,7 @@ object ConsoleImpl : Console {
     }
 
     override fun stopReading() = runBlocking {
-        readLoopJob?.cancelAndJoin()
+        readLoopJob?.cancel()
         readLoopJob = null
     }
 
@@ -111,10 +111,14 @@ object ConsoleImpl : Console {
     }
 
     override fun forceWriteLine(vararg messages: String) {
-        messages.onEach { reader.printAbove(it + System.lineSeparator()) }
+        messages.onEach {
+            _lastWrittenMessages.add(it)
+            reader.printAbove(it + System.lineSeparator())
+        }
     }
 
     override fun forceWrite(message: String) {
+        _lastWrittenMessages.add(message)
         reader.printAbove(message)
     }
 

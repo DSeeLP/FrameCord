@@ -7,7 +7,6 @@ package de.dseelp.kotlincord.api.buttons
 
 import de.dseelp.kommon.command.CommandDispatcher
 import de.dseelp.kommon.command.CommandNode
-import de.dseelp.kommon.command.literal
 import de.dseelp.kotlincord.api.InternalKotlinCordApi
 import de.dseelp.kotlincord.api.logging.logger
 import de.dseelp.kotlincord.api.plugins.Plugin
@@ -19,7 +18,7 @@ import org.koin.core.qualifier.qualifier
 import java.util.*
 
 @OptIn(InternalKotlinCordApi::class)
-class ButtonAction(plugin: Plugin, val name: String, val nodes: Array<CommandNode<ButtonContext>>) : CordKoinComponent {
+class ButtonAction(plugin: Plugin, val name: String, val node: CommandNode<ButtonContext>) : CordKoinComponent {
     val id
         get() = hashCode().toString()
 
@@ -28,11 +27,7 @@ class ButtonAction(plugin: Plugin, val name: String, val nodes: Array<CommandNod
     private val dispatcher = CommandDispatcher<ButtonContext>()
 
     init {
-        dispatcher.register(literal(id) {
-            for (node in nodes) {
-                node(node)
-            }
-        })
+        dispatcher.register(node.copy(name = id, argumentIdentifier = null, aliases = arrayOf()))
     }
 
     fun execute(event: ButtonClickEvent) {
@@ -46,7 +41,6 @@ class ButtonAction(plugin: Plugin, val name: String, val nodes: Array<CommandNod
         id = id.replaceFirst(QUALIFIER, "")
         val decodedId = Base64.getDecoder().decode(id).decodeToString()
         if (!decodedId.startsWith(this.id)) return
-        event.deferEdit().queue()
         dispatcher.execute(
             ButtonContext(this, event),
             decodedId.replaceFirst(DELIMITER, " "),
@@ -60,7 +54,7 @@ class ButtonAction(plugin: Plugin, val name: String, val nodes: Array<CommandNod
         if (other !is ButtonAction) return false
 
         if (name != other.name) return false
-        if (!nodes.contentEquals(other.nodes)) return false
+        if (node != other.node) return false
         if (pluginMeta != other.pluginMeta) return false
 
         return true

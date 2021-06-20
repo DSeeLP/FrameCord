@@ -20,24 +20,24 @@ object CommandUtils {
         val cached = cache[hashCode, message]
         val parsed = cached ?: parse(sender, message)
         if (parsed == null || parsed.failed) {
-            actions.error(message, parsed)
+            actions.error(message, parsed, null)
             return
         }
         if (cached == null) cache[hashCode, message] = parsed
 
-        val throwable = parsed.execute(bypassAccess)?.apply { printStackTrace() }
+        val throwable = parsed.execute(bypassAccess)
         if (throwable == null)
             actions.success(parsed)
-        else actions.error(message, parsed)
+        else actions.error(message, parsed, throwable)
     }
 
     interface Actions<T : Any> {
-        fun error(message: String, result: ParsedResult<T>?)
+        fun error(message: String, result: ParsedResult<T>?, throwable: Throwable?)
         fun success(result: ParsedResult<T>)
 
         companion object {
             fun <T : Any> noOperation() = object : Actions<T> {
-                override fun error(message: String, result: ParsedResult<T>?) = Unit
+                override fun error(message: String, result: ParsedResult<T>?, throwable: Throwable?) = Unit
 
                 override fun success(result: ParsedResult<T>) = Unit
             }

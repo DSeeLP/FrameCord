@@ -19,6 +19,7 @@ import de.dseelp.kotlincord.api.events.ReloadEvent
 import de.dseelp.kotlincord.api.logging.LogManager
 import de.dseelp.kotlincord.api.logging.logger
 import de.dseelp.kotlincord.api.plugins.PluginLoader
+import de.dseelp.kotlincord.api.plugins.PluginManager
 import de.dseelp.kotlincord.api.utils.CommandUtils
 import de.dseelp.kotlincord.api.utils.CommandUtils.execute
 import de.dseelp.kotlincord.api.utils.koin.CordKoinComponent
@@ -33,10 +34,25 @@ import java.util.*
 @OptIn(InternalKotlinCordApi::class)
 object CoreListener : CordKoinComponent {
 
+    val pluginService: PluginManager by inject()
+
     @EventHandle
     fun onReload(event: ReloadEvent) {
         val scopes = event.scopes
         if (scopes.contains(ReloadScope.SETTINGS)) Core.loadConfig()
+        if (scopes.contains(ReloadScope.PLUGINS)) {
+            for (index in 0..loader.loadedPlugins.lastIndex) {
+                val data = loader.loadedPlugins.getOrNull(index) ?: continue
+                pluginService.unload(data)
+            }
+            val pluginLocation = Core.pathQualifiers.pluginLocation
+            val file = pluginLocation.toFile()
+            if (!file.exists()) file.mkdir()
+            for (path in file.listFiles()!!) {
+                val load = Core.pluginService.load(path)
+                Core.pluginService.enable(load.plugin!!)
+            }
+        }
     }
 
     val buttonLog by logger("Buttons")
@@ -71,8 +87,9 @@ object CoreListener : CordKoinComponent {
             event.message,
             bypassAccess = true,
             actions = object : CommandUtils.Actions<Sender> {
-                override fun error(message: String, result: ParsedResult<Sender>?) {
+                override fun error(message: String, result: ParsedResult<Sender>?, throwable: Throwable?) {
                     if (result == null) rootLogger.warn("Command could not be found! For help, use the command \"help\".")
+                    throwable?.printStackTrace()
                 }
 
                 override fun success(result: ParsedResult<Sender>) = Unit

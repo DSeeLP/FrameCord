@@ -11,7 +11,9 @@ import de.dseelp.kotlincord.api.plugins.Plugin
 import de.dseelp.kotlincord.api.plugins.PluginData
 import de.dseelp.kotlincord.api.plugins.PluginMeta
 import de.dseelp.kotlincord.api.utils.koin.KoinModules
+import de.dseelp.kotlincord.core.commands.console.PluginCommand
 import de.dseelp.kotlincord.core.commands.console.ReloadCommand
+import de.dseelp.kotlincord.core.commands.console.ShutdownCommand
 import java.io.File
 import kotlin.io.path.Path
 import kotlin.io.path.div
@@ -32,7 +34,7 @@ object FakePlugin : Plugin() {
             ClassLoader.getSystemClassLoader(), file, PluginMeta(
                 "KotlinCord",
                 coreVersion,
-                "This is a fake plugin instance for registering Listeners in KotlinCord",
+                "This is a fake plugin instance for registering Listeners and Commands in KotlinCord",
                 arrayOf("DSeeLP"),
                 file,
                 Path("") / "config",
@@ -45,7 +47,10 @@ object FakePlugin : Plugin() {
                 this,
                 fakeData.meta
             ))
-
+        eventBus.searchPackage("de.dseelp.kotlincord.core", FakePlugin)
+        eventBus.searchPackage("de.dseelp.kotlincord.api", FakePlugin)
         register<ReloadCommand>()
+        register<PluginCommand>()
+        register<ShutdownCommand>()
     }
 }

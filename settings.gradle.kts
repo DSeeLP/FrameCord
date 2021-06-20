@@ -5,3 +5,5 @@
 
 rootProject.name = "kotlincord"
 include("core", "api", "test")
+include("plugins")
+include("plugins:moderation")

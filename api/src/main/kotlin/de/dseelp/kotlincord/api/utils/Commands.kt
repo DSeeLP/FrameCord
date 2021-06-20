@@ -5,16 +5,21 @@
 
 package de.dseelp.kotlincord.api.utils
 
+import de.dseelp.kommon.command.CommandBuilder
 import de.dseelp.kommon.command.CommandDispatcher
 import de.dseelp.kommon.command.CommandNode
 import de.dseelp.kotlincord.api.InternalKotlinCordApi
 import de.dseelp.kotlincord.api.command.Sender
+import de.dseelp.kotlincord.api.event.EventHandle
+import de.dseelp.kotlincord.api.event.Listener
+import de.dseelp.kotlincord.api.events.PluginDisableEvent
 import de.dseelp.kotlincord.api.plugins.Plugin
 import de.dseelp.kotlincord.api.utils.CommandScope.*
 import de.dseelp.kotlincord.api.utils.koin.CordKoinComponent
 import org.koin.core.component.inject
 import org.koin.core.qualifier.qualifier
 
+@Listener
 @InternalKotlinCordApi
 object Commands : CordKoinComponent {
     internal val guild: CommandDispatcher<Sender> by inject(qualifier("guild"))
@@ -31,6 +36,11 @@ object Commands : CordKoinComponent {
                 CONSOLE -> console.unregister(pair.second)
             }
         }
+    }
+
+    @EventHandle
+    fun onPluginDisable(event: PluginDisableEvent) {
+        unregister(event.plugin)
     }
 }
 
@@ -59,3 +69,6 @@ enum class CommandScope {
         val ALL = values()
     }
 }
+
+fun <S : Any> literal(name: String, aliases: Array<String>, block: CommandBuilder<S>.() -> Unit): CommandNode<S> =
+    CommandBuilder<S>(name, aliases).apply(block).build()

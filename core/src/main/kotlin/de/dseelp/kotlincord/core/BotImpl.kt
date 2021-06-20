@@ -8,7 +8,6 @@ package de.dseelp.kotlincord.core
 import de.dseelp.kotlincord.api.Bot
 import de.dseelp.kotlincord.api.InternalKotlinCordApi
 import de.dseelp.kotlincord.api.event.EventBus
-import de.dseelp.kotlincord.api.events.ShutdownEvent
 import de.dseelp.kotlincord.api.utils.koin.CordKoinComponent
 import de.dseelp.kotlincord.core.listeners.EventBusListener
 import net.dv8tion.jda.api.OnlineStatus
@@ -32,10 +31,5 @@ object BotImpl : Bot, CordKoinComponent {
         val token by inject<String>(qualifier("token"))
         _shardManager = DefaultShardManagerBuilder.createDefault(token).addEventListeners(EventBusListener).build()
         shardManager.setStatus(OnlineStatus.ONLINE)
-        Runtime.getRuntime().addShutdownHook(Thread {
-            println("Shutting down")
-            eventBus.call(ShutdownEvent())
-            shardManager.shutdown()
-        })
     }
 }

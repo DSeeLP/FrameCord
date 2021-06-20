@@ -5,25 +5,28 @@
 
 package de.dseelp.kotlincord.core.commands.console
 
+import de.dseelp.kommon.command.CommandNode
 import de.dseelp.kommon.command.arguments.StringArgument
-import de.dseelp.kommon.command.literal
 import de.dseelp.kotlincord.api.InternalKotlinCordApi
-import de.dseelp.kotlincord.api.Node
 import de.dseelp.kotlincord.api.PathQualifiers
+import de.dseelp.kotlincord.api.command.Command
+import de.dseelp.kotlincord.api.command.ConsoleSender
 import de.dseelp.kotlincord.api.plugins.PluginData
 import de.dseelp.kotlincord.api.plugins.PluginLoader
 import de.dseelp.kotlincord.api.plugins.PluginManager
+import de.dseelp.kotlincord.api.utils.CommandScope
 import de.dseelp.kotlincord.api.utils.koin.CordKoinComponent
+import de.dseelp.kotlincord.api.utils.literal
 import org.koin.core.component.inject
 import java.nio.file.Path
 import kotlin.io.path.div
 import kotlin.io.path.exists
 
 @OptIn(InternalKotlinCordApi::class)
-object PluginCommand : CordKoinComponent {
+object PluginCommand : Command<ConsoleSender>, CordKoinComponent {
     val loader: PluginLoader by inject()
     val manager: PluginManager by inject()
-    val cmd: Node = literal("plugin") {
+    override val node: CommandNode<ConsoleSender> = literal("plugins", arrayOf("plugin")) {
         literal("list") {
             execute {
                 for (data in loader.loadedPlugins) {
@@ -83,4 +86,5 @@ object PluginCommand : CordKoinComponent {
             }
         }
     }
+    override val scopes: Array<CommandScope> = arrayOf(CommandScope.CONSOLE)
 }

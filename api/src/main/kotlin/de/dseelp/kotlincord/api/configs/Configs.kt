@@ -3,9 +3,9 @@
  * © Copyright by DSeeLP
  */
 
-package de.dseelp.kotlincord.api
+package de.dseelp.kotlincord.api.configs
 
-import de.dseelp.kotlincord.api.ConfigFormat.Utils.registerDataClassDiscoverer
+import de.dseelp.kotlincord.api.configs.ConfigFormat.Utils.registerDataClassDiscoverer
 import org.spongepowered.configurate.CommentedConfigurationNode
 import org.spongepowered.configurate.ConfigurationNode
 import org.spongepowered.configurate.ConfigurationOptions

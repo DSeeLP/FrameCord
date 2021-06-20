@@ -6,17 +6,20 @@
 package de.dseelp.kotlincord.core
 
 import de.dseelp.kommon.command.CommandDispatcher
-import de.dseelp.kotlincord.api.*
+import de.dseelp.kotlincord.api.Dispatcher
+import de.dseelp.kotlincord.api.InternalKotlinCordApi
+import de.dseelp.kotlincord.api.PathQualifiers
 import de.dseelp.kotlincord.api.command.Sender
 import de.dseelp.kotlincord.api.configs.BotConfig
+import de.dseelp.kotlincord.api.configs.ConfigFormat
+import de.dseelp.kotlincord.api.configs.config
 import de.dseelp.kotlincord.api.event.EventBus
 import de.dseelp.kotlincord.api.logging.KLogger
 import de.dseelp.kotlincord.api.logging.LogManager.CORE
 import de.dseelp.kotlincord.api.logging.logger
 import de.dseelp.kotlincord.api.plugins.PluginManager
+import de.dseelp.kotlincord.api.randomAlphanumeric
 import de.dseelp.kotlincord.api.utils.koin.CordKoinComponent
-import de.dseelp.kotlincord.core.commands.console.PluginCommand
-import de.dseelp.kotlincord.core.commands.guild.TestCommand
 import de.dseelp.kotlincord.core.listeners.CoreListener
 import org.koin.core.component.inject
 import org.koin.core.qualifier.qualifier
@@ -50,8 +53,6 @@ object Core : CordKoinComponent {
         loadToken()
         ConsoleImpl.startReading()
         eventBus.addClassHandler(FakePlugin, CoreListener)
-        guildDispatcher.register(TestCommand.cmd)
-        consoleDispatcher.register(PluginCommand.cmd)
         BotImpl.start()
     }
 

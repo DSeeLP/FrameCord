@@ -10,5 +10,10 @@ import de.dseelp.kotlincord.api.plugins.Plugin
 interface Cord {
     fun reload(vararg scopes: ReloadScope)
 
+    fun shutdown()
+
+    @InternalKotlinCordApi
+    fun shutdown(unloadPlugins: Boolean)
+
     fun getPlugin(): Plugin
 }

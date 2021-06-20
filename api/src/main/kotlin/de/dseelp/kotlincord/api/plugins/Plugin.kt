@@ -65,9 +65,9 @@ abstract class Plugin : PluginComponent<Plugin> {
 
     private val _buttonActions = mutableListOf<ButtonAction>()
 
-    fun registerButtonAction(name: String, nodes: Array<CommandNode<ButtonContext>>): ButtonAction {
+    fun registerButtonAction(name: String, node: CommandNode<ButtonContext>): ButtonAction {
 
-        val action = ButtonAction(this, name, nodes)
+        val action = ButtonAction(this, name, node)
         for (a in _buttonActions) {
             if (a.name.equals(
                     name,
