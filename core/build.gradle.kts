@@ -19,19 +19,22 @@ application {
 
 val coroutinesVersion: String by project
 val jlineVersion: String by project
+val slf4jVersion: String by project
+val javassistVersion: String by project
+val classgraphVersion: String by project
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
     implementation(kotlin("reflect"))
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
     api(project(":api"))
-    api("org.slf4j:jul-to-slf4j:1.7.25")
+    api("org.slf4j:jul-to-slf4j:$slf4jVersion")
     //api("org.slf4j:slf4j-simple:1.7.25")
     api("org.jline:jline:$jlineVersion")
     api("org.jline:jline-terminal-jna:$jlineVersion")
     api("org.jline:jline-reader:$jlineVersion")
-    api("org.javassist:javassist:3.28.0-GA")
-    api("io.github.classgraph:classgraph:4.8.108")
+    api("org.javassist:javassist:$javassistVersion")
+    api("io.github.classgraph:classgraph:$classgraphVersion")
 }
 
 val implementationVersion = version

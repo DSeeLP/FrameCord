@@ -14,6 +14,9 @@ val jdaVersion: String by project
 val koinVersion: String by project
 val configurateVersion: String by project
 val datetimeVersion: String by project
+val kommonVersion: String by project
+val serializationVersion: String by project
+val jansiVersion: String by project
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
@@ -23,12 +26,11 @@ dependencies {
     api("net.dv8tion:JDA:$jdaVersion")
     api("io.insert-koin:koin-core:$koinVersion")
     api("io.insert-koin:koin-logger-slf4j:$koinVersion")
-    api("org.fusesource.jansi:jansi:2.3.2")
-    api("com.uchuhimo:konf:1.1.2")
-    api("io.github.dseelp.kommon:command:0.3.0") {
+    api("org.fusesource.jansi:jansi:$jansiVersion")
+    api("io.github.dseelp.kommon:command:$kommonVersion") {
         isChanging = true
     }
-    api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.1")
+    api("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializationVersion")
     api("org.spongepowered:configurate-hocon:$configurateVersion")
     api("org.spongepowered:configurate-gson:$configurateVersion")
     api("org.spongepowered:configurate-yaml:$configurateVersion")
