@@ -106,9 +106,9 @@ allprojects {
                         }
                     }
                     scm {
-                        connection.set("scm:git:git://github.com/DSeeLP/Kommon.git")
-                        developerConnection.set("scm:git:git://github.com/DSeeLP/Kommon.git")
-                        url.set("https://github.com/DSeeLP/Kommon/")
+                        connection.set("scm:git:git://github.com/DSeeLP/KotlinCord.git")
+                        developerConnection.set("scm:git:git://github.com/DSeeLP/KotlinCord.git")
+                        url.set("https://github.com/DSeeLP/KotlinCord/")
                     }
                 }
             }
