@@ -90,9 +90,13 @@ class EventBus {
 
             val clazzObj = (obj ?: clazz.objectInstance) ?: getKoin().getOrNull<Any>(clazz)
 
+            val methodCache: MutableMap<KClass<*>, List<Pair<KFunction<*>, KParameter>>> = ConcurrentHashMap()
+
             override fun invoke(event: Any) {
                 val eventClass = event::class
-                methods.filter { it.second.type.classifier == eventClass }.onEach {
+                methodCache.getOrPut(eventClass) {
+                    methods.filter { it.second.type.classifier == eventClass }
+                }.onEach {
                     val method = it.first
                     kotlin.runCatching { method.call(clazzObj, event) }.exceptionOrNull()?.cause?.printStackTrace()
                 }
