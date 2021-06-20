@@ -41,8 +41,10 @@ object ConsoleImpl : Console {
     override val prompt: String
         get() = _prompt
 
+    val version = CordBootstrap.version
+
     private val defaultPrompt =
-        "${ConsoleColor.RED}${System.getProperty("user.name")}${ConsoleColor.DEFAULT}@${ConsoleColor.GRAY}KotlinCord ${ConsoleColor.WHITE}=> "
+        "${ConsoleColor.RED}${System.getProperty("user.name")}${ConsoleColor.DEFAULT}@${ConsoleColor.GRAY}KotlinCord-$version ${ConsoleColor.WHITE}=> "
 
     private var _prompt = defaultPrompt
 
