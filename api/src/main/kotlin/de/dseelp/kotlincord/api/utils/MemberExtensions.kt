@@ -1,3 +1,8 @@
+/*
+ * Created by Dirk on 20.6.2021.
+ * © Copyright by DSeeLP
+ */
+
 package de.dseelp.kotlincord.api.utils
 
 import net.dv8tion.jda.api.Permission
