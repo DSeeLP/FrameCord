@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 
 #
-# Created by Dirk on 19.6.2021.
+# Created by Dirk in 2021.
 # © Copyright by DSeeLP
 #
 
