@@ -12,7 +12,7 @@ plugins {
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
     implementation(kotlin("reflect"))
-    compileOnly(project(":api"))
+    compileOnly(project(":core"))
 }
 
 val implementationVersion = version

@@ -17,6 +17,8 @@ val datetimeVersion: String by project
 val kommonVersion: String by project
 val serializationVersion: String by project
 val jansiVersion: String by project
+val exposedVersion: String by project
+val hikaricpVersion: String by project
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
@@ -34,7 +36,10 @@ dependencies {
     api("org.spongepowered:configurate-yaml:$configurateVersion")
     api("org.spongepowered:configurate-extra-kotlin:$configurateVersion")
     api("org.jetbrains.kotlinx:kotlinx-datetime:$datetimeVersion")
-
+    api("org.jetbrains.exposed:exposed-core:$exposedVersion")
+    api("org.jetbrains.exposed:exposed-dao:$exposedVersion")
+    api("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
+    api("com.zaxxer:HikariCP:$hikaricpVersion")
 }
 
 val implementationVersion = version

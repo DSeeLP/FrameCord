@@ -14,16 +14,14 @@ import de.dseelp.kotlincord.api.plugins.PluginLoader
 import de.dseelp.kotlincord.api.utils.Criterion
 import de.dseelp.kotlincord.api.utils.ReflectionUtils
 import de.dseelp.kotlincord.api.utils.koin.CordKoinComponent
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import org.koin.core.component.inject
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
+import kotlin.reflect.full.callSuspend
 import kotlin.reflect.full.declaredMemberFunctions
 import kotlin.reflect.full.hasAnnotation
 import kotlin.reflect.full.isSubclassOf
@@ -149,6 +147,8 @@ class EventBus : CordKoinComponent {
 
             val methodCache: MutableMap<KClass<*>, List<Pair<KFunction<*>, KParameter>>> = ConcurrentHashMap()
 
+            private val log by logger<EventBus>()
+
             override fun invoke(event: Any) {
                 val eventClass = event::class
                 methodCache.getOrPut(eventClass) {
@@ -156,9 +156,15 @@ class EventBus : CordKoinComponent {
                 }.onEach {
                     val method = it.first
                     try {
-                        method.call(clazzObj, event)
+                        if (method.isSuspend) runBlocking { method.callSuspend(clazzObj, event) } else method.call(
+                            clazzObj,
+                            event
+                        )
                     } catch (e: Throwable) {
-                        e.printStackTrace()
+                        log.error(
+                            "Failed to call method ${method.name} in ${clazz.qualifiedName}",
+                            if (e.cause != null) e.cause else e
+                        )
                     }
                 }
             }

@@ -14,6 +14,7 @@ import de.dseelp.kotlincord.api.command.ConsoleSender
 import de.dseelp.kotlincord.api.command.GuildSender
 import de.dseelp.kotlincord.api.command.PrivateSender
 import de.dseelp.kotlincord.api.console.Console
+import de.dseelp.kotlincord.api.database.DatabaseRegistry
 import de.dseelp.kotlincord.api.event.EventBus
 import de.dseelp.kotlincord.api.logging.LogManager.ROOT
 import de.dseelp.kotlincord.api.logging.logger
@@ -22,6 +23,7 @@ import de.dseelp.kotlincord.api.plugins.PluginManager
 import de.dseelp.kotlincord.api.plugins.repository.RepositoryManager
 import de.dseelp.kotlincord.api.utils.IReflectionUtils
 import de.dseelp.kotlincord.api.utils.koin.CordKoinContext
+import de.dseelp.kotlincord.core.database.DatabaseRegistryImpl
 import de.dseelp.kotlincord.core.plugin.PluginLoaderImpl
 import de.dseelp.kotlincord.core.plugin.PluginManagerImpl
 import de.dseelp.kotlincord.core.plugin.repository.RepositoryManagerImpl
@@ -46,6 +48,7 @@ object CordBootstrap {
         single<Cord> { CordImpl } bind CordImpl::class
         single { EventBus() }
         single<Bot> { BotImpl } bind BotImpl::class
+        single<DatabaseRegistry> { DatabaseRegistryImpl() } bind DatabaseRegistryImpl::class
         single<RepositoryManager> { RepositoryManagerImpl() } bind RepositoryManagerImpl::class
         single(qualifier("console")) { CommandDispatcher<ConsoleSender>() }
         single(qualifier("guild")) { CommandDispatcher<GuildSender>() }

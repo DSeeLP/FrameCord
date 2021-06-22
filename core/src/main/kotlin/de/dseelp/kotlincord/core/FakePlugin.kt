@@ -7,6 +7,9 @@ package de.dseelp.kotlincord.core
 
 import de.dseelp.kotlincord.api.InternalKotlinCordApi
 import de.dseelp.kotlincord.api.Version
+import de.dseelp.kotlincord.api.database.DatabaseInfo
+import de.dseelp.kotlincord.api.database.DatabaseRegistry
+import de.dseelp.kotlincord.api.event.Listener
 import de.dseelp.kotlincord.api.plugins.Plugin
 import de.dseelp.kotlincord.api.plugins.PluginData
 import de.dseelp.kotlincord.api.plugins.PluginMeta
@@ -16,13 +19,17 @@ import de.dseelp.kotlincord.core.commands.console.PluginCommand
 import de.dseelp.kotlincord.core.commands.console.ReloadCommand
 import de.dseelp.kotlincord.core.commands.console.RepositoryCommand
 import de.dseelp.kotlincord.core.commands.console.ShutdownCommand
+import kotlinx.coroutines.runBlocking
 import org.koin.core.component.inject
+import org.koin.core.qualifier.named
+import org.koin.dsl.module
 import java.io.File
 import kotlin.io.path.Path
 import kotlin.io.path.div
 import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.jvm.javaField
 
+@Listener
 @InternalKotlinCordApi
 object FakePlugin : Plugin() {
     private val file = File("")
@@ -31,6 +38,7 @@ object FakePlugin : Plugin() {
     val fakeData: PluginData
 
     val repositoryManager: RepositoryManager by inject()
+    val databaseRegistry: DatabaseRegistry by inject()
 
     init {
         loadKoinModules(CordBootstrap.defaultModules)
@@ -58,6 +66,16 @@ object FakePlugin : Plugin() {
         try {
             repositoryManager.reloadRepositories()
         } catch (ex: Exception) {
+            ex.printStackTrace()
+        }
+        try {
+            runBlocking {
+                val db = databaseRegistry.registerDatabase(this@FakePlugin, DatabaseInfo.sqlite(Path("") / "cord.db"))
+                loadKoinModules(module {
+                    single(named("cord")) { db }
+                })
+            }
+        } catch (ex: Throwable) {
             ex.printStackTrace()
         }
         register<ReloadCommand>()
