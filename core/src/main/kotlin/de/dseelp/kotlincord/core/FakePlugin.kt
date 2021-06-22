@@ -1,5 +1,5 @@
 /*
- * Created by Dirk on 19.6.2021.
+ * Created by Dirk on 22.6.2021.
  * © Copyright by DSeeLP
  */
 
@@ -10,10 +10,13 @@ import de.dseelp.kotlincord.api.Version
 import de.dseelp.kotlincord.api.plugins.Plugin
 import de.dseelp.kotlincord.api.plugins.PluginData
 import de.dseelp.kotlincord.api.plugins.PluginMeta
+import de.dseelp.kotlincord.api.plugins.repository.RepositoryManager
 import de.dseelp.kotlincord.api.utils.koin.KoinModules
 import de.dseelp.kotlincord.core.commands.console.PluginCommand
 import de.dseelp.kotlincord.core.commands.console.ReloadCommand
+import de.dseelp.kotlincord.core.commands.console.RepositoryCommand
 import de.dseelp.kotlincord.core.commands.console.ShutdownCommand
+import org.koin.core.component.inject
 import java.io.File
 import kotlin.io.path.Path
 import kotlin.io.path.div
@@ -27,11 +30,14 @@ object FakePlugin : Plugin() {
     val coreVersion: Version = CordBootstrap.version
     val fakeData: PluginData
 
+    val repositoryManager: RepositoryManager by inject()
+
     init {
         loadKoinModules(CordBootstrap.defaultModules)
         KoinModules.load(this)
         fakeData = PluginData(
             ClassLoader.getSystemClassLoader(), file, PluginMeta(
+                "io.github.dseelp.kotlincord",
                 "KotlinCord",
                 coreVersion,
                 "This is a fake plugin instance for registering Listeners and Commands in KotlinCord",
@@ -49,8 +55,14 @@ object FakePlugin : Plugin() {
             ))
         eventBus.searchPackage("de.dseelp.kotlincord.core", FakePlugin)
         eventBus.searchPackage("de.dseelp.kotlincord.api", FakePlugin)
+        try {
+            repositoryManager.reloadRepositories()
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+        }
         register<ReloadCommand>()
         register<PluginCommand>()
         register<ShutdownCommand>()
+        register<RepositoryCommand>()
     }
 }

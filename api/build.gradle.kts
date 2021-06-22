@@ -1,5 +1,5 @@
 /*
- * Created by Dirk on 19.6.2021.
+ * Created by Dirk on 22.6.2021.
  * © Copyright by DSeeLP
  */
 
@@ -25,17 +25,16 @@ dependencies {
     api("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$coroutinesVersion")
     api("net.dv8tion:JDA:$jdaVersion")
     api("io.insert-koin:koin-core:$koinVersion")
-    api("io.insert-koin:koin-logger-slf4j:$koinVersion")
     api("org.fusesource.jansi:jansi:$jansiVersion")
     api("io.github.dseelp.kommon:command:$kommonVersion") {
         isChanging = true
     }
     api("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializationVersion")
-    api("org.spongepowered:configurate-hocon:$configurateVersion")
-    api("org.spongepowered:configurate-gson:$configurateVersion")
+    api("org.spongepowered:configurate-jackson:$configurateVersion")
     api("org.spongepowered:configurate-yaml:$configurateVersion")
     api("org.spongepowered:configurate-extra-kotlin:$configurateVersion")
     api("org.jetbrains.kotlinx:kotlinx-datetime:$datetimeVersion")
+
 }
 
 val implementationVersion = version

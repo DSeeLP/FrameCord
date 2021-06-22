@@ -1,11 +1,10 @@
 /*
- * Created by Dirk on 19.6.2021.
+ * Created by Dirk on 22.6.2021.
  * © Copyright by DSeeLP
  */
 
 package de.dseelp.kotlincord.plugins.test
 
-import de.dseelp.kommon.command.argument
 import de.dseelp.kommon.command.arguments.LongArgument
 import de.dseelp.kommon.command.literal
 import de.dseelp.kotlincord.api.command.DiscordSender
@@ -20,7 +19,7 @@ import net.dv8tion.jda.api.entities.TextChannel
 import net.dv8tion.jda.api.interactions.components.ButtonStyle
 import java.util.concurrent.TimeUnit
 
-@PluginInfo("Test", "0.0.1", "This is a testing module", ["DSeeLP"])
+@PluginInfo("de.dseelp.kotlincord", "Test", "0.0.1", "This is a testing module", ["DSeeLP"])
 object TestPlugin : Plugin() {
 
     @PluginAction(PluginAction.Action.ENABLE)
@@ -31,7 +30,7 @@ object TestPlugin : Plugin() {
                 sender.sendMessage("Hi")
             }
         }, CommandScope.ALL)
-        val channelAction = registerButtonAction("ChannelDelete", arrayOf(
+        val channelAction = registerButtonAction("ChannelDelete", literal("") {
             argument(LongArgument("channel")) {
                 map<Long, TextChannel?>("channel") {
                     sender.event.guild?.getTextChannelById(it)
@@ -62,7 +61,7 @@ object TestPlugin : Plugin() {
                     channel?.delete()?.queue()
                 }
             }
-        ))
+        })
         register(literal<DiscordSender<TextChannel>>("delete") {
             argument(MentionArgument.messageChannel("channel")) {
                 execute {

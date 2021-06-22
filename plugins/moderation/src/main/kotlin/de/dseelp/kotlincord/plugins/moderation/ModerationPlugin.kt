@@ -1,5 +1,5 @@
 /*
- * Created by Dirk on 19.6.2021.
+ * Created by Dirk on 22.6.2021.
  * © Copyright by DSeeLP
  */
 
@@ -11,7 +11,7 @@ import de.dseelp.kotlincord.api.plugins.PluginInfo
 import de.dseelp.kotlincord.plugins.moderation.commands.DeleteCommand
 import de.dseelp.kotlincord.plugins.moderation.commands.KickCommand
 
-@PluginInfo("Moderation", "0.1", "This is a Moderation Module", ["DSeeLP"])
+@PluginInfo("io.github.dseelp.kotlincord.plugins", "Moderation", "0.1", "This is a Moderation Module", ["DSeeLP"])
 object ModerationPlugin : Plugin() {
 
     @PluginAction(PluginAction.Action.ENABLE)

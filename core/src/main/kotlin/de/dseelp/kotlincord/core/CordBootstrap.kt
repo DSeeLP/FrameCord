@@ -1,5 +1,5 @@
 /*
- * Created by Dirk on 19.6.2021.
+ * Created by Dirk on 22.6.2021.
  * © Copyright by DSeeLP
  */
 
@@ -19,10 +19,12 @@ import de.dseelp.kotlincord.api.logging.LogManager.ROOT
 import de.dseelp.kotlincord.api.logging.logger
 import de.dseelp.kotlincord.api.plugins.PluginLoader
 import de.dseelp.kotlincord.api.plugins.PluginManager
+import de.dseelp.kotlincord.api.plugins.repository.RepositoryManager
 import de.dseelp.kotlincord.api.utils.IReflectionUtils
 import de.dseelp.kotlincord.api.utils.koin.CordKoinContext
 import de.dseelp.kotlincord.core.plugin.PluginLoaderImpl
 import de.dseelp.kotlincord.core.plugin.PluginManagerImpl
+import de.dseelp.kotlincord.core.plugin.repository.RepositoryManagerImpl
 import de.dseelp.kotlincord.core.utils.ReflectionUtilsImpl
 import kotlinx.coroutines.runBlocking
 import org.koin.core.qualifier.qualifier
@@ -44,6 +46,7 @@ object CordBootstrap {
         single<Cord> { CordImpl } bind CordImpl::class
         single { EventBus() }
         single<Bot> { BotImpl } bind BotImpl::class
+        single<RepositoryManager> { RepositoryManagerImpl() } bind RepositoryManagerImpl::class
         single(qualifier("console")) { CommandDispatcher<ConsoleSender>() }
         single(qualifier("guild")) { CommandDispatcher<GuildSender>() }
         single(qualifier("private")) { CommandDispatcher<PrivateSender>() }

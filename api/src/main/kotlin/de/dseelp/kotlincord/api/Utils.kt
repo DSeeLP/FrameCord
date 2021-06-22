@@ -1,5 +1,5 @@
 /*
- * Created by Dirk on 19.6.2021.
+ * Created by Dirk on 22.6.2021.
  * © Copyright by DSeeLP
  */
 
@@ -9,10 +9,17 @@ import de.dseelp.kommon.command.CommandDispatcher
 import de.dseelp.kommon.command.CommandNode
 import de.dseelp.kotlincord.api.command.Sender
 import java.io.ByteArrayOutputStream
+import java.net.MalformedURLException
+import java.net.URISyntaxException
+import java.net.URL
 import java.nio.charset.StandardCharsets.UTF_8
+import java.util.regex.Matcher
+import java.util.regex.Pattern
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
+import kotlin.math.round
 import kotlin.random.Random
+
 
 fun validateVersion(versionString: String, lazyMessage: () -> String) {
     try {
@@ -59,3 +66,27 @@ fun ungzip(content: ByteArray): String =
 
 typealias Node = CommandNode<Sender>
 typealias Dispatcher = CommandDispatcher<Sender>
+
+fun isValidUrl(urlString: String): Boolean {
+    try {
+        val regex: Pattern =
+            Pattern.compile("^(https?|http)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]")
+        val matcher: Matcher = regex.matcher(urlString)
+        if (!matcher.find()) {
+            throw URISyntaxException(urlString, "")
+        }
+        val url = URL(urlString)
+        url.toURI()
+    } catch (e: MalformedURLException) {
+        return false
+    } catch (e: URISyntaxException) {
+        return false
+    }
+    return true
+}
+
+fun Double.round(decimals: Int): Double {
+    var multiplier = 1.0
+    repeat(decimals) { multiplier *= 10 }
+    return round(this * multiplier) / multiplier
+}

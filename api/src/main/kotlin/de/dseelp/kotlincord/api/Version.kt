@@ -1,11 +1,20 @@
 /*
- * Created by Dirk on 19.6.2021.
+ * Created by Dirk on 22.6.2021.
  * © Copyright by DSeeLP
  */
 
 package de.dseelp.kotlincord.api
 
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 
+
+@Serializable(Version.Serializer::class)
 data class Version(
     val major: Int,
     val minor: Int? = null,
@@ -13,6 +22,16 @@ data class Version(
     val identifier: Identifier = Identifier.RELEASE,
     val build: String? = null
 ) {
+
+    object Serializer : KSerializer<Version> {
+        override fun deserialize(decoder: Decoder): Version = parse(decoder.decodeString())
+
+        override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("version", PrimitiveKind.STRING)
+
+        override fun serialize(encoder: Encoder, value: Version) {
+            encoder.encodeString(value.toString())
+        }
+    }
 
 
     init {
@@ -28,6 +47,7 @@ data class Version(
         }
     }
 
+    @Serializable(Identifier.Serializer::class)
     class Identifier private constructor(val displayName: String, val isRedundant: Boolean, vararg names: String) {
         val names: Array<String> = names.toList().toTypedArray()
 
@@ -52,6 +72,17 @@ data class Version(
             val SNAPSHOT = register("SNAPSHOT", false, "SNAPSHOT")
             val BETA = register("BETA", false, "BETA")
             val ALPHA = register("ALPHA", false, "ALPHA")
+        }
+
+        object Serializer : KSerializer<Identifier> {
+            override fun deserialize(decoder: Decoder): Identifier = get(decoder.decodeString())
+
+            override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("identifier", PrimitiveKind.STRING)
+
+            override fun serialize(encoder: Encoder, value: Identifier) {
+                encoder.encodeString(value.displayName)
+            }
+
         }
 
         override fun equals(other: Any?): Boolean {
