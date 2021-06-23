@@ -15,4 +15,6 @@ interface DatabaseRegistry {
     fun hasDatabase(plugin: Plugin): Boolean
 
     suspend fun unregister(plugin: Plugin)
+
+    fun getScope(plugin: Plugin): DatabaseScope
 }

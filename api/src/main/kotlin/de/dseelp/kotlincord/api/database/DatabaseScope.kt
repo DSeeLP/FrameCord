@@ -8,6 +8,7 @@ package de.dseelp.kotlincord.api.database
 import kotlinx.coroutines.CoroutineDispatcher
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.Transaction
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
 @Suppress("UNUSED")
 class DatabaseScope(val cordDatabase: CordDatabase) {
@@ -17,6 +18,10 @@ class DatabaseScope(val cordDatabase: CordDatabase) {
 
     fun <T> transaction(statement: Transaction.() -> T) =
         org.jetbrains.exposed.sql.transactions.transaction(database, statement)
+
+    suspend fun <T> suspendedTransaction(context: CoroutineDispatcher? = null, statement: suspend Transaction.() -> T) =
+        newSuspendedTransaction(context, database, statement = statement)
+
 
     suspend fun <T> suspendedTransactionAsync(
         context: CoroutineDispatcher? = null,

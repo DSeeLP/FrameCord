@@ -11,6 +11,9 @@ import de.dseelp.kotlincord.api.Version
 import de.dseelp.kotlincord.api.buttons.ButtonAction
 import de.dseelp.kotlincord.api.buttons.ButtonContext
 import de.dseelp.kotlincord.api.command.Command
+import de.dseelp.kotlincord.api.database.DatabaseInfo
+import de.dseelp.kotlincord.api.database.DatabaseRegistry
+import de.dseelp.kotlincord.api.database.DatabaseScope
 import de.dseelp.kotlincord.api.event.EventBus
 import de.dseelp.kotlincord.api.logging.logger
 import de.dseelp.kotlincord.api.utils.koin.KoinModules
@@ -31,22 +34,13 @@ abstract class Plugin : PluginComponent<Plugin> {
 
     val eventBus: EventBus by inject()
 
-    companion object {
-        /*private val koinField by lazy {
-            Koin::class.declaredMemberProperties.first { it.name == "modules" }.apply { isAccessible = true }
-        }
-
-        @OptIn(InternalKotlinCordApi::class)
-        private fun getModules() = CordKoinContext.app?.koin?.let { koin -> koinField.get(koin) as HashSet<Module> }!!*/
-    }
-
-    val koinApp = koinApplication {
-        //modules(getModules().toList())
-    }
+    val koinApp = koinApplication { }
 
     init {
         KoinModules.load(this)
     }
+
+    val databaseRegistry: DatabaseRegistry by inject()
 
     val meta: PluginMeta
         get() = _meta!!
@@ -106,6 +100,10 @@ abstract class Plugin : PluginComponent<Plugin> {
     override fun hashCode(): Int {
         return _meta?.hashCode() ?: 0
     }
+
+    suspend fun registerDatabase(info: DatabaseInfo) = databaseRegistry.registerDatabase(this, info)
+
+    fun <T> database(block: DatabaseScope.() -> T) = block.invoke(databaseRegistry.getScope(this))
 
 
 }

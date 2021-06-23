@@ -22,17 +22,15 @@ import org.jetbrains.exposed.sql.Database
 class DatabaseRegistryImpl : DatabaseRegistry {
     val log by logger<DatabaseRegistry>()
     val databases = mutableMapOf<Plugin, CordDatabase>()
+    val databaseScopes = mutableMapOf<Plugin, DatabaseScope>()
     val mutex = Mutex()
 
     @EventHandle
     @Suppress("UNUSED")
     suspend fun onPluginDisable(event: PluginDisableEvent) {
         if (event.type != PluginEventType.POST) return
-        try {
-            unregister(event.plugin)
-        } catch (e: NoDatabaseFoundException) {
-
-        }
+        if (!hasDatabase(event.plugin)) return
+        unregister(event.plugin)
     }
 
     override suspend fun registerDatabase(plugin: Plugin, databaseInfo: DatabaseInfo): CordDatabase {
@@ -45,6 +43,7 @@ class DatabaseRegistryImpl : DatabaseRegistry {
             val dataSource = HikariDataSource(databaseInfo.config)
             val cord = CordDatabase(dataSource, Database.connect(dataSource), databaseInfo)
             databases[plugin] = cord
+            databaseScopes[plugin] = DatabaseScope(cord)
             return cord
         }
     }
@@ -71,7 +70,11 @@ class DatabaseRegistryImpl : DatabaseRegistry {
             val database = get(plugin)
             if (!database.isClosed) database.close()
             databases.remove(plugin)
+            databaseScopes.remove(plugin)
         }
 
     }
+
+    override fun getScope(plugin: Plugin) = databaseScopes[plugin]
+        ?: throw NoDatabaseFoundException("There is no registered database for the plugin ${plugin.name}")
 }

@@ -8,7 +8,6 @@ package de.dseelp.kotlincord.core
 import de.dseelp.kotlincord.api.InternalKotlinCordApi
 import de.dseelp.kotlincord.api.Version
 import de.dseelp.kotlincord.api.database.DatabaseInfo
-import de.dseelp.kotlincord.api.database.DatabaseRegistry
 import de.dseelp.kotlincord.api.event.Listener
 import de.dseelp.kotlincord.api.plugins.Plugin
 import de.dseelp.kotlincord.api.plugins.PluginData
@@ -38,7 +37,6 @@ object FakePlugin : Plugin() {
     val fakeData: PluginData
 
     val repositoryManager: RepositoryManager by inject()
-    val databaseRegistry: DatabaseRegistry by inject()
 
     init {
         loadKoinModules(CordBootstrap.defaultModules)
@@ -70,7 +68,7 @@ object FakePlugin : Plugin() {
         }
         try {
             runBlocking {
-                val db = databaseRegistry.registerDatabase(this@FakePlugin, DatabaseInfo.sqlite(Path("") / "cord.db"))
+                val db = registerDatabase(DatabaseInfo.sqlite(dataFolder / "cord.db"))
                 loadKoinModules(module {
                     single(named("cord")) { db }
                 })
