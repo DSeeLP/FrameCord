@@ -21,7 +21,7 @@ data class Version(
     val patch: Int? = null,
     val identifier: Identifier = Identifier.RELEASE,
     val build: String? = null
-) {
+) : Comparable<Version> {
 
     object Serializer : KSerializer<Version> {
         override fun deserialize(decoder: Decoder): Version = parse(decoder.decodeString())
@@ -48,7 +48,12 @@ data class Version(
     }
 
     @Serializable(Identifier.Serializer::class)
-    class Identifier private constructor(val displayName: String, val isRedundant: Boolean, vararg names: String) {
+    class Identifier private constructor(
+        val displayName: String,
+        val level: Int,
+        val isRedundant: Boolean,
+        vararg names: String
+    ) {
         val names: Array<String> = names.toList().toTypedArray()
 
         companion object {
@@ -60,18 +65,28 @@ data class Version(
                     ?: throw IllegalStateException("Version identifier with display name ${name.uppercase()} couldn't be found")
             }
 
-            fun register(displayName: String, isRedundant: Boolean = false, vararg names: String): Identifier {
+            fun register(
+                displayName: String,
+                level: Int,
+                isRedundant: Boolean = false,
+                vararg names: String
+            ): Identifier {
                 val identifier =
-                    Identifier(displayName.uppercase(), isRedundant, *names.map { it.uppercase() }.toTypedArray())
+                    Identifier(
+                        displayName.uppercase(),
+                        level,
+                        isRedundant,
+                        *names.map { it.uppercase() }.toTypedArray()
+                    )
                 map[displayName.uppercase()] = identifier
                 return identifier
             }
 
-            val RELEASE = register("RELEASE", true, "RELEASE")
-            val RELEASE_CANDIDATE = register("RC", false, "RC")
-            val SNAPSHOT = register("SNAPSHOT", false, "SNAPSHOT")
-            val BETA = register("BETA", false, "BETA")
-            val ALPHA = register("ALPHA", false, "ALPHA")
+            val RELEASE = register("RELEASE", 200, true, "RELEASE")
+            val RELEASE_CANDIDATE = register("RC", 300, false, "RC")
+            val SNAPSHOT = register("SNAPSHOT", 400, false, "SNAPSHOT")
+            val BETA = register("BETA", 500, false, "BETA")
+            val ALPHA = register("ALPHA", 600, false, "ALPHA")
         }
 
         object Serializer : KSerializer<Identifier> {
@@ -167,5 +182,25 @@ data class Version(
         )
 
         private fun String.checkString(): Boolean = stringConditions.all { it.invoke(this) }
+    }
+
+    override fun compareTo(other: Version): Int {
+        if (this == other) return 0
+        if (major > other.major) return 1
+        if (other.major > major) return -1
+
+        if (minor != null && other.minor != null && minor > other.minor) return 1
+        if (minor != null && other.minor != null && minor < other.minor) return -1
+
+        if (patch != null && other.patch != null && patch > other.patch) return 1
+        if (patch != null && other.patch != null && patch < other.patch) return -1
+
+        if (build != null && other.build != null && build > other.build) return 1
+        if (build != null && other.build != null && build < other.build) return -1
+
+        if (identifier.level < other.identifier.level) return 1
+        if (identifier.level > other.identifier.level) return -1
+
+        return 0
     }
 }
