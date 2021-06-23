@@ -35,22 +35,25 @@ class EventBus : CordKoinComponent {
     val job = SupervisorJob()
     val scope = CoroutineScope(job + eventExecutorService.asCoroutineDispatcher())
 
-    fun call(event: Any, async: Boolean = false) {
+    suspend fun callAsync(event: Any, async: Boolean = false) {
         val eventClass = event::class
-        val executeFunction = {
-            for (index in 0..handlers.lastIndex) {
-                val handler = handlers.getOrNull(index) ?: continue
-                if (handler is Handler.ClassHandler<*>) handler.invoke(event)
-                else if (handler.clazz == eventClass || eventClass.isSubclassOf(handler.clazz)) handler.invoke(event)
+        withContext(scope.coroutineContext) {
+            val executeFunction = suspend {
+                for (index in 0..handlers.lastIndex) {
+                    val handler = handlers.getOrNull(index) ?: continue
+                    if (handler is Handler.ClassHandler<*>) handler.invoke(event)
+                    else if (handler.clazz == eventClass || eventClass.isSubclassOf(handler.clazz)) handler.invoke(event)
+                }
+            }
+            if (async) scope.launch {
+                executeFunction.invoke()
+            } else {
+                executeFunction.invoke()
             }
         }
-        if (async) scope.launch {
-            executeFunction.invoke()
-        } else {
-            executeFunction.invoke()
-        }
-
     }
+
+    fun call(event: Any, async: Boolean = false) = runBlocking { callAsync(event, async) }
 
     @InternalKotlinCordApi
     fun unregister(clazz: KClass<out Plugin>) {
@@ -112,7 +115,7 @@ class EventBus : CordKoinComponent {
     }
 
     sealed class Handler(val plugin: Plugin) {
-        abstract fun invoke(
+        abstract suspend fun invoke(
             event: Any
         )
 
@@ -123,7 +126,7 @@ class EventBus : CordKoinComponent {
             override val clazz: KClass<out Any>,
             val lambda: (event: T) -> Unit
         ) : Handler(plugin) {
-            override fun invoke(
+            override suspend fun invoke(
                 event: Any
             ) {
                 @Suppress("UNCHECKED_CAST")
@@ -149,14 +152,14 @@ class EventBus : CordKoinComponent {
 
             private val log by logger<EventBus>()
 
-            override fun invoke(event: Any) {
+            override suspend fun invoke(event: Any) {
                 val eventClass = event::class
                 methodCache.getOrPut(eventClass) {
                     methods.filter { it.second.type.classifier == eventClass }
                 }.onEach {
                     val method = it.first
                     try {
-                        if (method.isSuspend) runBlocking { method.callSuspend(clazzObj, event) } else method.call(
+                        if (method.isSuspend) method.callSuspend(clazzObj, event) else method.call(
                             clazzObj,
                             event
                         )
