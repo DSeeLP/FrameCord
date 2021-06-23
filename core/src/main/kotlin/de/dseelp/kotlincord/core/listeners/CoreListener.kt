@@ -49,8 +49,12 @@ object CoreListener : CordKoinComponent {
             val file = pluginLocation.toFile()
             if (!file.exists()) file.mkdir()
             for (path in file.listFiles()!!) {
-                val load = Core.pluginService.load(path)
-                Core.pluginService.enable(load.plugin!!)
+                try {
+                    val load = Core.pluginService.load(path)
+                    Core.pluginService.enable(load.plugin!!)
+                } catch (t: Throwable) {
+                    Core.log.error("Failed to load plugin $path", t)
+                }
             }
         }
     }

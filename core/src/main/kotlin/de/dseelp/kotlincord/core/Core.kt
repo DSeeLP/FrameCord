@@ -44,8 +44,12 @@ object Core : CordKoinComponent {
         val file = pluginLocation.toFile()
         if (!file.exists()) file.mkdir()
         for (path in file.listFiles()!!) {
-            val load = pluginService.load(path)
-            pluginService.enable(load.plugin!!)
+            try {
+                val load = pluginService.load(path)
+                pluginService.enable(load.plugin!!)
+            } catch (t: Throwable) {
+                log.error("Failed to load plugin $path", t)
+            }
         }
         loadKoinModules(module {
             single { pathQualifiers.root }
