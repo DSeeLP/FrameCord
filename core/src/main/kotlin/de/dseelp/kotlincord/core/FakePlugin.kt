@@ -51,7 +51,7 @@ object FakePlugin : Plugin() {
                 "This is a fake plugin instance for registering Listeners and Commands in KotlinCord",
                 arrayOf("DSeeLP"),
                 file,
-                Path("") / "config",
+                Path("") / "local",
                 this::class
             ),
             this
