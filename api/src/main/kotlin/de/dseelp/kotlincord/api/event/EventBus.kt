@@ -65,8 +65,8 @@ class EventBus : CordKoinComponent {
     private val pluginLoader: PluginLoader by inject()
     private val log by logger<EventBus>()
 
-    fun searchPackage(packageName: String, plugin: Plugin? = null) {
-        ReflectionUtils.findClasses(packageName) {
+    fun searchPackages(plugin: Plugin? = null, vararg packages: String) {
+        ReflectionUtils.findClasses(packages.toList().toTypedArray()) {
             Criterion.hasAnnotation<Listener>().assert()
         }.onEach { clazz ->
             val p = if (plugin != null) plugin
@@ -79,9 +79,10 @@ class EventBus : CordKoinComponent {
                 return
             }
             addHandler(Handler.ClassHandler(p, clazz))
-
         }
     }
+
+    fun searchPackage(packageName: String, plugin: Plugin? = null) = searchPackages(plugin, packageName)
 
     fun addHandler(handler: Handler) {
         handlers.add(handler)
