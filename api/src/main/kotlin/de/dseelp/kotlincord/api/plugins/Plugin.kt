@@ -16,11 +16,15 @@ import de.dseelp.kotlincord.api.database.DatabaseRegistry
 import de.dseelp.kotlincord.api.database.DatabaseScope
 import de.dseelp.kotlincord.api.event.EventBus
 import de.dseelp.kotlincord.api.logging.logger
+import de.dseelp.kotlincord.api.utils.Criterion
+import de.dseelp.kotlincord.api.utils.ReflectionUtils
 import de.dseelp.kotlincord.api.utils.koin.KoinModules
 import de.dseelp.kotlincord.api.utils.register
 import org.koin.core.component.inject
 import org.koin.dsl.koinApplication
 import java.nio.file.Path
+import kotlin.io.path.createDirectories
+import kotlin.reflect.KClass
 import kotlin.reflect.full.createInstance
 
 @OptIn(InternalKotlinCordApi::class)
@@ -50,7 +54,7 @@ abstract class Plugin : PluginComponent<Plugin> {
     val version: Version
         get() = meta.version
     val dataFolder: Path
-        get() = meta.dataFolder
+        get() = meta.dataFolder.also { it.createDirectories() }
 
     val logger by logger()
 
@@ -92,8 +96,11 @@ abstract class Plugin : PluginComponent<Plugin> {
         register(command.node, *command.scopes)
     }
 
-    inline fun <reified T : Command<*>> register() {
-        val instance = (T::class.objectInstance ?: koinApp.koin.getOrNull()) ?: T::class.createInstance()
+    @Suppress("UNCHECKED_CAST")
+    inline fun <reified T : Command<*>> register() = register(T::class as KClass<Command<*>>)
+
+    fun register(clazz: KClass<Command<*>>) {
+        val instance = (clazz.objectInstance ?: koinApp.koin.getOrNull()) ?: clazz.createInstance()
         register(instance)
     }
 
@@ -104,6 +111,18 @@ abstract class Plugin : PluginComponent<Plugin> {
     suspend fun registerDatabase(info: DatabaseInfo) = databaseRegistry.registerDatabase(this, info)
 
     fun <T> database(block: DatabaseScope.() -> T) = block.invoke(databaseRegistry.getScope(this))
+
+    fun searchEvents(vararg packages: String) = eventBus.searchPackages(this, *packages)
+
+    fun searchCommands(vararg packages: String) {
+        ReflectionUtils.findClasses(packages.toList().toTypedArray()) {
+            Criterion.isSubClassOf(Command::class).assert()
+        }.onEach { clazz ->
+            register(clazz as KClass<Command<*>>)
+        }
+    }
+
+    fun searchCommands(packageName: String) = searchCommands(*arrayOf(packageName).toList().toTypedArray())
 
 
 }
