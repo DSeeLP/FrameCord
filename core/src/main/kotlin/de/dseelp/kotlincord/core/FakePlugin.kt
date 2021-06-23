@@ -14,10 +14,6 @@ import de.dseelp.kotlincord.api.plugins.PluginData
 import de.dseelp.kotlincord.api.plugins.PluginMeta
 import de.dseelp.kotlincord.api.plugins.repository.RepositoryManager
 import de.dseelp.kotlincord.api.utils.koin.KoinModules
-import de.dseelp.kotlincord.core.commands.console.PluginCommand
-import de.dseelp.kotlincord.core.commands.console.ReloadCommand
-import de.dseelp.kotlincord.core.commands.console.RepositoryCommand
-import de.dseelp.kotlincord.core.commands.console.ShutdownCommand
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.inject
 import org.koin.core.qualifier.named
@@ -76,9 +72,6 @@ object FakePlugin : Plugin() {
         } catch (ex: Throwable) {
             ex.printStackTrace()
         }
-        register<ReloadCommand>()
-        register<PluginCommand>()
-        register<ShutdownCommand>()
-        register<RepositoryCommand>()
+        searchCommands("de.dseelp.kotlincord.core")
     }
 }
