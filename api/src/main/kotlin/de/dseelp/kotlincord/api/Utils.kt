@@ -8,6 +8,10 @@ package de.dseelp.kotlincord.api
 import de.dseelp.kommon.command.CommandDispatcher
 import de.dseelp.kommon.command.CommandNode
 import de.dseelp.kotlincord.api.command.Sender
+import org.jetbrains.exposed.sql.Column
+import org.jetbrains.exposed.sql.IColumnType
+import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.VarCharColumnType
 import java.io.ByteArrayOutputStream
 import java.net.MalformedURLException
 import java.net.URISyntaxException
@@ -90,3 +94,23 @@ fun Double.round(decimals: Int): Double {
     repeat(decimals) { multiplier *= 10 }
     return round(this * multiplier) / multiplier
 }
+
+class VersionColumnType : VarCharColumnType(), IColumnType {
+    override fun notNullValueToDB(value: Any): Any {
+        return when (value) {
+            is String -> value
+            is Version -> value.toString()
+            else -> error("Unexpected value: $value of ${value::class.qualifiedName}")
+        }
+    }
+
+    override fun valueFromDB(value: Any): Any {
+        return when (value) {
+            is Version -> value
+            is String -> Version.parse(value)
+            else -> valueFromDB(value.toString())
+        }
+    }
+}
+
+fun Table.version(name: String): Column<Version> = registerColumn(name, VersionColumnType())

@@ -70,7 +70,7 @@ object KickCommand : Command<GuildSender> {
                         description = "The user ${user?.asMention} was kicked out of the server!"
                     }
                 }.build())?.queue { it.delete().queueAfter(20, TimeUnit.SECONDS) }
-                member?.kick()?.queue()
+                member!!.kick().queue()
             }
         }
     })

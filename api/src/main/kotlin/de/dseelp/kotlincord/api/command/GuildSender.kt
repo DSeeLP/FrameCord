@@ -18,4 +18,7 @@ class GuildSender(override val jda: JDA, override val message: Message) : Discor
     override val isConsole: Boolean = false
     override val name: String = author.name
     val guild = message.guild
+
+    val member
+        get() = guild.retrieveMember(author).complete()
 }

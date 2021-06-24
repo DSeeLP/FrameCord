@@ -14,7 +14,9 @@ import de.dseelp.kotlincord.api.plugins.PluginData
 import de.dseelp.kotlincord.api.plugins.PluginMeta
 import de.dseelp.kotlincord.api.plugins.repository.RepositoryManager
 import de.dseelp.kotlincord.api.utils.koin.KoinModules
+import de.dseelp.kotlincord.core.plugin.repository.data.InstalledPackages
 import kotlinx.coroutines.runBlocking
+import org.jetbrains.exposed.sql.SchemaUtils
 import org.koin.core.component.inject
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
@@ -68,6 +70,12 @@ object FakePlugin : Plugin() {
                 loadKoinModules(module {
                     single(named("cord")) { db }
                 })
+                database {
+                    transaction {
+                        SchemaUtils.createMissingTablesAndColumns(InstalledPackages)
+                        commit()
+                    }
+                }
             }
         } catch (ex: Throwable) {
             ex.printStackTrace()

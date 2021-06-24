@@ -37,8 +37,15 @@ data class RepositoryIndexImpl(
         if (response.status == HttpStatusCode.NotFound) {
             throw InvalidRepositoryException("Failed to find package ${groupId}:${artifactId} in repository ${repository.url}")
         }
-        return kotlin.runCatching { response.receive<PackageImpl>() }
-            .getOrElse { throw InvalidRepositoryException("Defect package.json for package ${toString()} in repository ${repository.url}") }
+        val catching = kotlin.runCatching { response.receive<PackageImpl>() }
+        return catching
+            .getOrElse {
+                throw InvalidRepositoryException(
+                    "Defect package.json for package ${toString()} in repository ${repository.url}",
+                    catching.exceptionOrNull()
+                )
+            }
+            .apply { this.repository = repository }
     }
 
     override fun toString(): String = "$groupId:$artifactId"

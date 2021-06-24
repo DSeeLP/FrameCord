@@ -10,14 +10,18 @@ import de.dseelp.kotlincord.api.plugins.repository.RepositoryIndex
 import de.dseelp.kotlincord.api.plugins.repository.RepositoryManager
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
+import io.ktor.client.features.*
 import io.ktor.client.features.json.*
+import kotlinx.coroutines.sync.Mutex
 import java.net.URL
 import kotlin.io.path.Path
 import kotlin.io.path.div
 
 class RepositoryManagerImpl : RepositoryManager {
+    var mutex: Mutex = Mutex()
     val httpClient: HttpClient = HttpClient(CIO) {
         install(JsonFeature)
+        install(HttpTimeout.Feature)
         expectSuccess = false
     }
 
@@ -30,6 +34,7 @@ class RepositoryManagerImpl : RepositoryManager {
     private val path = Path("") / "repositories.json"
 
     override fun addRepository(urlString: String): Repository {
+        if (RepositoryConfig.load(path).repositories.contains(urlString)) repositories.first { it.url == urlString }
         RepositoryConfig.add(path, urlString)
         reloadRepositories()
         return repositories.first { it.url == urlString }
@@ -41,8 +46,8 @@ class RepositoryManagerImpl : RepositoryManager {
 
     override fun removeRepository(urlString: String) {
         if (!RepositoryConfig.load(path).repositories.contains(urlString)) return
-        reloadRepositories()
         RepositoryConfig.remove(path, urlString)
+        reloadRepositories()
     }
 
     override suspend fun updateIndexes() {
@@ -69,7 +74,7 @@ class RepositoryManagerImpl : RepositoryManager {
         val newUrls = urls - oldUrls
         if (newUrls.isEmpty()) return
         val new = newUrls.map { RepositoryImpl(httpClient, it) }.filter { it.name != "" && it.name.isNotEmpty() }
-        _repositories = (_repositories + new).distinct().toTypedArray()
+        _repositories = (_repositories + new).distinct().filter { urls.contains(it.url) }.toTypedArray()
     }
 
 }

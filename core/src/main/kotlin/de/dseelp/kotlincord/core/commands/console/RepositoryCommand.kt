@@ -10,6 +10,7 @@ import de.dseelp.kommon.command.CommandContext
 import de.dseelp.kommon.command.CommandNode
 import de.dseelp.kommon.command.arguments.StringArgument
 import de.dseelp.kotlincord.api.InternalKotlinCordApi
+import de.dseelp.kotlincord.api.Version
 import de.dseelp.kotlincord.api.command.Command
 import de.dseelp.kotlincord.api.command.ConsoleSender
 import de.dseelp.kotlincord.api.isValidUrl
@@ -20,6 +21,7 @@ import de.dseelp.kotlincord.api.round
 import de.dseelp.kotlincord.api.utils.CommandScope
 import de.dseelp.kotlincord.api.utils.koin.CordKoinComponent
 import de.dseelp.kotlincord.api.utils.literal
+import de.dseelp.kotlincord.api.utils.merge
 import io.ktor.http.*
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.inject
@@ -104,6 +106,46 @@ object RepositoryCommand : Command<ConsoleSender>, CordKoinComponent {
             }
         }
 
+        literal("install") {
+
+            argument(StringArgument("term")) {
+                execute {
+                    val raw: String = get("term")
+                    val splitted = raw.split('@')
+                    if (!raw.contains('@') || splitted.size < 2) {
+                        sender.sendMessage(
+                            "Please provide the version you want to install.",
+                            "If you want to install the latest version just specify 'latest'."
+                        )
+                        return@execute
+                    }
+                    val versionString = splitted[1]
+                    val latest = versionString.lowercase() == "latest"
+                    val version = runCatching { Version.parse(versionString) }.getOrNull()
+                    if (version == null && !latest) {
+                        sender.sendMessage("$versionString is not a valid version!")
+                        return@execute
+                    }
+                    val results = findResults(exact = true, mustHaveArtifactId = true) {
+                        val index = it.indexOf('@')
+                        it.substring(0 until index)
+                    } ?: return@execute
+                    val merged = merge(*results.values.toTypedArray())
+                    if (merged.size > 1) {
+                        sender.sendMessage("An unknown error occured #232. Please report this error to an maintainer of the KotlinCord project.")
+                        return@execute
+                    }
+                    val index = merged[0]
+                    runBlocking {
+                        val foundPackage = index.asPackage(results.keys.first())
+                        sender.sendMessage("Installing package...")
+                        if (latest) foundPackage.installLatest()
+                        else foundPackage.install(version!!)
+                    }
+                }
+            }
+        }
+
         node(searchNode(false, nodeName = "search") {
             node(CommandNode("exact", target = searchNode(true), noAccess = null, executor = null))
         })
@@ -138,8 +180,12 @@ object RepositoryCommand : Command<ConsoleSender>, CordKoinComponent {
         apply(builder)
     }
 
-    fun CommandContext<ConsoleSender>.findResults(exact: Boolean): Map<Repository, Array<RepositoryIndex>>? {
-        val term: String = get("term")
+    fun CommandContext<ConsoleSender>.findResults(
+        exact: Boolean,
+        mustHaveArtifactId: Boolean = false,
+        termModifier: (String) -> String = { it }
+    ): Map<Repository, Array<RepositoryIndex>>? {
+        val term: String = termModifier(get("term"))
         val results = (if (term.contains(':')) {
             val splitted = term.split(':')
             if (splitted.size > 2) {
@@ -147,9 +193,13 @@ object RepositoryCommand : Command<ConsoleSender>, CordKoinComponent {
                 return null
             }
             repositoryManager.find(splitted[0], splitted[1], exact, exact)
-        } else {
+        } else if (!mustHaveArtifactId) {
             repositoryManager.find(term, exact)
-        }).filter { it.value.isNotEmpty() }
+        } else null)?.filter { it.value.isNotEmpty() }
+        if (results == null) {
+            sender.sendMessage("You must provide a groupId and artifactId.")
+            return null
+        }
         if (results.isEmpty()) {
             sender.sendMessage("No results found for \"$term\"")
             return null
