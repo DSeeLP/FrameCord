@@ -21,7 +21,7 @@ import de.dseelp.kotlincord.api.round
 import de.dseelp.kotlincord.api.utils.CommandScope
 import de.dseelp.kotlincord.api.utils.koin.CordKoinComponent
 import de.dseelp.kotlincord.api.utils.literal
-import de.dseelp.kotlincord.api.utils.merge
+import de.dseelp.kotlincord.api.merge
 import io.ktor.http.*
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.inject
