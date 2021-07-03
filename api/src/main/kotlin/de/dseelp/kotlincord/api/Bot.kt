@@ -5,9 +5,9 @@
 
 package de.dseelp.kotlincord.api
 
-import net.dv8tion.jda.api.sharding.ShardManager
+import dev.kord.core.Kord
 
 interface Bot {
-    val shardManager: ShardManager
+    val kord: Kord
     val isStarted: Boolean
 }

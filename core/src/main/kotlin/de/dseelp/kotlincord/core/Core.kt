@@ -38,12 +38,13 @@ object Core : CordKoinComponent {
     private val eventBus by inject<EventBus>()
 
 
-    fun startup() {
+    suspend fun startup() {
         loadConfig()
         val pluginLocation = pathQualifiers.pluginLocation
         val file = pluginLocation.toFile()
         if (!file.exists()) file.mkdir()
         for (path in file.listFiles()!!) {
+            if (!path.isFile) continue
             try {
                 val load = pluginService.load(path)
                 pluginService.enable(load.plugin!!)

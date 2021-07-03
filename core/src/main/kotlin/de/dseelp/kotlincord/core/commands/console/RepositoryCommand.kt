@@ -52,9 +52,7 @@ object RepositoryCommand : Command<ConsoleSender>, CordKoinComponent {
                 }
                 sender.sendMessage("Updating repositories...")
                 val took = measureTimeMillis {
-                    runBlocking {
-                        repositoryManager.updateIndexes()
-                    }
+                    repositoryManager.updateIndexes()
                 }
                 if (took == 0L) {
                     sender.sendMessage("Update completed instantaneous.")
@@ -136,12 +134,10 @@ object RepositoryCommand : Command<ConsoleSender>, CordKoinComponent {
                         return@execute
                     }
                     val index = merged[0]
-                    runBlocking {
-                        val foundPackage = index.asPackage(results.keys.first())
-                        sender.sendMessage("Installing package...")
-                        if (latest) foundPackage.installLatest()
-                        else foundPackage.install(version!!)
-                    }
+                    val foundPackage = index.asPackage(results.keys.first())
+                    sender.sendMessage("Installing package...")
+                    if (latest) foundPackage.installLatest()
+                    else foundPackage.install(version!!)
                 }
             }
         }
@@ -180,7 +176,7 @@ object RepositoryCommand : Command<ConsoleSender>, CordKoinComponent {
         apply(builder)
     }
 
-    fun CommandContext<ConsoleSender>.findResults(
+    suspend fun CommandContext<ConsoleSender>.findResults(
         exact: Boolean,
         mustHaveArtifactId: Boolean = false,
         termModifier: (String) -> String = { it }

@@ -5,16 +5,16 @@
 
 package de.dseelp.kotlincord.api.command
 
-import net.dv8tion.jda.api.JDA
-import net.dv8tion.jda.api.entities.Message
-import net.dv8tion.jda.api.entities.PrivateChannel
-import net.dv8tion.jda.api.entities.User
+import dev.kord.core.entity.Message
+import dev.kord.core.entity.User
+import dev.kord.core.entity.channel.DmChannel
 
-class PrivateSender(override val jda: JDA, override val message: Message) : DiscordSender<PrivateChannel> {
-    override val author: User = message.author
-    override val isGuild: Boolean = true
-    override val isPrivate: Boolean = false
-    override val channel: PrivateChannel = message.privateChannel
+
+class PrivateSender(override val message: Message) : DiscordSender<DmChannel> {
+    override val author: User = message.author!!
+    override val isGuild: Boolean = false
+    override val isPrivate: Boolean = true
+    override val channel: DmChannel = message.channel as DmChannel
     override val isConsole: Boolean = false
-    override val name: String = author.name
+    override val name: String = author.username
 }

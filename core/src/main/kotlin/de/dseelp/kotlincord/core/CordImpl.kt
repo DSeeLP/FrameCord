@@ -33,10 +33,10 @@ object CordImpl : Cord, CordKoinComponent {
         coreLog.info("Reload complete!")
     }
 
-    override fun shutdown() = shutdown(true)
+    override suspend fun shutdown() = shutdown(true)
 
     @InternalKotlinCordApi
-    override fun shutdown(unloadPlugins: Boolean) {
+    override suspend fun shutdown(unloadPlugins: Boolean) {
         coreLog.also { log ->
             log.info("Shutting down...")
             eventBus.call(ShutdownEvent())
@@ -48,7 +48,7 @@ object CordImpl : Cord, CordKoinComponent {
                 log.error("Forcing shutdown...")
                 exitProcess(1)
             }.start()
-            bot.shardManager.shutdown()
+            bot.kord.shutdown()
             println("Shutdown complete")
         }
     }
