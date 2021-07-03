@@ -17,13 +17,33 @@ import java.net.MalformedURLException
 import java.net.URISyntaxException
 import java.net.URL
 import java.nio.charset.StandardCharsets.UTF_8
+import java.security.SecureRandom
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 import kotlin.math.round
 import kotlin.random.Random
+import kotlin.random.asKotlinRandom
 
+inline fun <reified T : Any> merge(vararg arrays: Array<T>): Array<T> {
+    var result: Array<T?> = arrayOfNulls(0)
+    for (array in arrays) {
+        result += array
+    }
+    @Suppress("UNCHECKED_CAST")
+    return result as Array<T>
+}
+
+@JvmName("mergeNullable")
+inline fun <reified T> merge(vararg arrays: Array<T>): Array<T?> {
+    var result: Array<T?> = arrayOfNulls(0)
+    for (array in arrays) {
+        result += array
+    }
+    @Suppress("UNCHECKED_CAST")
+    return result
+}
 
 fun validateVersion(versionString: String, lazyMessage: () -> String) {
     try {
@@ -38,7 +58,8 @@ fun randomAlphanumeric(
     lowercase: Boolean = true,
     uppercase: Boolean = true,
     numbers: Boolean = true,
-    custom: Array<Char> = arrayOf()
+    custom: Array<Char> = arrayOf(),
+    random: Random = Random
 ): String {
     val lowerString = "abcdefghijklmnopqrstuvwxyz"
     val upperString = lowerString.uppercase()
@@ -53,7 +74,7 @@ fun randomAlphanumeric(
     if (allowed.isEmpty()) throw IllegalArgumentException("You must allow some sort of characters!")
     var array = arrayOf<Char>()
     for (i in 1..size) {
-        val c = allowed[Random.nextInt(allowed.lastIndex)]
+        val c = allowed[random.nextInt(allowed.lastIndex)]
         array += c
     }
     return array.joinToString("")
