@@ -17,8 +17,10 @@ plugins {
     id("org.jetbrains.dokka") version "1.4.32" apply false
 
     kotlin("jvm") version "1.5.10" apply false
+    kotlin("multiplatform") version "1.5.10" apply false
     id("com.github.johnrengelman.shadow") version "6.1.0" apply false
     kotlin("plugin.serialization") version "1.5.10" apply false
+    id("org.jetbrains.compose") version (System.getenv("COMPOSE_TEMPLATE_COMPOSE_VERSION") ?: "0.5.0-build229") apply false
 }
 
 val isDeployingToCentral = System.getenv().containsKey("DEPLOY_CENTRAL")
@@ -35,6 +37,7 @@ allprojects {
         mavenCentral()
         maven(url = "https://m2.dv8tion.net/releases")
         maven(url = "https://jitpack.io")
+        maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
     }
 
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
@@ -67,7 +70,7 @@ allprojects {
     }
 
 
-    val excludedModules = arrayOf("test")
+    val excludedModules = arrayOf("test", "frontend", "app", "backend")
 
     publishing {
         if (excludedModules.contains(this@allprojects.name)) return@publishing
