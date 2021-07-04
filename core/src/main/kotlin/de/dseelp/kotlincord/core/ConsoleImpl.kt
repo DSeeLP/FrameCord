@@ -67,7 +67,7 @@ object ConsoleImpl : Console {
                 catching.exceptionOrNull()?.printStackTrace()
                 val line = catching.getOrNull() ?: exitProcess(0)
                 readJob = null
-                eventBus.call(ConsoleMessageEvent(line))
+                eventBus.callAsync(ConsoleMessageEvent(line))
             }
         }
     }

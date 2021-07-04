@@ -5,17 +5,14 @@
 
 package de.dseelp.kotlincord.api.command
 
-import net.dv8tion.jda.api.EmbedBuilder
-import net.dv8tion.jda.api.entities.Message
-import net.dv8tion.jda.api.entities.MessageEmbed
+import dev.kord.rest.builder.message.MessageCreateBuilder
+
 
 sealed interface Sender {
     val isConsole: Boolean
     val name: String
 
-    fun sendMessage(vararg messages: String, parseColors: Boolean = true)
+    suspend fun sendMessage(vararg messages: String, parseColors: Boolean = true)
 
-    fun sendMessage(embed: MessageEmbed) = sendMessage(net.dv8tion.jda.api.MessageBuilder(embed).build())
-    fun sendMessage(embed: EmbedBuilder) = sendMessage(embed.build())
-    fun sendMessage(message: Message)
+    suspend fun sendMessage(message: MessageCreateBuilder.() -> Unit)
 }

@@ -5,9 +5,13 @@
 
 package de.dseelp.kotlincord.api
 
-import net.dv8tion.jda.api.sharding.ShardManager
+import dev.kord.core.Kord
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 
-interface Bot {
-    val shardManager: ShardManager
+interface Bot: CoroutineScope {
+    val kord: Kord
     val isStarted: Boolean
+    val job: Job
 }

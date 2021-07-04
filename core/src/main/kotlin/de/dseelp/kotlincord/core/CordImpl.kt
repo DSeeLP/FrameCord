@@ -26,20 +26,19 @@ object CordImpl : Cord, CordKoinComponent {
     val bot: Bot by inject()
     val coreLog by logger(LogManager.CORE)
 
-    override fun reload(vararg scopes: ReloadScope) {
-        //TODO: Add logic to reload here
+    override suspend fun reload(vararg scopes: ReloadScope) {
         coreLog.info("Reloading...")
-        eventBus.call(ReloadEvent(scopes.toList().toTypedArray()))
+        eventBus.callAsync(ReloadEvent(scopes.toList().toTypedArray()))
         coreLog.info("Reload complete!")
     }
 
-    override fun shutdown() = shutdown(true)
+    override suspend fun shutdown() = shutdown(true)
 
     @InternalKotlinCordApi
-    override fun shutdown(unloadPlugins: Boolean) {
+    override suspend fun shutdown(unloadPlugins: Boolean) {
         coreLog.also { log ->
             log.info("Shutting down...")
-            eventBus.call(ShutdownEvent())
+            eventBus.callAsync(ShutdownEvent())
             ConsoleImpl.stopReading()
             ConsoleImpl.stopCurrentRead()
             Thread {
@@ -48,7 +47,7 @@ object CordImpl : Cord, CordKoinComponent {
                 log.error("Forcing shutdown...")
                 exitProcess(1)
             }.start()
-            bot.shardManager.shutdown()
+            bot.kord.shutdown()
             println("Shutdown complete")
         }
     }

@@ -10,7 +10,7 @@ plugins {
 }
 
 val coroutinesVersion: String by project
-val jdaVersion: String by project
+val kordVersion: String by project
 val koinVersion: String by project
 val configurateVersion: String by project
 val datetimeVersion: String by project
@@ -25,7 +25,7 @@ dependencies {
     implementation(kotlin("reflect"))
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
     api("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$coroutinesVersion")
-    api("net.dv8tion:JDA:$jdaVersion")
+    api("dev.kord:kord-core:$kordVersion")
     api("io.insert-koin:koin-core:$koinVersion")
     api("org.fusesource.jansi:jansi:$jansiVersion")
     api("io.github.dseelp.kommon:command:$kommonVersion") {
