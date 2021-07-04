@@ -15,12 +15,10 @@ import de.dseelp.kotlincord.api.command.GuildSender
 import de.dseelp.kotlincord.api.utils.koin.CordKoinComponent
 import dev.kord.common.entity.ChannelType
 import dev.kord.common.entity.Snowflake
-import dev.kord.core.entity.Message
+import dev.kord.core.entity.Member
 import dev.kord.core.entity.Role
 import dev.kord.core.entity.User
 import dev.kord.core.entity.channel.*
-import dev.kord.core.kordLogger
-import kotlinx.coroutines.runBlocking
 import org.koin.core.component.inject
 
 class MentionArgument<S : DiscordSender<out MessageChannel>, M : Any>(
@@ -35,10 +33,22 @@ class MentionArgument<S : DiscordSender<out MessageChannel>, M : Any>(
     @OptIn(InternalKotlinCordApi::class)
     companion object : CordKoinComponent {
         private val bot: Bot by inject()
+
+        private fun getSnowflake(message: String): Snowflake? {
+            if (!(message.startsWith("<@!") && message.endsWith('>'))) return null
+            return Snowflake(message.replaceFirst("<@!", "").replaceFirst(">", ""))
+        }
+
         fun <S : DiscordSender<out GuildMessageChannel>> user(name: String) =
             MentionArgument<S, User>(name) { message ->
-                if (!(message.startsWith("<@!") && message.endsWith('>'))) return@MentionArgument null
-                bot.kord.getUser(Snowflake(message.replaceFirst("<@!", "").replaceFirst(">", "")))
+                val snowflake = getSnowflake(message) ?: return@MentionArgument null
+                bot.kord.getUser(snowflake)
+            }
+
+        fun <S : DiscordSender<out GuildMessageChannel>> member(name: String) =
+            MentionArgument<S, Member>(name) { message ->
+                val snowflake = getSnowflake(message) ?: return@MentionArgument null
+                sender.message.getGuild().getMemberOrNull(snowflake)
             }
 
         private suspend fun <S : DiscordSender<out MessageChannel>> CommandContext<S>.getChannel(message: String): GuildChannel? {
@@ -57,14 +67,14 @@ class MentionArgument<S : DiscordSender<out MessageChannel>, M : Any>(
         fun <S : DiscordSender<out MessageChannel>> textChannel(name: String) =
             MentionArgument<S, TextChannel>(name) { message ->
                 val channel = getChannel(message) ?: return@MentionArgument null
-                if (channel.type != ChannelType.GuildText) channel as TextChannel
+                if (channel.type == ChannelType.GuildText) channel as TextChannel
                 else null
             }
 
         fun <S : DiscordSender<out MessageChannel>> messageChannel(name: String) =
             MentionArgument<S, GuildMessageChannel>(name) { message ->
                 val channel = getChannel(message) ?: return@MentionArgument null
-                if (channel.type != ChannelType.GuildText || channel.type == ChannelType.GuildNews) channel as GuildMessageChannel
+                if (channel.type == ChannelType.GuildText || channel.type == ChannelType.GuildNews) channel as GuildMessageChannel
                 else null
             }
 

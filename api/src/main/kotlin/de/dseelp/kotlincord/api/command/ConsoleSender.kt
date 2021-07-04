@@ -17,7 +17,7 @@ object ConsoleSender : Sender {
         messages.onEach { log.command(if (parseColors) ConsoleColor.toColouredString('&', it) else it) }
     }
 
-    override fun sendMessage(message: MessageCreateBuilder.() -> Unit) {
+    override suspend fun sendMessage(message: MessageCreateBuilder.() -> Unit) {
         throw UnsupportedOperationException("A ConsoleSender can't send discord messages")
     }
 

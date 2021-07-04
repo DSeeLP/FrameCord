@@ -6,9 +6,7 @@
 package de.dseelp.kotlincord.core
 
 import de.dseelp.kommon.command.CommandDispatcher
-import de.dseelp.kotlincord.api.Dispatcher
-import de.dseelp.kotlincord.api.InternalKotlinCordApi
-import de.dseelp.kotlincord.api.PathQualifiers
+import de.dseelp.kotlincord.api.*
 import de.dseelp.kotlincord.api.command.Sender
 import de.dseelp.kotlincord.api.configs.BotConfig
 import de.dseelp.kotlincord.api.configs.ConfigFormat
@@ -18,7 +16,6 @@ import de.dseelp.kotlincord.api.logging.KLogger
 import de.dseelp.kotlincord.api.logging.LogManager.CORE
 import de.dseelp.kotlincord.api.logging.logger
 import de.dseelp.kotlincord.api.plugins.PluginManager
-import de.dseelp.kotlincord.api.randomAlphanumeric
 import de.dseelp.kotlincord.api.utils.koin.CordKoinComponent
 import de.dseelp.kotlincord.core.listeners.CoreListener
 import org.koin.core.component.inject
@@ -26,14 +23,14 @@ import org.koin.core.qualifier.qualifier
 import org.koin.dsl.module
 import org.spongepowered.configurate.kotlin.extensions.get
 import kotlin.io.path.div
+import kotlin.io.path.isDirectory
+import kotlin.io.path.listDirectoryEntries
 
 @OptIn(InternalKotlinCordApi::class)
 object Core : CordKoinComponent {
 
     val log by logger(CORE)
     val pluginService by inject<PluginManager>()
-    val guildDispatcher: CommandDispatcher<Sender> by inject(qualifier("guild"))
-    val consoleDispatcher: Dispatcher by inject(qualifier("console"))
     val pathQualifiers by inject<PathQualifiers>()
     private val eventBus by inject<EventBus>()
 
@@ -52,13 +49,15 @@ object Core : CordKoinComponent {
                 log.error("Failed to load plugin $path", t)
             }
         }
+        ConsoleImpl.startReading()
         loadKoinModules(module {
             single { pathQualifiers.root }
         })
         loadToken()
-        ConsoleImpl.startReading()
         eventBus.addClassHandler(FakePlugin, CoreListener)
         BotImpl.start()
+        log.info("Startup complete")
+        bot.job.join()
     }
 
     fun loadToken(log: KLogger = logger(CORE).value) {

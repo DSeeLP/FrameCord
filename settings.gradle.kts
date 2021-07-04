@@ -4,6 +4,6 @@
  */
 
 rootProject.name = "kotlincord"
-include("core", "api", "test")
+include("core", "api")
 include("plugins")
 include("plugins:moderation")

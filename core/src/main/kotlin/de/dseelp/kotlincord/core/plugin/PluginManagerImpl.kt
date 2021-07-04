@@ -56,7 +56,7 @@ class PluginManagerImpl : PluginManager {
     @OptIn(InternalKotlinCordApi::class)
     @EventHandle
     @Suppress("UNUSED_PARAMETER")
-    fun shutdown(event: ShutdownEvent) {
+    suspend fun shutdown(event: ShutdownEvent) {
         logger.info("Unloading plugins...")
         loader.loadedPlugins.onEach {
             unload(it)
@@ -76,14 +76,14 @@ class PluginManagerImpl : PluginManager {
     }
 
     @OptIn(InternalKotlinCordApi::class)
-    override fun unload(data: PluginData) {
+    override suspend fun unload(data: PluginData) {
         val plugin = data.plugin ?: return
         disable(plugin)
         if (data.classLoader is Closeable) (data.classLoader as Closeable).close()
         loader.removeData(data)
     }
 
-    override fun unload(path: Path) {
+    override suspend fun unload(path: Path) {
         loader.loadedPlugins.firstOrNull { it.file.toPath() == path }?.let {
             val name = it.meta?.name
             logger.info("Unloading Plugin ${name}...")
@@ -96,10 +96,10 @@ class PluginManagerImpl : PluginManager {
         }
     }
 
-    override fun enable(plugin: Plugin) {
-        eventBus.call(PluginEnableEvent(plugin, PluginEventType.PRE))
+    override suspend fun enable(plugin: Plugin) {
+        eventBus.callAsync(PluginEnableEvent(plugin, PluginEventType.PRE))
         executeAction(plugin, PluginAction.Action.ENABLE)
-        eventBus.call(PluginEnableEvent(plugin, PluginEventType.POST))
+        eventBus.callAsync(PluginEnableEvent(plugin, PluginEventType.POST))
     }
 
     private fun find(plugin: Plugin) = plugin::class.declaredFunctions.filter { it.hasAnnotation<PluginAction>() }
@@ -118,11 +118,11 @@ class PluginManagerImpl : PluginManager {
         }
     }
 
-    override fun disable(plugin: Plugin) {
-        eventBus.call(PluginDisableEvent(plugin, PluginEventType.PRE))
+    override suspend fun disable(plugin: Plugin) {
+        eventBus.callAsync(PluginDisableEvent(plugin, PluginEventType.PRE))
         executeAction(plugin, PluginAction.Action.DISABLE)
         plugin.koinApp.close()
-        eventBus.call(PluginDisableEvent(plugin, PluginEventType.POST))
+        eventBus.callAsync(PluginDisableEvent(plugin, PluginEventType.POST))
     }
 
     override fun get(name: String): PluginData? = loader.loadedPlugins.firstOrNull { it.meta?.name == name }

@@ -26,10 +26,9 @@ object CordImpl : Cord, CordKoinComponent {
     val bot: Bot by inject()
     val coreLog by logger(LogManager.CORE)
 
-    override fun reload(vararg scopes: ReloadScope) {
-        //TODO: Add logic to reload here
+    override suspend fun reload(vararg scopes: ReloadScope) {
         coreLog.info("Reloading...")
-        eventBus.call(ReloadEvent(scopes.toList().toTypedArray()))
+        eventBus.callAsync(ReloadEvent(scopes.toList().toTypedArray()))
         coreLog.info("Reload complete!")
     }
 
@@ -39,7 +38,7 @@ object CordImpl : Cord, CordKoinComponent {
     override suspend fun shutdown(unloadPlugins: Boolean) {
         coreLog.also { log ->
             log.info("Shutting down...")
-            eventBus.call(ShutdownEvent())
+            eventBus.callAsync(ShutdownEvent())
             ConsoleImpl.stopReading()
             ConsoleImpl.stopCurrentRead()
             Thread {

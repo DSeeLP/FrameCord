@@ -9,6 +9,7 @@ import de.dseelp.kommon.command.CommandDispatcher
 import de.dseelp.kommon.command.CommandNode
 import de.dseelp.kotlincord.api.buttons.ButtonAction
 import de.dseelp.kotlincord.api.command.Sender
+import de.dseelp.kotlincord.api.utils.koin.CordKoinContext
 import dev.kord.common.annotation.KordPreview
 import dev.kord.common.entity.*
 import dev.kord.common.entity.optional.Optional
@@ -213,3 +214,7 @@ fun ActionRowBuilder.action(
         this.emoji = emoji
     }
 }
+
+@OptIn(InternalKotlinCordApi::class)
+val bot: Bot
+get() = CordKoinContext.app!!.koin.get()

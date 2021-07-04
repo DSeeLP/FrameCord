@@ -6,8 +6,12 @@
 package de.dseelp.kotlincord.api
 
 import dev.kord.core.Kord
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 
-interface Bot {
+interface Bot: CoroutineScope {
     val kord: Kord
     val isStarted: Boolean
+    val job: Job
 }

@@ -14,5 +14,5 @@ sealed interface Sender {
 
     suspend fun sendMessage(vararg messages: String, parseColors: Boolean = true)
 
-    fun sendMessage(message: MessageCreateBuilder.() -> Unit)
+    suspend fun sendMessage(message: MessageCreateBuilder.() -> Unit)
 }

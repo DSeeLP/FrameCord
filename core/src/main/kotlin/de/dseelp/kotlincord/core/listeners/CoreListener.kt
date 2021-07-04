@@ -41,7 +41,7 @@ object CoreListener : CordKoinComponent {
     val pluginService: PluginManager by inject()
 
     @EventHandle
-    fun onReload(event: ReloadEvent) {
+    suspend fun onReload(event: ReloadEvent) {
         val scopes = event.scopes
         if (scopes.contains(ReloadScope.SETTINGS)) Core.loadConfig()
         if (scopes.contains(ReloadScope.PLUGINS)) {

@@ -56,7 +56,7 @@ object CommandUtils {
                 if (sender is GuildSender) {
                     val selfMember = sender.getGuild().getMember(bot.kord.selfId)
                     logger.debug("", throwable)
-                    if (selfMember.checkPermissions(sender.channel, Permission.SendMessages)) {
+                    if (selfMember.checkPermissions(sender.getChannel(), Permission.SendMessages)) {
                         sender.sendMessage {
                             embed {
                                 title = "Not enough permissions!"

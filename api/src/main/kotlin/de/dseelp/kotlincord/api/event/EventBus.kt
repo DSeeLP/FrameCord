@@ -6,6 +6,7 @@
 package de.dseelp.kotlincord.api.event
 
 import de.dseelp.kotlincord.api.InternalKotlinCordApi
+import de.dseelp.kotlincord.api.bot
 import de.dseelp.kotlincord.api.events.PluginDisableEvent
 import de.dseelp.kotlincord.api.events.PluginEventType
 import de.dseelp.kotlincord.api.logging.logger
@@ -32,12 +33,11 @@ class EventBus : CordKoinComponent {
     private val handlers = mutableListOf<Handler>()
 
     private val eventExecutorService = Executors.newFixedThreadPool(4)
-    val job = SupervisorJob()
-    val scope = CoroutineScope(job + eventExecutorService.asCoroutineDispatcher())
+
 
     suspend fun callAsync(event: Any, async: Boolean = false) {
         val eventClass = event::class
-        withContext(scope.coroutineContext) {
+        withContext(bot.coroutineContext) {
             val executeFunction = suspend {
                 for (index in 0..handlers.lastIndex) {
                     val handler = handlers.getOrNull(index) ?: continue
@@ -45,15 +45,13 @@ class EventBus : CordKoinComponent {
                     else if (handler.clazz == eventClass || eventClass.isSubclassOf(handler.clazz)) handler.invoke(event)
                 }
             }
-            if (async) scope.launch {
+            if (async) bot.launch {
                 executeFunction.invoke()
             } else {
                 executeFunction.invoke()
             }
         }
     }
-
-    fun call(event: Any, async: Boolean = false) = runBlocking { callAsync(event, async) }
 
     @InternalKotlinCordApi
     fun unregister(clazz: KClass<out Plugin>) {

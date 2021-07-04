@@ -15,14 +15,14 @@ sealed interface DiscordSender<T : MessageChannel> : Sender {
     val author: User
     val isGuild: Boolean
     val isPrivate: Boolean
-    val channel: T
+    suspend fun getChannel(): T
     val message: Message
 
-    override fun sendMessage(message: MessageCreateBuilder.() -> Unit) {
-
+    override suspend fun sendMessage(message: MessageCreateBuilder.() -> Unit) {
+        getChannel().asChannelOrNull()?.createMessage(message)
     }
 
     override suspend fun sendMessage(vararg messages: String, parseColors: Boolean) {
-        messages.onEach { channel.createMessage(it) }
+        messages.onEach { getChannel().createMessage(it) }
     }
 }
