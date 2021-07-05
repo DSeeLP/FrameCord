@@ -4,10 +4,10 @@
  */
 
 val defaultGroupName = "io.github.dseelp.kotlincord"
-val defaultVersion = "0.1"
+val projectVersion: String by project
 
 group = defaultGroupName
-version = defaultVersion
+version = projectVersion
 
 plugins {
     base
@@ -31,7 +31,7 @@ val excludedModules = arrayOf("moderation", "plugins")
 allprojects {
 
     group = defaultGroupName
-    version = defaultVersion
+    version = projectVersion
 
     repositories {
         mavenLocal()
