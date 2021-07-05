@@ -4,9 +4,17 @@
  */
 
 plugins {
+    application
     kotlin("jvm")
     id("com.github.johnrengelman.shadow")
     kotlin("plugin.serialization")
+}
+
+application {
+    val mainClazz = ""
+    mainClass.set(mainClass)
+    @Suppress("DEPRECATION")
+    mainClassName = mainClazz
 }
 
 val coroutinesVersion: String by project

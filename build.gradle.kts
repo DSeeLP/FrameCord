@@ -25,6 +25,9 @@ val isDeployingToCentral = System.getenv().containsKey("DEPLOY_CENTRAL")
 
 if (isDeployingToCentral) println("Deploying to central...")
 
+val rootProject = project
+
+val excludedModules = arrayOf("moderation", "plugins")
 allprojects {
 
     group = defaultGroupName
@@ -52,12 +55,82 @@ allprojects {
         targetCompatibility = JavaVersion.VERSION_11
     }
 
-    val dokkaHtml by tasks.getting(org.jetbrains.dokka.gradle.DokkaTask::class)
+    val docsDir = File(
+        rootProject.rootDir, "docs/${
+            if (project == rootProject) {
+                "bundled"
+            } else {
+                project.name
+            }
+        }"
+    )
+
+    val licenseFile = File(rootProject.rootDir, "LICENSE")
 
     val javadocJar: TaskProvider<Jar> by tasks.registering(Jar::class) {
-        dependsOn(dokkaHtml)
+
+        val configureTask: org.jetbrains.dokka.gradle.AbstractDokkaTask.() -> Unit = {
+            outputDirectory.set(File(docsDir, "html"))
+        }
+
+        val task = if (project == rootProject) {
+            val dokkaHtmlMultiModule by tasks.getting(org.jetbrains.dokka.gradle.DokkaMultiModuleTask::class) {
+                configureTask(this)
+                archiveBaseName.set("bundled")
+            }
+            dependsOn(dokkaHtmlMultiModule)
+            dokkaHtmlMultiModule
+        } else {
+            val dokkaHtml by tasks.getting(org.jetbrains.dokka.gradle.DokkaTask::class) {
+                configureTask(this)
+            }
+            dependsOn(dokkaHtml)
+            dokkaHtml
+        }
+
         archiveClassifier.set("javadoc")
-        from(dokkaHtml.outputDirectory)
+        destinationDirectory.set(docsDir)
+        from(task.outputDirectory)
+    }
+
+    val generateDocs = tasks.register("generateDocs") {
+        if (!excludedModules.contains(this@allprojects.name)) dependsOn(javadocJar)
+    }
+
+    tasks.withType<Jar>().onEach {
+        it.from(licenseFile)
+    }
+
+    if (!excludedModules.contains(this@allprojects.name)) {
+        val distributionDir = File(rootProject.rootDir, "distribution")
+        val assembleGithubDistribution = tasks.register<Copy>("assembleGitHubDistribution") {
+            if (project == rootProject) {
+                from(File(rootProject.rootDir, "docs/bundled/html")) {
+                    into("docs/html")
+                }
+                from(licenseFile)
+                from(File(rootProject.rootDir, "templates"))
+            } else if (project.name == "core") {
+                val shadowJar = tasks.getByName<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar")
+                dependsOn(shadowJar)
+                from(shadowJar.archiveFile) {
+                    rename { "${project.name}.jar" }
+                }
+            }
+            dependsOn(generateDocs)
+            from(javadocJar.get().archiveFile) {
+                rename { "javadoc.jar" }
+                into("docs")
+            }
+            into(distributionDir)
+        }
+
+        tasks.register<Zip>("gitHubDistribution") {
+            dependsOn(assembleGithubDistribution)
+            if (project != rootProject) return@register
+            from(distributionDir)
+            archiveFileName.set("kotlincord.zip")
+        }
     }
 
     val sourcesJar by tasks.registering(Jar::class) {
@@ -65,11 +138,9 @@ allprojects {
         from(sourceSets.main.get().allSource)
     }
 
-
-    val excludedModules = arrayOf("test")
-
     publishing {
         if (excludedModules.contains(this@allprojects.name)) return@publishing
+        if (rootProject == this@allprojects) return@publishing
         repositories {
             if (isDeployingToCentral) maven(url = "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/") {
                 credentials {
@@ -121,5 +192,11 @@ allprojects {
         publishing.publications.onEach {
             sign(it)
         }
+    }
+}
+
+tasks {
+    wrapper {
+        gradleVersion = "7.1.1"
     }
 }
