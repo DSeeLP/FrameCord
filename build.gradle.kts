@@ -93,7 +93,7 @@ allprojects {
         from(task.outputDirectory)
     }
 
-    val generateDocs = tasks.register("generateDocs") {
+    tasks.register("generateDocs") {
         if (!excludedModules.contains(this@allprojects.name)) dependsOn(javadocJar)
     }
 
@@ -104,23 +104,23 @@ allprojects {
     if (!excludedModules.contains(this@allprojects.name)) {
         val distributionDir = File(rootProject.rootDir, "distribution")
         val assembleGithubDistribution = tasks.register<Copy>("assembleGitHubDistribution") {
+            dependsOn(tasks.build)
             if (project == rootProject) {
                 from(File(rootProject.rootDir, "docs/bundled/html")) {
                     into("docs/html")
                 }
                 from(licenseFile)
                 from(File(rootProject.rootDir, "templates"))
+                dependsOn(javadocJar)
+                from(javadocJar.get().archiveFile) {
+                    rename { "javadoc.jar" }
+                    into("docs")
+                }
             } else if (project.name == "core") {
                 val shadowJar = tasks.getByName<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar")
-                dependsOn(shadowJar)
                 from(shadowJar.archiveFile) {
                     rename { "${project.name}.jar" }
                 }
-            }
-            dependsOn(generateDocs)
-            from(javadocJar.get().archiveFile) {
-                rename { "javadoc.jar" }
-                into("docs")
             }
             into(distributionDir)
         }
@@ -129,6 +129,7 @@ allprojects {
             dependsOn(assembleGithubDistribution)
             if (project != rootProject) return@register
             from(distributionDir)
+            //from(File(distributionDir, "core.jar"))
             archiveFileName.set("kotlincord.zip")
         }
     }

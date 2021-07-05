@@ -32,19 +32,19 @@ jobs:
         run: ./gradlew test
       - name: Generate Distribution
         run: ./gradlew gitHubDistribution
+      - name: Rerun Generate Distribution
+        # For some reason the core is not present in the zip when only running once. But it is in the distribution folder.
+        run: ./gradlew gitHubDistribution
       - name: Cleanup Gradle Cache
         # Remove some files from the Gradle cache, so they aren't cached by GitHub Actions.
         # Restoring these files from a GitHub Actions cache might cause problems for future builds.
         run: |
           rm -f ~/.gradle/caches/modules-2/modules-2.lock
           rm -f ~/.gradle/caches/modules-2/gc.properties
-      - uses: montudor/action-zip@v1
-        with:
-          args: unzip -qq build/distributions/kotlincord.zip -d temp/
       - uses: actions/upload-artifact@v2
         with:
           name: KotlinCord
-          path: temp/
+          path: distribution/
 
   publish:
     runs-on: ubuntu-latest
