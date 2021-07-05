@@ -1,5 +1,5 @@
 /*
- * Created by Dirk on 19.6.2021.
+ * Created by Dirk in 2021.
  * © Copyright by DSeeLP
  */
 
@@ -11,6 +11,7 @@ import java.nio.file.Path
 import kotlin.reflect.KClass
 
 data class PluginMeta(
+    val group: String,
     val name: String,
     val version: Version,
     val description: String,

@@ -1,5 +1,5 @@
 /*
- * Created by Dirk on 19.6.2021.
+ * Created by Dirk in 2021.
  * © Copyright by DSeeLP
  */
 
@@ -11,6 +11,7 @@ import org.koin.core.component.inject
 import kotlin.reflect.KClass
 import kotlin.reflect.KVisibility
 import kotlin.reflect.full.hasAnnotation
+import kotlin.reflect.full.isSubclassOf
 
 @OptIn(InternalKotlinCordApi::class)
 object ReflectionUtils : CordKoinComponent {
@@ -54,6 +55,7 @@ fun interface Criterion {
     companion object {
         inline fun <reified T : Annotation> hasAnnotation() = Criterion { it.hasAnnotation<T>() }
         fun hasAnnotation(clazz: KClass<*>) = Criterion { it.annotations.firstOrNull { it::class == clazz } != null }
+        fun isSubClassOf(clazz: KClass<*>) = Criterion { it.isSubclassOf(clazz) }
         fun isInterface() = Criterion { it.java.isInterface }
         fun isEnum() = Criterion { it.java.isEnum }
         fun isAnnotation() = Criterion { it.java.isAnnotation }

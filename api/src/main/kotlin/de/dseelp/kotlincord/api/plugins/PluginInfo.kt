@@ -1,5 +1,5 @@
 /*
- * Created by Dirk on 19.6.2021.
+ * Created by Dirk in 2021.
  * © Copyright by DSeeLP
  */
 
@@ -14,6 +14,7 @@ import kotlin.reflect.KClass
 @Retention
 @Target(AnnotationTarget.CLASS)
 annotation class PluginInfo(
+    val group: String,
     val name: String,
     val version: String,
     val description: String = "",
@@ -21,4 +22,4 @@ annotation class PluginInfo(
 )
 
 fun PluginInfo.meta(file: File, dataFolder: Path, mainClass: KClass<out Plugin>) =
-    PluginMeta(name, Version.parse(version), description, authors, file, dataFolder, mainClass)
+    PluginMeta(group, name, Version.parse(version), description, authors, file, dataFolder, mainClass)

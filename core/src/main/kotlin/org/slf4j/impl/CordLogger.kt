@@ -1,5 +1,5 @@
 /*
- * Created by Dirk on 19.6.2021.
+ * Created by Dirk in 2021.
  * © Copyright by DSeeLP
  */
 
@@ -10,11 +10,13 @@ import de.dseelp.kotlincord.api.console.Console
 import de.dseelp.kotlincord.api.console.ConsoleColor
 import de.dseelp.kotlincord.api.logging.KLogger
 import de.dseelp.kotlincord.api.utils.koin.CordKoinComponent
+import de.dseelp.kotlincord.core.ConsoleImpl
 import de.dseelp.kotlincord.core.CordImpl
 import org.koin.core.component.inject
 import org.slf4j.helpers.MarkerIgnoringBase
 import org.slf4j.helpers.MessageFormatter
 import org.slf4j.spi.LocationAwareLogger
+import java.io.PrintStream
 
 @OptIn(InternalKotlinCordApi::class)
 class CordLogger(name: String) : MarkerIgnoringBase(), KLogger, CordKoinComponent {
@@ -49,6 +51,8 @@ class CordLogger(name: String) : MarkerIgnoringBase(), KLogger, CordKoinComponen
             logAndPrint(level, s, t)
         }
     }
+
+    fun stream(level: Int) = PrintStream(ConsoleImpl.ActionOutputStream { logAndPrint(level, it) }, true)
 
     val colored = true
 
@@ -94,7 +98,7 @@ class CordLogger(name: String) : MarkerIgnoringBase(), KLogger, CordKoinComponen
             appendColor(ConsoleColor.DEFAULT)
         } else null
         if (builtMessage != null) console.forceWriteLine(builtMessage)
-        throwable?.printStackTrace(console.printStream)
+        throwable?.printStackTrace(stream(level))
     }
 
     fun StringBuilder.appendColor(color: ConsoleColor) {

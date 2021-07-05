@@ -1,5 +1,5 @@
 /*
- * Created by Dirk on 19.6.2021.
+ * Created by Dirk in 2021.
  * © Copyright by DSeeLP
  */
 
@@ -7,6 +7,7 @@ package de.dseelp.kotlincord.core.listeners
 
 import de.dseelp.kommon.command.CommandDispatcher
 import de.dseelp.kommon.command.ParsedResult
+import de.dseelp.kotlincord.api.Bot
 import de.dseelp.kotlincord.api.InternalKotlinCordApi
 import de.dseelp.kotlincord.api.ReloadScope
 import de.dseelp.kotlincord.api.buttons.ButtonAction
@@ -19,13 +20,17 @@ import de.dseelp.kotlincord.api.events.ReloadEvent
 import de.dseelp.kotlincord.api.logging.LogManager
 import de.dseelp.kotlincord.api.logging.logger
 import de.dseelp.kotlincord.api.plugins.PluginLoader
+import de.dseelp.kotlincord.api.plugins.PluginManager
 import de.dseelp.kotlincord.api.utils.CommandUtils
 import de.dseelp.kotlincord.api.utils.CommandUtils.execute
 import de.dseelp.kotlincord.api.utils.koin.CordKoinComponent
 import de.dseelp.kotlincord.core.Core
 import de.dseelp.kotlincord.core.FakePlugin
-import net.dv8tion.jda.api.events.interaction.ButtonClickEvent
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent
+import dev.kord.common.annotation.KordPreview
+import dev.kord.common.entity.InteractionType
+import dev.kord.core.entity.interaction.ComponentInteraction
+import dev.kord.core.event.interaction.InteractionCreateEvent
+import dev.kord.core.event.message.MessageCreateEvent
 import org.koin.core.component.inject
 import org.koin.core.qualifier.qualifier
 import java.util.*
@@ -33,10 +38,29 @@ import java.util.*
 @OptIn(InternalKotlinCordApi::class)
 object CoreListener : CordKoinComponent {
 
+    val pluginService: PluginManager by inject()
+
     @EventHandle
-    fun onReload(event: ReloadEvent) {
+    suspend fun onReload(event: ReloadEvent) {
         val scopes = event.scopes
         if (scopes.contains(ReloadScope.SETTINGS)) Core.loadConfig()
+        if (scopes.contains(ReloadScope.PLUGINS)) {
+            for (index in 0..loader.loadedPlugins.lastIndex) {
+                val data = loader.loadedPlugins.getOrNull(index) ?: continue
+                pluginService.unload(data)
+            }
+            val pluginLocation = Core.pathQualifiers.pluginLocation
+            val file = pluginLocation.toFile()
+            if (!file.exists()) file.mkdir()
+            for (path in file.listFiles()!!) {
+                try {
+                    val load = Core.pluginService.load(path)
+                    Core.pluginService.enable(load.plugin!!)
+                } catch (t: Throwable) {
+                    Core.log.error("Failed to load plugin $path", t)
+                }
+            }
+        }
     }
 
     val buttonLog by logger("Buttons")
@@ -46,16 +70,17 @@ object CoreListener : CordKoinComponent {
     private val consoleDispatcher: CommandDispatcher<Sender> by inject(qualifier("console"))
     private val loader: PluginLoader by inject()
 
+    val bot: Bot by inject()
+
     @EventHandle
-    fun onMessageReceived(event: MessageReceivedEvent) {
-        val fromGuild = event.isFromGuild
+    suspend fun onMessageReceived(event: MessageCreateEvent) {
         val message = event.message
-        val content = message.contentRaw
+        val content = message.content
         if (!content.startsWith("!")) return
-        if (event.author == event.jda.selfUser) return
+        if (message.author == bot.kord.getSelf()) return
         if (message.embeds.isNotEmpty()) return
-        (if (fromGuild) guildDispatcher else privateDispatcher).execute(
-            GuildSender(event.jda, message),
+        (if (event.guildId != null) guildDispatcher else privateDispatcher).execute(
+            GuildSender(message),
             content.replaceFirst("!", ""),
             CommandUtils.Actions.noOperation()
         )
@@ -64,26 +89,32 @@ object CoreListener : CordKoinComponent {
     val rootLogger by logger(LogManager.ROOT)
 
     @EventHandle
-    fun onConsoleMessage(event: ConsoleMessageEvent) {
+    suspend fun onConsoleMessage(event: ConsoleMessageEvent) {
         if (event.message.isBlank() || event.message.isEmpty()) return
         consoleDispatcher.execute(
             ConsoleSender,
             event.message,
             bypassAccess = true,
             actions = object : CommandUtils.Actions<Sender> {
-                override fun error(message: String, result: ParsedResult<Sender>?) {
+                override suspend fun error(message: String, result: ParsedResult<Sender>?, throwable: Throwable?) {
                     if (result == null) rootLogger.warn("Command could not be found! For help, use the command \"help\".")
+                    handleError(message, result, throwable)
                 }
 
-                override fun success(result: ParsedResult<Sender>) = Unit
+                override suspend fun success(result: ParsedResult<Sender>) = Unit
 
             })
     }
 
+    @OptIn(KordPreview::class)
     @EventHandle
-    fun onButtonClick(event: ButtonClickEvent) {
-        if (event.message?.author != event.jda.selfUser) return
-        var id = event.button!!.id!!
+    suspend fun onButtonClick(event: InteractionCreateEvent) {
+        val interaction = event.interaction
+        if (interaction.type != InteractionType.Component) return
+        interaction as ComponentInteraction
+        val authorId = interaction.message?.author?.id
+        if (authorId != null && authorId != bot.kord.selfId) return
+        var id = interaction.componentId
         if (!id.startsWith(ButtonAction.QUALIFIER)) {
             if (id.startsWith("cord:"))
                 buttonLog.debug("Tried to execute button click event from another instance of KotlinCord")

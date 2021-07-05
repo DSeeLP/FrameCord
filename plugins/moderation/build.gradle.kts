@@ -1,5 +1,5 @@
 /*
- * Created by Dirk on 19.6.2021.
+ * Created by Dirk in 2021.
  * © Copyright by DSeeLP
  */
 
@@ -10,9 +10,9 @@ plugins {
 }
 
 dependencies {
-    implementation(kotlin("stdlib-jdk8"))
-    implementation(kotlin("reflect"))
-    api(project(":api"))
+    compileOnly(kotlin("stdlib-jdk8"))
+    compileOnly(kotlin("reflect"))
+    compileOnly(project(":core"))
 }
 
 val implementationVersion = version
@@ -30,5 +30,11 @@ tasks {
 tasks {
     build {
         dependsOn(shadowJar)
+    }
+
+    register<Copy>("copyShadow") {
+        from(shadowJar.get().archiveFile.get().asFile)
+        into(File("../../run/plugins/"))
+        dependsOn(build)
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Created by Dirk on 19.6.2021.
+ * Created by Dirk in 2021.
  * © Copyright by DSeeLP
  */
 
@@ -15,16 +15,16 @@ interface PluginManager : CordKoinComponent {
     fun load(file: File): PluginData
     fun load(path: Path) = load(path.toFile())
 
-    fun unload(data: PluginData)
-    fun unload(path: Path)
+    suspend fun unload(data: PluginData)
+    suspend fun unload(path: Path)
 
 
-    fun enable(plugin: Plugin)
-    fun enable(name: String) =
+    suspend fun enable(plugin: Plugin)
+    suspend fun enable(name: String) =
         enable(get(name)?.plugin ?: throw RuntimeException("A module with the name $name couldn't be found"))
 
-    fun disable(plugin: Plugin)
-    fun disable(name: String) =
+    suspend fun disable(plugin: Plugin)
+    suspend fun disable(name: String) =
         disable(get(name)?.plugin ?: throw RuntimeException("A module with the name $name couldn't be found"))
 
     operator fun get(name: String): PluginData?

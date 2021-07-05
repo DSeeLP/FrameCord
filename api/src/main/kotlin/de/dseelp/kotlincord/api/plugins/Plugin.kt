@@ -1,5 +1,5 @@
 /*
- * Created by Dirk on 19.6.2021.
+ * Created by Dirk in 2021.
  * © Copyright by DSeeLP
  */
 
@@ -11,13 +11,20 @@ import de.dseelp.kotlincord.api.Version
 import de.dseelp.kotlincord.api.buttons.ButtonAction
 import de.dseelp.kotlincord.api.buttons.ButtonContext
 import de.dseelp.kotlincord.api.command.Command
+import de.dseelp.kotlincord.api.database.DatabaseInfo
+import de.dseelp.kotlincord.api.database.DatabaseRegistry
+import de.dseelp.kotlincord.api.database.DatabaseScope
 import de.dseelp.kotlincord.api.event.EventBus
 import de.dseelp.kotlincord.api.logging.logger
+import de.dseelp.kotlincord.api.utils.Criterion
+import de.dseelp.kotlincord.api.utils.ReflectionUtils
 import de.dseelp.kotlincord.api.utils.koin.KoinModules
 import de.dseelp.kotlincord.api.utils.register
 import org.koin.core.component.inject
 import org.koin.dsl.koinApplication
 import java.nio.file.Path
+import kotlin.io.path.createDirectories
+import kotlin.reflect.KClass
 import kotlin.reflect.full.createInstance
 
 @OptIn(InternalKotlinCordApi::class)
@@ -31,22 +38,13 @@ abstract class Plugin : PluginComponent<Plugin> {
 
     val eventBus: EventBus by inject()
 
-    companion object {
-        /*private val koinField by lazy {
-            Koin::class.declaredMemberProperties.first { it.name == "modules" }.apply { isAccessible = true }
-        }
-
-        @OptIn(InternalKotlinCordApi::class)
-        private fun getModules() = CordKoinContext.app?.koin?.let { koin -> koinField.get(koin) as HashSet<Module> }!!*/
-    }
-
-    val koinApp = koinApplication {
-        //modules(getModules().toList())
-    }
+    val koinApp = koinApplication { }
 
     init {
         KoinModules.load(this)
     }
+
+    val databaseRegistry: DatabaseRegistry by inject()
 
     val meta: PluginMeta
         get() = _meta!!
@@ -56,7 +54,7 @@ abstract class Plugin : PluginComponent<Plugin> {
     val version: Version
         get() = meta.version
     val dataFolder: Path
-        get() = meta.dataFolder
+        get() = meta.dataFolder.also { it.createDirectories() }
 
     val logger by logger()
 
@@ -65,9 +63,9 @@ abstract class Plugin : PluginComponent<Plugin> {
 
     private val _buttonActions = mutableListOf<ButtonAction>()
 
-    fun registerButtonAction(name: String, nodes: Array<CommandNode<ButtonContext>>): ButtonAction {
+    fun registerButtonAction(name: String, node: CommandNode<ButtonContext>): ButtonAction {
 
-        val action = ButtonAction(this, name, nodes)
+        val action = ButtonAction(this, name, node)
         for (a in _buttonActions) {
             if (a.name.equals(
                     name,
@@ -98,14 +96,33 @@ abstract class Plugin : PluginComponent<Plugin> {
         register(command.node, *command.scopes)
     }
 
-    inline fun <reified T : Command<*>> register() {
-        val instance = (T::class.objectInstance ?: koinApp.koin.getOrNull()) ?: T::class.createInstance()
+    @Suppress("UNCHECKED_CAST")
+    inline fun <reified T : Command<*>> register() = register(T::class as KClass<Command<*>>)
+
+    fun register(clazz: KClass<Command<*>>) {
+        val instance = (clazz.objectInstance ?: koinApp.koin.getOrNull()) ?: clazz.createInstance()
         register(instance)
     }
 
     override fun hashCode(): Int {
         return _meta?.hashCode() ?: 0
     }
+
+    suspend fun registerDatabase(info: DatabaseInfo) = databaseRegistry.registerDatabase(this, info)
+
+    fun <T> database(block: DatabaseScope.() -> T) = block.invoke(databaseRegistry.getScope(this))
+
+    fun searchEvents(vararg packages: String) = eventBus.searchPackages(this, *packages)
+
+    fun searchCommands(vararg packages: String) {
+        ReflectionUtils.findClasses(packages.toList().toTypedArray()) {
+            Criterion.isSubClassOf(Command::class).assert()
+        }.onEach { clazz ->
+            register(clazz as KClass<Command<*>>)
+        }
+    }
+
+    fun searchCommands(packageName: String) = searchCommands(*arrayOf(packageName).toList().toTypedArray())
 
 
 }

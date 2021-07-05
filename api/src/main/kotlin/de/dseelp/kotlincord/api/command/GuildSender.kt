@@ -1,21 +1,22 @@
 /*
- * Created by Dirk on 19.6.2021.
+ * Created by Dirk in 2021.
  * © Copyright by DSeeLP
  */
 
 package de.dseelp.kotlincord.api.command
 
-import net.dv8tion.jda.api.JDA
-import net.dv8tion.jda.api.entities.Message
-import net.dv8tion.jda.api.entities.TextChannel
-import net.dv8tion.jda.api.entities.User
+import dev.kord.core.entity.Message
+import dev.kord.core.entity.User
+import dev.kord.core.entity.channel.GuildMessageChannel
+import dev.kord.core.event.message.MessageCreateEvent
 
-class GuildSender(override val jda: JDA, override val message: Message) : DiscordSender<TextChannel> {
-    override val author: User = message.author
+class GuildSender(override val message: Message) : DiscordSender<GuildMessageChannel> {
+    override val author: User = message.author!!
     override val isGuild: Boolean = true
     override val isPrivate: Boolean = false
-    override val channel: TextChannel = message.textChannel
+    override suspend fun getChannel(): GuildMessageChannel = message.channel.asChannel() as GuildMessageChannel
     override val isConsole: Boolean = false
-    override val name: String = author.name
-    val guild = message.guild
+    override val name: String = author.username
+    suspend fun getGuild() = message.getGuild()
+    suspend fun getMember() = message.getAuthorAsMember()!!
 }

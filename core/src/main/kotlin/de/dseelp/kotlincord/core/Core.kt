@@ -1,5 +1,5 @@
 /*
- * Created by Dirk on 19.6.2021.
+ * Created by Dirk in 2021.
  * © Copyright by DSeeLP
  */
 
@@ -9,50 +9,55 @@ import de.dseelp.kommon.command.CommandDispatcher
 import de.dseelp.kotlincord.api.*
 import de.dseelp.kotlincord.api.command.Sender
 import de.dseelp.kotlincord.api.configs.BotConfig
+import de.dseelp.kotlincord.api.configs.ConfigFormat
+import de.dseelp.kotlincord.api.configs.config
 import de.dseelp.kotlincord.api.event.EventBus
 import de.dseelp.kotlincord.api.logging.KLogger
 import de.dseelp.kotlincord.api.logging.LogManager.CORE
 import de.dseelp.kotlincord.api.logging.logger
 import de.dseelp.kotlincord.api.plugins.PluginManager
 import de.dseelp.kotlincord.api.utils.koin.CordKoinComponent
-import de.dseelp.kotlincord.core.commands.console.PluginCommand
-import de.dseelp.kotlincord.core.commands.guild.TestCommand
 import de.dseelp.kotlincord.core.listeners.CoreListener
 import org.koin.core.component.inject
 import org.koin.core.qualifier.qualifier
 import org.koin.dsl.module
 import org.spongepowered.configurate.kotlin.extensions.get
 import kotlin.io.path.div
+import kotlin.io.path.isDirectory
+import kotlin.io.path.listDirectoryEntries
 
 @OptIn(InternalKotlinCordApi::class)
 object Core : CordKoinComponent {
 
     val log by logger(CORE)
     val pluginService by inject<PluginManager>()
-    val guildDispatcher: CommandDispatcher<Sender> by inject(qualifier("guild"))
-    val consoleDispatcher: Dispatcher by inject(qualifier("console"))
     val pathQualifiers by inject<PathQualifiers>()
     private val eventBus by inject<EventBus>()
 
 
-    fun startup() {
+    suspend fun startup() {
         loadConfig()
         val pluginLocation = pathQualifiers.pluginLocation
         val file = pluginLocation.toFile()
         if (!file.exists()) file.mkdir()
         for (path in file.listFiles()!!) {
-            val load = pluginService.load(path)
-            pluginService.enable(load.plugin!!)
+            if (!path.isFile) continue
+            try {
+                val load = pluginService.load(path)
+                pluginService.enable(load.plugin!!)
+            } catch (t: Throwable) {
+                log.error("Failed to load plugin $path", t)
+            }
         }
+        ConsoleImpl.startReading()
         loadKoinModules(module {
             single { pathQualifiers.root }
         })
         loadToken()
-        ConsoleImpl.startReading()
         eventBus.addClassHandler(FakePlugin, CoreListener)
-        guildDispatcher.register(TestCommand.cmd)
-        consoleDispatcher.register(PluginCommand.cmd)
         BotImpl.start()
+        log.info("Startup complete")
+        bot.job.join()
     }
 
     fun loadToken(log: KLogger = logger(CORE).value) {

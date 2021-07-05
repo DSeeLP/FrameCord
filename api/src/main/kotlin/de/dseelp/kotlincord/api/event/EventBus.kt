@@ -1,27 +1,55 @@
 /*
- * Created by Dirk on 19.6.2021.
+ * Created by Dirk in 2021.
  * © Copyright by DSeeLP
  */
 
 package de.dseelp.kotlincord.api.event
 
 import de.dseelp.kotlincord.api.InternalKotlinCordApi
+import de.dseelp.kotlincord.api.bot
+import de.dseelp.kotlincord.api.events.PluginDisableEvent
+import de.dseelp.kotlincord.api.events.PluginEventType
+import de.dseelp.kotlincord.api.logging.logger
 import de.dseelp.kotlincord.api.plugins.Plugin
+import de.dseelp.kotlincord.api.plugins.PluginLoader
+import de.dseelp.kotlincord.api.utils.Criterion
+import de.dseelp.kotlincord.api.utils.ReflectionUtils
 import de.dseelp.kotlincord.api.utils.koin.CordKoinComponent
+import kotlinx.coroutines.*
+import org.koin.core.component.inject
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.Executors
 import kotlin.reflect.KClass
+import kotlin.reflect.KFunction
+import kotlin.reflect.KParameter
+import kotlin.reflect.full.callSuspend
 import kotlin.reflect.full.declaredMemberFunctions
 import kotlin.reflect.full.hasAnnotation
 import kotlin.reflect.full.isSubclassOf
 
-class EventBus {
+@OptIn(InternalKotlinCordApi::class)
+@Listener
+class EventBus : CordKoinComponent {
     private val handlers = mutableListOf<Handler>()
 
-    fun call(event: Any) {
+    private val eventExecutorService = Executors.newFixedThreadPool(4)
+
+
+    suspend fun callAsync(event: Any, async: Boolean = false) {
         val eventClass = event::class
-        for (index in 0..handlers.lastIndex) {
-            val handler = handlers.getOrNull(index) ?: continue
-            if (handler is Handler.ClassHandler<*>) handler.invoke(event)
-            else if (handler.clazz == eventClass || eventClass.isSubclassOf(handler.clazz)) handler.invoke(event)
+        withContext(bot.coroutineContext) {
+            val executeFunction = suspend {
+                for (index in 0..handlers.lastIndex) {
+                    val handler = handlers.getOrNull(index) ?: continue
+                    if (handler is Handler.ClassHandler<*>) handler.invoke(event)
+                    else if (handler.clazz == eventClass || eventClass.isSubclassOf(handler.clazz)) handler.invoke(event)
+                }
+            }
+            if (async) bot.launch {
+                executeFunction.invoke()
+            } else {
+                executeFunction.invoke()
+            }
         }
     }
 
@@ -31,6 +59,28 @@ class EventBus {
             it.plugin::class == clazz
         }
     }
+
+    private val pluginLoader: PluginLoader by inject()
+    private val log by logger<EventBus>()
+
+    fun searchPackages(plugin: Plugin? = null, vararg packages: String) {
+        ReflectionUtils.findClasses(packages.toList().toTypedArray()) {
+            Criterion.hasAnnotation<Listener>().assert()
+        }.onEach { clazz ->
+            val p = if (plugin != null) plugin
+            else {
+                val classLoader = clazz.java.classLoader
+                pluginLoader.loadedPlugins.firstOrNull { it.classLoader == classLoader }?.plugin
+            }
+            if (p == null) {
+                log.error("Failed to determine plugin for class ${clazz.qualifiedName}")
+                return
+            }
+            addHandler(Handler.ClassHandler(p, clazz))
+        }
+    }
+
+    fun searchPackage(packageName: String, plugin: Plugin? = null) = searchPackages(plugin, packageName)
 
     fun addHandler(handler: Handler) {
         handlers.add(handler)
@@ -56,8 +106,15 @@ class EventBus {
         handlers.removeIf { it.plugin == plugin }
     }
 
+    @EventHandle
+    @InternalKotlinCordApi
+    fun onPluginDisable(event: PluginDisableEvent) {
+        if (event.type != PluginEventType.POST) return
+        unregister(event.plugin::class)
+    }
+
     sealed class Handler(val plugin: Plugin) {
-        abstract fun invoke(
+        abstract suspend fun invoke(
             event: Any
         )
 
@@ -68,7 +125,7 @@ class EventBus {
             override val clazz: KClass<out Any>,
             val lambda: (event: T) -> Unit
         ) : Handler(plugin) {
-            override fun invoke(
+            override suspend fun invoke(
                 event: Any
             ) {
                 @Suppress("UNCHECKED_CAST")
@@ -90,11 +147,27 @@ class EventBus {
 
             val clazzObj = (obj ?: clazz.objectInstance) ?: getKoin().getOrNull<Any>(clazz)
 
-            override fun invoke(event: Any) {
+            val methodCache: MutableMap<KClass<*>, List<Pair<KFunction<*>, KParameter>>> = ConcurrentHashMap()
+
+            private val log by logger<EventBus>()
+
+            override suspend fun invoke(event: Any) {
                 val eventClass = event::class
-                methods.filter { it.second.type.classifier == eventClass }.onEach {
+                methodCache.getOrPut(eventClass) {
+                    methods.filter { it.second.type.classifier == eventClass }
+                }.onEach {
                     val method = it.first
-                    kotlin.runCatching { method.call(clazzObj, event) }.exceptionOrNull()?.cause?.printStackTrace()
+                    try {
+                        if (method.isSuspend) method.callSuspend(clazzObj, event) else method.call(
+                            clazzObj,
+                            event
+                        )
+                    } catch (e: Throwable) {
+                        log.error(
+                            "Failed to call method ${method.name} in ${clazz.qualifiedName}",
+                            if (e.cause != null) e.cause else e
+                        )
+                    }
                 }
             }
         }

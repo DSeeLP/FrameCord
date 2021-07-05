@@ -1,5 +1,5 @@
 /*
- * Created by Dirk on 19.6.2021.
+ * Created by Dirk in 2021.
  * © Copyright by DSeeLP
  */
 
@@ -17,7 +17,15 @@ class ReflectionUtilsImpl : IReflectionUtils {
     @Suppress("UNCHECKED_CAST")
     override fun findClasses(packages: Array<String>, criteria: CriterionBuilder) =
         ClassGraph().enableClassInfo().acceptPackages(*packages)
-            .scan().allClasses.map { it.loadClass().kotlin }.filter { criteria.check(it) }
-
+            .scan()
+            .allClasses
+            .map { it.loadClass().kotlin }
+            .filter {
+                try {
+                    criteria.check(it)
+                } catch (ex: UnsupportedOperationException) {
+                    false
+                }
+            }
             .toTypedArray() as Array<KClass<Any>>
 }

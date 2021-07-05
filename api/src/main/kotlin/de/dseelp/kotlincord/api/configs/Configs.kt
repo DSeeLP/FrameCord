@@ -1,15 +1,15 @@
 /*
- * Created by Dirk on 19.6.2021.
+ * Created by Dirk in 2021.
  * © Copyright by DSeeLP
  */
 
-package de.dseelp.kotlincord.api
+package de.dseelp.kotlincord.api.configs
 
-import de.dseelp.kotlincord.api.ConfigFormat.Utils.registerDataClassDiscoverer
+import de.dseelp.kotlincord.api.configs.ConfigFormat.Utils.registerDataClassDiscoverer
 import org.spongepowered.configurate.CommentedConfigurationNode
 import org.spongepowered.configurate.ConfigurationNode
 import org.spongepowered.configurate.ConfigurationOptions
-import org.spongepowered.configurate.gson.GsonConfigurationLoader
+import org.spongepowered.configurate.jackson.JacksonConfigurationLoader
 import org.spongepowered.configurate.kotlin.commented
 import org.spongepowered.configurate.kotlin.dataClassFieldDiscoverer
 import org.spongepowered.configurate.loader.ConfigurationLoader
@@ -76,8 +76,8 @@ class Config(
 
 class ConfigFormat<T : Any>(val clazz: KClass<T>, val initBlock: (path: Path) -> T) {
     companion object {
-        val JSON = ConfigFormat(GsonConfigurationLoader::class) { path ->
-            GsonConfigurationLoader.builder().path(path)
+        val JSON = ConfigFormat(JacksonConfigurationLoader::class) { path ->
+            JacksonConfigurationLoader.builder().path(path)
                 .defaultOptions(ConfigurationOptions
                     .defaults()
                     .serializers { builder ->

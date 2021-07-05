@@ -1,5 +1,5 @@
 /*
- * Created by Dirk on 19.6.2021.
+ * Created by Dirk in 2021.
  * © Copyright by DSeeLP
  */
 
@@ -7,19 +7,20 @@ package de.dseelp.kotlincord.api.buttons
 
 import de.dseelp.kommon.command.CommandDispatcher
 import de.dseelp.kommon.command.CommandNode
-import de.dseelp.kommon.command.literal
 import de.dseelp.kotlincord.api.InternalKotlinCordApi
 import de.dseelp.kotlincord.api.logging.logger
 import de.dseelp.kotlincord.api.plugins.Plugin
 import de.dseelp.kotlincord.api.utils.CommandUtils
 import de.dseelp.kotlincord.api.utils.CommandUtils.execute
 import de.dseelp.kotlincord.api.utils.koin.CordKoinComponent
-import net.dv8tion.jda.api.events.interaction.ButtonClickEvent
+import dev.kord.common.annotation.KordPreview
+import dev.kord.core.entity.interaction.ComponentInteraction
+import dev.kord.core.event.interaction.InteractionCreateEvent
 import org.koin.core.qualifier.qualifier
 import java.util.*
 
 @OptIn(InternalKotlinCordApi::class)
-class ButtonAction(plugin: Plugin, val name: String, val nodes: Array<CommandNode<ButtonContext>>) : CordKoinComponent {
+class ButtonAction(plugin: Plugin, val name: String, val node: CommandNode<ButtonContext>) : CordKoinComponent {
     val id
         get() = hashCode().toString()
 
@@ -28,15 +29,14 @@ class ButtonAction(plugin: Plugin, val name: String, val nodes: Array<CommandNod
     private val dispatcher = CommandDispatcher<ButtonContext>()
 
     init {
-        dispatcher.register(literal(id) {
-            for (node in nodes) {
-                node(node)
-            }
-        })
+        dispatcher.register(node.copy(name = id, argumentIdentifier = null, aliases = arrayOf()))
     }
 
-    fun execute(event: ButtonClickEvent) {
-        var id = event.button!!.id!!
+    @OptIn(KordPreview::class)
+    suspend fun execute(event: InteractionCreateEvent) {
+        val interaction = event.interaction
+        if (interaction !is ComponentInteraction) return
+        var id = interaction.componentId
         if (!id.startsWith(QUALIFIER)) {
             if (id.startsWith("cord:"))
                 log.warn("Tried to execute button click event from another instance of KotlinCord")
@@ -46,9 +46,8 @@ class ButtonAction(plugin: Plugin, val name: String, val nodes: Array<CommandNod
         id = id.replaceFirst(QUALIFIER, "")
         val decodedId = Base64.getDecoder().decode(id).decodeToString()
         if (!decodedId.startsWith(this.id)) return
-        event.deferEdit().queue()
         dispatcher.execute(
-            ButtonContext(this, event),
+            ButtonContext(this, interaction),
             decodedId.replaceFirst(DELIMITER, " "),
             CommandUtils.Actions.noOperation()
         )
@@ -60,7 +59,7 @@ class ButtonAction(plugin: Plugin, val name: String, val nodes: Array<CommandNod
         if (other !is ButtonAction) return false
 
         if (name != other.name) return false
-        if (!nodes.contentEquals(other.nodes)) return false
+        if (node != other.node) return false
         if (pluginMeta != other.pluginMeta) return false
 
         return true
@@ -81,17 +80,18 @@ class ButtonAction(plugin: Plugin, val name: String, val nodes: Array<CommandNod
     }
 }
 
-data class ButtonContext(val action: ButtonAction, val event: ButtonClickEvent) {
+@OptIn(KordPreview::class)
+data class ButtonContext(val action: ButtonAction, val interaction: ComponentInteraction) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is ButtonContext) return false
 
-        if (event != other.event) return false
+        if (interaction != other.interaction) return false
 
         return true
     }
 
     override fun hashCode(): Int {
-        return event.hashCode()
+        return interaction.hashCode()
     }
 }

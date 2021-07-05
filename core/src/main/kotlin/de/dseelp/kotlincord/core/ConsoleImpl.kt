@@ -1,5 +1,5 @@
 /*
- * Created by Dirk on 19.6.2021.
+ * Created by Dirk in 2021.
  * © Copyright by DSeeLP
  */
 
@@ -32,7 +32,7 @@ object ConsoleImpl : Console {
     private val _lastWrittenMessages = object : ArrayList<String>() {
         override fun add(element: String): Boolean {
             if (size > 200) {
-                println("removed ${removeAt(0)}")
+                removeAt(0)
             }
             return super.add(element)
         }
@@ -41,8 +41,10 @@ object ConsoleImpl : Console {
     override val prompt: String
         get() = _prompt
 
+    val version = CordBootstrap.version
+
     private val defaultPrompt =
-        "${ConsoleColor.RED}${System.getProperty("user.name")}${ConsoleColor.DEFAULT}@${ConsoleColor.GRAY}KotlinCord ${ConsoleColor.WHITE}=> "
+        "${ConsoleColor.RED}${System.getProperty("user.name")}${ConsoleColor.DEFAULT}@${ConsoleColor.GRAY}KotlinCord-$version ${ConsoleColor.WHITE}=> "
 
     private var _prompt = defaultPrompt
 
@@ -65,13 +67,13 @@ object ConsoleImpl : Console {
                 catching.exceptionOrNull()?.printStackTrace()
                 val line = catching.getOrNull() ?: exitProcess(0)
                 readJob = null
-                eventBus.call(ConsoleMessageEvent(line))
+                eventBus.callAsync(ConsoleMessageEvent(line))
             }
         }
     }
 
     override fun stopReading() = runBlocking {
-        readLoopJob?.cancelAndJoin()
+        readLoopJob?.cancel()
         readLoopJob = null
     }
 
@@ -109,10 +111,14 @@ object ConsoleImpl : Console {
     }
 
     override fun forceWriteLine(vararg messages: String) {
-        messages.onEach { reader.printAbove(it + System.lineSeparator()) }
+        messages.onEach {
+            _lastWrittenMessages.add(it)
+            reader.printAbove(it + System.lineSeparator())
+        }
     }
 
     override fun forceWrite(message: String) {
+        _lastWrittenMessages.add(message)
         reader.printAbove(message)
     }
 
