@@ -33,16 +33,6 @@ data class DatabaseInfo(val type: DatabaseType, val config: HikariConfig) {
             config["serverName"] = host
             config["port"] = port
             config["databaseName"] = databaseName
-            config["cachePrepStmts"] = true
-            config["prepStmtCacheSize"] = 250
-            config["prepStmtCacheSqlLimit"] = 2048
-            config["useServerPrepStmts"] = true
-            config["useLocalSessionState"] = true
-            config["rewriteBatchedStatements"] = true
-            config["cacheResultSetMetadata"] = true
-            config["cacheServerConfiguration"] = true
-            config["elideSetAutoCommits"] = true
-            config["maintainTimeStats"] = false
             return DatabaseInfo(type, config)
         }
 
@@ -52,7 +42,6 @@ data class DatabaseInfo(val type: DatabaseType, val config: HikariConfig) {
         private fun sqlite(pathString: String): DatabaseInfo {
             val config = HikariConfig()
             config.dataSourceClassName = DatabaseType.SQLITE.dataSourceClass
-            //config.driverClassName = "org.sqlite.JDBC"
             config["url"] = "jdbc:sqlite:$pathString"
             return DatabaseInfo(DatabaseType.SQLITE, config)
         }
