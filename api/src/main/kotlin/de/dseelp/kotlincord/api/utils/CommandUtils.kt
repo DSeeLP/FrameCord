@@ -9,9 +9,9 @@ import de.dseelp.kommon.command.CommandDispatcher
 import de.dseelp.kommon.command.ParsedResult
 import de.dseelp.kotlincord.api.Bot
 import de.dseelp.kotlincord.api.InternalKotlinCordApi
-import de.dseelp.kotlincord.api.buttons.ButtonContext
 import de.dseelp.kotlincord.api.checkPermissions
 import de.dseelp.kotlincord.api.command.GuildSender
+import de.dseelp.kotlincord.api.interactions.ButtonContext
 import de.dseelp.kotlincord.api.logging.logger
 import de.dseelp.kotlincord.api.utils.koin.CordKoinComponent
 import dev.kord.common.entity.Permission

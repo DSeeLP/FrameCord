@@ -8,7 +8,6 @@ package de.dseelp.kotlincord.core
 import de.dseelp.kotlincord.api.Bot
 import de.dseelp.kotlincord.api.InternalKotlinCordApi
 import de.dseelp.kotlincord.api.bot
-import de.dseelp.kotlincord.api.event.EventBus
 import de.dseelp.kotlincord.api.logging.logger
 import de.dseelp.kotlincord.api.utils.koin.CordKoinComponent
 import de.dseelp.kotlincord.core.listeners.EventBusListener
@@ -40,7 +39,7 @@ object BotImpl : Bot, CordKoinComponent {
         bot.launch {
             kord.login()
         }
-        //EventBusListener
+        EventBusListener
         logger.info("Startup complete")
     }
 }

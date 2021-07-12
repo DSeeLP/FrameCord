@@ -8,13 +8,15 @@ package de.dseelp.kotlincord.api.plugins
 import de.dseelp.kommon.command.CommandNode
 import de.dseelp.kotlincord.api.InternalKotlinCordApi
 import de.dseelp.kotlincord.api.Version
-import de.dseelp.kotlincord.api.buttons.ButtonAction
-import de.dseelp.kotlincord.api.buttons.ButtonContext
 import de.dseelp.kotlincord.api.command.Command
 import de.dseelp.kotlincord.api.database.DatabaseInfo
 import de.dseelp.kotlincord.api.database.DatabaseRegistry
 import de.dseelp.kotlincord.api.database.DatabaseScope
 import de.dseelp.kotlincord.api.event.EventBus
+import de.dseelp.kotlincord.api.interactions.ButtonAction
+import de.dseelp.kotlincord.api.interactions.ButtonContext
+import de.dseelp.kotlincord.api.interactions.SelectionMenu
+import de.dseelp.kotlincord.api.interactions.SelectionMenuBuilder
 import de.dseelp.kotlincord.api.logging.logger
 import de.dseelp.kotlincord.api.utils.Criterion
 import de.dseelp.kotlincord.api.utils.ReflectionUtils
@@ -63,6 +65,11 @@ abstract class Plugin : PluginComponent<Plugin> {
 
     private val _buttonActions = mutableListOf<ButtonAction>()
 
+    val selectionMenus: Array<SelectionMenu>
+        get() = _selectionMenus.toTypedArray()
+
+    private val _selectionMenus = mutableListOf<SelectionMenu>()
+
     fun registerButtonAction(name: String, node: CommandNode<ButtonContext>): ButtonAction {
 
         val action = ButtonAction(this, name, node)
@@ -78,6 +85,17 @@ abstract class Plugin : PluginComponent<Plugin> {
     }
 
     fun getButtonAction(name: String): ButtonAction? = _buttonActions.firstOrNull { it.name.equals(name, true) }
+
+    fun registerSelectionMenu(menu: SelectionMenu) {
+        _selectionMenus.add(menu)
+    }
+
+    fun registerSelectionMenu(block: SelectionMenuBuilder.() -> Unit): SelectionMenu {
+        val menu = SelectionMenuBuilder().apply(block).build(this)
+        registerSelectionMenu(menu)
+        return menu
+    }
+
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

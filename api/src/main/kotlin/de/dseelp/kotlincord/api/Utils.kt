@@ -7,21 +7,20 @@ package de.dseelp.kotlincord.api
 
 import de.dseelp.kommon.command.CommandDispatcher
 import de.dseelp.kommon.command.CommandNode
-import de.dseelp.kotlincord.api.buttons.ButtonAction
 import de.dseelp.kotlincord.api.command.Sender
+import de.dseelp.kotlincord.api.interactions.ButtonAction
+import de.dseelp.kotlincord.api.interactions.SelectionMenu
+import de.dseelp.kotlincord.api.interactions.SelectionMenuBuilder
+import de.dseelp.kotlincord.api.plugins.Plugin
 import de.dseelp.kotlincord.api.utils.koin.CordKoinContext
 import dev.kord.common.annotation.KordPreview
 import dev.kord.common.entity.*
-import dev.kord.common.entity.optional.Optional
 import dev.kord.core.behavior.interaction.ComponentInteractionBehavior
 import dev.kord.core.behavior.interaction.EphemeralInteractionResponseBehavior
 import dev.kord.core.entity.Member
 import dev.kord.core.entity.channel.GuildChannel
 import dev.kord.rest.builder.component.ActionRowBuilder
 import dev.kord.rest.builder.interaction.UpdateMessageInteractionResponseCreateBuilder
-import dev.kord.rest.json.request.InteractionApplicationCommandCallbackData
-import dev.kord.rest.json.request.InteractionResponseCreateRequest
-import dev.kord.rest.route.Route
 import kotlinx.datetime.Instant
 import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.IColumnType
@@ -32,7 +31,6 @@ import java.net.MalformedURLException
 import java.net.URISyntaxException
 import java.net.URL
 import java.nio.charset.StandardCharsets.UTF_8
-import java.security.SecureRandom
 import java.util.*
 import java.util.regex.Matcher
 import java.util.regex.Pattern
@@ -43,7 +41,6 @@ import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 import kotlin.math.round
 import kotlin.random.Random
-import kotlin.random.asKotlinRandom
 
 inline fun <reified T : Any> merge(vararg arrays: Array<T>): Array<T> {
     var result: Array<T?> = arrayOfNulls(0)
@@ -215,6 +212,22 @@ fun ActionRowBuilder.action(
     }
 }
 
+@OptIn(KordPreview::class)
+fun ActionRowBuilder.selectionMenu(
+    selectionMenu: SelectionMenu
+) {
+    components.add(selectionMenu.discordComponentBuilder)
+}
+
+@OptIn(KordPreview::class)
+fun ActionRowBuilder.selectionMenu(
+    plugin: Plugin,
+    block: SelectionMenuBuilder.() -> Unit
+) {
+    val menu = plugin.registerSelectionMenu(block)
+    selectionMenu(menu)
+}
+
 @OptIn(InternalKotlinCordApi::class)
 val bot: Bot
-get() = CordKoinContext.app!!.koin.get()
+    get() = CordKoinContext.app!!.koin.get()

@@ -3,7 +3,7 @@
  * © Copyright by DSeeLP
  */
 
-package de.dseelp.kotlincord.api.buttons
+package de.dseelp.kotlincord.api.interactions
 
 import de.dseelp.kommon.command.CommandDispatcher
 import de.dseelp.kommon.command.CommandNode
