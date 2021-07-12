@@ -139,7 +139,6 @@ object CoreListener : CordKoinComponent {
     @OptIn(KordPreview::class)
     suspend fun executeSelectMenuClick(id: String, event: InteractionCreateEvent) {
         val interaction = event.interaction as SelectMenuInteraction
-        val component = interaction.component!!
         val datas = loader.loadedPlugins + FakePlugin.fakeData
         var found = false
         val splittedId =
@@ -151,9 +150,8 @@ object CoreListener : CordKoinComponent {
             found = true
             val clickedOptions = menu.options.filter { interaction.values.contains(it.value) }.toTypedArray()
             val context = SelectionOptionClickContext(event, interaction, clickedOptions)
-            menu.options.onEach {
-                it.onClick.invoke(context)
-            }
+            if (clickedOptions.size == 1 && !menu.alwaysUseMultiOptionCallback) clickedOptions.first().onClick(context)
+            else menu.onMultipleOptionClick(context)
             break
         }
     }

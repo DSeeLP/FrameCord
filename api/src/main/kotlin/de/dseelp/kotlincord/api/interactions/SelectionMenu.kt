@@ -1,3 +1,4 @@
+@file:OptIn(KordPreview::class)
 package de.dseelp.kotlincord.api.interactions
 
 import de.dseelp.kotlincord.api.InternalKotlinCordApi
@@ -15,11 +16,14 @@ import dev.kord.rest.builder.component.SelectOptionBuilder
 import org.koin.core.qualifier.qualifier
 import java.util.*
 
+
 data class SelectionMenu(
     val plugin: Plugin,
     val options: Array<SelectionOption>,
     val allowedValues: IntRange = 1..1,
-    val placeholder: String? = null
+    val placeholder: String? = null,
+    val onMultipleOptionClick: suspend SelectionOptionClickContext.() -> Unit = {},
+    val alwaysUseMultiOptionCallback: Boolean = false
 ) {
 
     val randomId by lazy { randomAlphanumeric(8) }
@@ -117,13 +121,26 @@ class SelectionMenuBuilder {
     var options = mutableListOf<SelectionOption>()
     var allowedValues: IntRange = 1..1
     var placeholder: String? = null
+    var onMultipleOptionClick: suspend SelectionOptionClickContext.() -> Unit = {}
+    var alwaysUseMultiOptionCallback: Boolean = false
 
     fun option(label: String, value: String, block: SelectionOptionBuilder.() -> Unit) {
         options.add(SelectionOptionBuilder(label, value).apply(block).build())
     }
 
+    fun onMultipleOptionClick(block: suspend SelectionOptionClickContext.() -> Unit) {
+        onMultipleOptionClick = block
+    }
+
     fun build(plugin: Plugin) =
-        SelectionMenu(plugin, options.toTypedArray(), allowedValues, placeholder)
+        SelectionMenu(
+            plugin,
+            options.toTypedArray(),
+            allowedValues,
+            placeholder,
+            onMultipleOptionClick,
+            alwaysUseMultiOptionCallback
+        )
 }
 
 class SelectionOptionBuilder(var label: String, var value: String) {

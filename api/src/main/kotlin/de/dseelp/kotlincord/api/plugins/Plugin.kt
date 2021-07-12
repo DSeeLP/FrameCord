@@ -84,6 +84,10 @@ abstract class Plugin : PluginComponent<Plugin> {
         return action
     }
 
+    fun unregisterButtonAction(action: ButtonAction) {
+        _buttonActions.remove(action)
+    }
+
     fun getButtonAction(name: String): ButtonAction? = _buttonActions.firstOrNull { it.name.equals(name, true) }
 
     fun registerSelectionMenu(menu: SelectionMenu) {
@@ -94,6 +98,10 @@ abstract class Plugin : PluginComponent<Plugin> {
         val menu = SelectionMenuBuilder().apply(block).build(this)
         registerSelectionMenu(menu)
         return menu
+    }
+
+    fun unregisterSelectionMenu(menu: SelectionMenu) {
+        _selectionMenus.remove(menu)
     }
 
 
