@@ -17,10 +17,10 @@ interface RepositoryManager {
     fun getByUrl(url: String): Array<Repository> =
         url.lowercase().let { s -> repositories.filter { it.name.lowercase() == s } }.toTypedArray()
 
-    fun addRepository(url: URL): Repository
-    fun addRepository(urlString: String): Repository
-    fun removeRepository(url: URL)
-    fun removeRepository(urlString: String)
+    suspend fun addRepository(url: URL): Repository
+    suspend fun addRepository(urlString: String): Repository
+    suspend fun removeRepository(url: URL)
+    suspend fun removeRepository(urlString: String)
 
     suspend fun updateIndexes()
 
@@ -33,6 +33,6 @@ interface RepositoryManager {
         exactArtifactId: Boolean = true
     ): Map<Repository, Array<RepositoryIndex>>
 
-    fun reloadRepositories()
+    suspend fun reloadRepositories()
 
 }

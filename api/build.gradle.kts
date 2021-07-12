@@ -40,6 +40,7 @@ dependencies {
         isChanging = true
     }
     api("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializationVersion")
+    api("com.github.uchuhimo.konf:konf:master-SNAPSHOT")
     api("org.spongepowered:configurate-jackson:$configurateVersion")
     api("org.spongepowered:configurate-yaml:$configurateVersion")
     api("org.spongepowered:configurate-extra-kotlin:$configurateVersion")

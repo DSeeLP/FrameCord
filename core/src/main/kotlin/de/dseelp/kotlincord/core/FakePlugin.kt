@@ -7,8 +7,8 @@ package de.dseelp.kotlincord.core
 
 import de.dseelp.kotlincord.api.InternalKotlinCordApi
 import de.dseelp.kotlincord.api.Version
-import de.dseelp.kotlincord.api.database.DatabaseInfo
 import de.dseelp.kotlincord.api.event.Listener
+import de.dseelp.kotlincord.api.plugins.DatabaseConfig
 import de.dseelp.kotlincord.api.plugins.Plugin
 import de.dseelp.kotlincord.api.plugins.PluginData
 import de.dseelp.kotlincord.api.plugins.PluginMeta
@@ -60,13 +60,20 @@ object FakePlugin : Plugin() {
         eventBus.searchPackage("de.dseelp.kotlincord.core", FakePlugin)
         eventBus.searchPackage("de.dseelp.kotlincord.api", FakePlugin)
         try {
-            repositoryManager.reloadRepositories()
+            runBlocking {
+                repositoryManager.reloadRepositories()
+            }
         } catch (ex: Exception) {
             ex.printStackTrace()
         }
         try {
             runBlocking {
-                val db = registerDatabase(DatabaseInfo.sqlite(dataFolder / "cord.db"))
+                val db = registerDatabase(
+                    DatabaseConfig.load(
+                        this@FakePlugin,
+                        default = DatabaseConfig.defaultDatabaseConfig(this@FakePlugin).copy(databaseName = "cord")
+                    ).toDatabaseInfo(this@FakePlugin)
+                )
                 loadKoinModules(module {
                     single(named("cord")) { db }
                 })
