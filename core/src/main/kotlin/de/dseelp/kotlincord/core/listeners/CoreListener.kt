@@ -25,6 +25,7 @@ import de.dseelp.kotlincord.api.plugins.PluginManager
 import de.dseelp.kotlincord.api.utils.CommandUtils
 import de.dseelp.kotlincord.api.utils.CommandUtils.execute
 import de.dseelp.kotlincord.api.utils.koin.CordKoinComponent
+import de.dseelp.kotlincord.core.CordImpl
 import de.dseelp.kotlincord.core.Core
 import de.dseelp.kotlincord.core.FakePlugin
 import dev.kord.common.annotation.KordPreview
@@ -49,21 +50,7 @@ object CoreListener : CordKoinComponent {
         val scopes = event.scopes
         if (scopes.contains(ReloadScope.SETTINGS)) Core.loadConfig()
         if (scopes.contains(ReloadScope.PLUGINS)) {
-            for (index in 0..loader.loadedPlugins.lastIndex) {
-                val data = loader.loadedPlugins.getOrNull(index) ?: continue
-                pluginService.unload(data)
-            }
-            val pluginLocation = Core.pathQualifiers.pluginLocation
-            val file = pluginLocation.toFile()
-            if (!file.exists()) file.mkdir()
-            for (path in file.listFiles()!!) {
-                try {
-                    val load = Core.pluginService.load(path)
-                    Core.pluginService.enable(load.plugin!!)
-                } catch (t: Throwable) {
-                    Core.log.error("Failed to load plugin $path", t)
-                }
-            }
+            CordImpl.reloadPlugins()
         }
     }
 

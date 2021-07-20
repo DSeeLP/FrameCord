@@ -22,12 +22,12 @@ val jlineVersion: String by project
 val slf4jVersion: String by project
 val javassistVersion: String by project
 val classgraphVersion: String by project
-val ktorVersion: String by project
 val koinVersion: String by project
 val mariadbVersion: String by project
 val mysqlVersion: String by project
 val sqliteVersion: String by project
 val h2Version: String by project
+val ktorVersion: String by project
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
@@ -42,9 +42,7 @@ dependencies {
     api("org.jline:jline-reader:$jlineVersion")
     api("org.javassist:javassist:$javassistVersion")
     api("io.github.classgraph:classgraph:$classgraphVersion")
-    api("io.ktor:ktor-client-core:$ktorVersion")
     api("io.ktor:ktor-client-cio:$ktorVersion")
-    api("io.ktor:ktor-client-serialization:$ktorVersion")
     api("org.mariadb.jdbc:mariadb-java-client:$mariadbVersion")
     api("org.xerial:sqlite-jdbc:$sqliteVersion")
     api("com.h2database:h2:$h2Version")

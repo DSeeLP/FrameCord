@@ -7,11 +7,11 @@ package de.dseelp.kotlincord.api.plugins.repository
 
 import de.dseelp.kotlincord.api.Version
 
-interface Package {
+interface Package<V : BasePackageVersion<V>> {
     val groupId: String
     val artifactId: String
     val authors: String
-    val versions: Array<PackageVersion>
+    val versions: Array<V>
 
     suspend fun install(version: Version, update: Boolean = false, returnImmediately: Boolean = false)
     suspend fun installLatest()

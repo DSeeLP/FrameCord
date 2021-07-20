@@ -9,5 +9,5 @@ interface RepositoryIndex {
     val groupId: String
     val artifactId: String
 
-    suspend fun asPackage(repository: Repository): Package
+    suspend fun asPackage(repository: Repository): Package<*> = repository.toPackage(this)
 }

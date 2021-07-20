@@ -20,6 +20,7 @@ import de.dseelp.kotlincord.api.logging.logger
 import de.dseelp.kotlincord.api.plugins.PluginManager
 import de.dseelp.kotlincord.api.utils.koin.CordKoinComponent
 import de.dseelp.kotlincord.core.listeners.CoreListener
+import de.dseelp.kotlincord.core.plugin.repository.RepositoryLoaderImpl
 import org.koin.core.component.inject
 import org.koin.core.qualifier.qualifier
 import org.koin.dsl.module
@@ -36,24 +37,19 @@ object Core : CordKoinComponent {
 
     suspend fun startup() {
         loadConfig()
-        val pluginLocation = pathQualifiers.pluginLocation
-        val file = pluginLocation.toFile()
-        if (!file.exists()) file.mkdir()
-        for (path in file.listFiles()!!) {
-            if (!path.isFile) continue
-            try {
-                val load = pluginService.load(path)
-                pluginService.enable(load.plugin!!)
-            } catch (t: Throwable) {
-                log.error("Failed to load plugin $path", t)
-            }
-        }
+        CordImpl.reloadPlugins()
         ConsoleImpl.startReading()
         loadKoinModules(module {
             single { pathQualifiers.root }
         })
         loadToken()
         eventBus.addClassHandler(FakePlugin, CoreListener)
+        try {
+            FakePlugin.repositoryManager.addLoader(FakePlugin, RepositoryLoaderImpl())
+            FakePlugin.repositoryManager.reloadRepositories()
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+        }
         BotImpl.start()
         log.info("Startup complete")
         bot.job.join()

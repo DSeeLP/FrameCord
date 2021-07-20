@@ -15,6 +15,8 @@ import de.dseelp.kotlincord.api.events.ShutdownEvent
 import de.dseelp.kotlincord.api.logging.LogManager
 import de.dseelp.kotlincord.api.logging.logger
 import de.dseelp.kotlincord.api.plugins.Plugin
+import de.dseelp.kotlincord.api.plugins.PluginLoader
+import de.dseelp.kotlincord.api.plugins.PluginManager
 import de.dseelp.kotlincord.api.utils.koin.CordKoinComponent
 import org.koin.core.component.inject
 import java.text.SimpleDateFormat
@@ -22,9 +24,11 @@ import kotlin.system.exitProcess
 
 @OptIn(InternalKotlinCordApi::class)
 object CordImpl : Cord, CordKoinComponent {
-    val eventBus by inject<EventBus>()
-    val bot: Bot by inject()
-    val coreLog by logger(LogManager.CORE)
+    private val eventBus by inject<EventBus>()
+    private val bot: Bot by inject()
+    private val coreLog by logger(LogManager.CORE)
+    private val loader: PluginLoader by inject()
+    private val pluginService: PluginManager by inject()
 
     override suspend fun reload(vararg scopes: ReloadScope) {
         coreLog.info("Reloading...")
@@ -53,6 +57,23 @@ object CordImpl : Cord, CordKoinComponent {
     }
 
     override fun getPlugin(): Plugin = FakePlugin
+    override suspend fun reloadPlugins() {
+        for (index in 0..loader.loadedPlugins.lastIndex) {
+            val data = loader.loadedPlugins.getOrNull(index) ?: continue
+            pluginService.unload(data)
+        }
+        val pluginLocation = Core.pathQualifiers.pluginLocation
+        val file = pluginLocation.toFile()
+        if (!file.exists()) file.mkdir()
+        for (path in file.listFiles()!!) {
+            try {
+                val load = Core.pluginService.load(path)
+                Core.pluginService.enable(load.plugin!!)
+            } catch (t: Throwable) {
+                Core.log.error("Failed to load plugin $path", t)
+            }
+        }
+    }
 
     val formatter = SimpleDateFormat("dd.MM HH:mm:ss")
 }

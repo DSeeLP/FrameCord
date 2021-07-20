@@ -61,13 +61,6 @@ object FakePlugin : Plugin() {
         eventBus.searchPackage("de.dseelp.kotlincord.api", FakePlugin)
         try {
             runBlocking {
-                repositoryManager.reloadRepositories()
-            }
-        } catch (ex: Exception) {
-            ex.printStackTrace()
-        }
-        try {
-            runBlocking {
                 val db = registerDatabase(
                     DatabaseConfig.load(
                         this@FakePlugin,

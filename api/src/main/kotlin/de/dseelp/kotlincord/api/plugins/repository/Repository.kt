@@ -7,7 +7,7 @@ package de.dseelp.kotlincord.api.plugins.repository
 
 interface Repository {
     val url: String
-    val name: String
+    val meta: RepositoryMeta
     val indexes: Array<RepositoryIndex>
     suspend fun updateIndexes()
 
@@ -18,4 +18,6 @@ interface Repository {
         exactGroupId: Boolean = true,
         exactArtifactId: Boolean = true
     ): Array<RepositoryIndex>
+
+    suspend fun toPackage(index: RepositoryIndex): Package<*>
 }

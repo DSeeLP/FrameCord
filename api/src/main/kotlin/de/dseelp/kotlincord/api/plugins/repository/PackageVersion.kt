@@ -15,7 +15,7 @@ data class PackageVersion(
     val minCoreVersion: Version,
     val maxCoreVersion: Version,
     val supportsLatest: Boolean = false
-) : Comparable<PackageVersion> {
+) : BasePackageVersion<PackageVersion> {
     @Transient
     val coreVersionRange = minCoreVersion..maxCoreVersion
 

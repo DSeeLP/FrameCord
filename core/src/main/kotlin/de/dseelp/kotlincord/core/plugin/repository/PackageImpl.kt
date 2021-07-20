@@ -34,7 +34,7 @@ data class PackageImpl(
     override val artifactId: String,
     override val authors: String,
     override val versions: Array<PackageVersion>
-) : Package, CordKoinComponent {
+) : Package<PackageVersion>, CordKoinComponent {
     @Transient
     lateinit var repository: RepositoryImpl
 

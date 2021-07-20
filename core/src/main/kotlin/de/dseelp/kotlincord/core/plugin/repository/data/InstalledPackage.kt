@@ -17,7 +17,7 @@ import java.util.*
 
 class InstalledPackage(id: EntityID<UUID>) : UUIDEntity(id) {
     companion object : UUIDEntityClass<InstalledPackage>(InstalledPackages) {
-        fun findByPackage(`package`: Package) =
+        fun findByPackage(`package`: Package<*>) =
             find { (InstalledPackages.groupId eq `package`.groupId) and (InstalledPackages.artifactId eq `package`.artifactId) }
     }
 

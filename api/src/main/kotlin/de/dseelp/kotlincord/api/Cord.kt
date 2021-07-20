@@ -16,4 +16,6 @@ interface Cord {
     suspend fun shutdown(unloadPlugins: Boolean)
 
     fun getPlugin(): Plugin
+
+    suspend fun reloadPlugins()
 }

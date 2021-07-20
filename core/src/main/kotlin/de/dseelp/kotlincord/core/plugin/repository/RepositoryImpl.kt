@@ -5,13 +5,13 @@
 
 package de.dseelp.kotlincord.core.plugin.repository
 
+import de.dseelp.kotlincord.api.InternalKotlinCordApi
 import de.dseelp.kotlincord.api.logging.logger
-import de.dseelp.kotlincord.api.plugins.repository.InvalidRepositoryException
-import de.dseelp.kotlincord.api.plugins.repository.Repository
-import de.dseelp.kotlincord.api.plugins.repository.RepositoryIndex
-import de.dseelp.kotlincord.api.plugins.repository.RepositoryManager
+import de.dseelp.kotlincord.api.plugins.repository.*
 import io.ktor.client.*
+import io.ktor.client.call.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.runBlocking
 import java.net.ConnectException
@@ -26,11 +26,11 @@ class RepositoryImpl(
 
     private val parsedUrl = Url(url)
 
-    private var _name: String = ""
+    private lateinit var _meta: RepositoryMeta
     private var _indexes: Array<RepositoryIndex> = indexes
 
-    override val name: String
-        get() = _name
+    override val meta: RepositoryMeta
+        get() = _meta
     override val indexes: Array<RepositoryIndex>
         get() = _indexes
 
@@ -42,7 +42,8 @@ class RepositoryImpl(
 
     private suspend fun refresh() {
         val data = requestData() ?: return
-        _name = data.name
+        if (this::_meta.isInitialized && (_meta.version != data.meta.version)) return
+        _meta = data.meta
         updateIndexes(data)
     }
 
@@ -82,6 +83,28 @@ class RepositoryImpl(
     ): Array<RepositoryIndex> =
         indexes.filter { it.groupId.check(groupId, exactGroupId) && it.artifactId.check(artifactId, exactArtifactId) }
             .toTypedArray()
+
+    @OptIn(InternalKotlinCordApi::class)
+    override suspend fun toPackage(index: RepositoryIndex): Package<*> {
+        val response: HttpResponse = httpClient.get {
+            url {
+                takeFrom(url)
+                path(index.groupId.replace('.', '/'), index.artifactId, "package.json")
+            }
+        }
+        if (response.status == HttpStatusCode.NotFound) {
+            throw InvalidRepositoryException("Failed to find package ${index.groupId}:${index.artifactId} in repository $url")
+        }
+        val catching = kotlin.runCatching { response.receive<PackageImpl>() }
+        return catching
+            .getOrElse {
+                throw InvalidRepositoryException(
+                    "Defect package.json for package $index in repository $url",
+                    catching.exceptionOrNull()
+                )
+            }
+            .apply { this.repository = this@RepositoryImpl }
+    }
 
     private fun String.check(value: String, exact: Boolean) =
         if (exact) this.equals(value, ignoreCase = true) else this.lowercase().startsWith(value.lowercase())

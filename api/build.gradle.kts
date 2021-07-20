@@ -27,6 +27,7 @@ val serializationVersion: String by project
 val jansiVersion: String by project
 val exposedVersion: String by project
 val hikaricpVersion: String by project
+val ktorVersion: String by project
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
@@ -49,6 +50,8 @@ dependencies {
     api("org.jetbrains.exposed:exposed-dao:$exposedVersion")
     api("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
     api("com.zaxxer:HikariCP:$hikaricpVersion")
+    api("io.ktor:ktor-client-core:$ktorVersion")
+    api("io.ktor:ktor-client-serialization:$ktorVersion")
 }
 
 val implementationVersion = version
