@@ -5,32 +5,47 @@
 
 package de.dseelp.kotlincord.core.plugin.repository
 
-import de.dseelp.kotlincord.api.plugins.repository.Repository
-import de.dseelp.kotlincord.api.plugins.repository.RepositoryIndex
-import de.dseelp.kotlincord.api.plugins.repository.RepositoryManager
+import de.dseelp.kotlincord.api.event.EventHandle
+import de.dseelp.kotlincord.api.event.Listener
+import de.dseelp.kotlincord.api.events.PluginDisableEvent
+import de.dseelp.kotlincord.api.logging.logger
+import de.dseelp.kotlincord.api.plugins.Plugin
+import de.dseelp.kotlincord.api.plugins.repository.*
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.features.*
 import io.ktor.client.features.json.*
+import io.ktor.client.features.json.serializer.*
+import io.ktor.client.request.*
+import io.ktor.http.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.net.URL
 import kotlin.io.path.Path
 import kotlin.io.path.div
 
+@Listener
 class RepositoryManagerImpl : RepositoryManager {
+    private val logger by logger<RepositoryManager>()
     var mutex: Mutex = Mutex()
     val httpClient: HttpClient = HttpClient(CIO) {
-        install(JsonFeature)
+        install(JsonFeature) {
+            serializer = KotlinxSerializer(kotlinx.serialization.json.Json {
+                ignoreUnknownKeys = true
+            })
+        }
         install(HttpTimeout.Feature)
         expectSuccess = false
     }
+    private val loaderMutex = Mutex()
+    private var loaders = mapOf<Plugin, List<RepositoryLoader>>()
 
     override val repositories: Array<Repository>
         @Suppress("UNCHECKED_CAST")
-        get() = _repositories as Array<Repository>
+        get() = _repositories
 
-    private var _repositories: Array<RepositoryImpl> = arrayOf()
+    private var _repositories: Array<Repository> = arrayOf()
 
     private val path = Path("") / "repositories.json"
 
@@ -62,7 +77,7 @@ class RepositoryManagerImpl : RepositoryManager {
     }
 
     override fun find(groupId: String, exact: Boolean): Map<Repository, Array<RepositoryIndex>> =
-        repositories.associate { it to it.find(groupId, exact) }
+        repositories.associateWith { it.find(groupId, exact) }
 
     override fun find(
         groupId: String,
@@ -70,7 +85,9 @@ class RepositoryManagerImpl : RepositoryManager {
         exactGroupId: Boolean,
         exactArtifactId: Boolean
     ): Map<Repository, Array<RepositoryIndex>> {
-        val results = repositories.associateWith { it.find(groupId, artifactId, exactGroupId, exactArtifactId) }
+        val searchingGroupId = if (groupId == "*") "" else groupId
+        val results =
+            repositories.associateWith { it.find(searchingGroupId, artifactId, exactGroupId, exactArtifactId) }
         if (results.size > 20) throw IllegalArgumentException("Too many results found!")
         return results
     }
@@ -80,8 +97,73 @@ class RepositoryManagerImpl : RepositoryManager {
         val oldUrls = _repositories.map { it.url }.distinct()
         val newUrls = urls - oldUrls
         if (newUrls.isEmpty()) return
-        val new = newUrls.map { RepositoryImpl(httpClient, it) }.filter { it.name != "" && it.name.isNotEmpty() }
-        _repositories = (_repositories + new).distinct().filter { urls.contains(it.url) }.toTypedArray()
+        val new = newUrls.mapNotNull { url -> loadRepository(url) }
+        _repositories =
+            (_repositories + new).distinct().filter { repository -> urls.contains(repository.url) }.toTypedArray()
+    }
+
+    override suspend fun loadRepository(url: String, logErrors: Boolean): Repository? {
+        val meta = httpClient.get<RepositoryMetaHolder?> {
+            url {
+                takeFrom(url)
+                pathComponents("index.json")
+            }
+        }?.meta ?: run {
+            logger.warn("Failed to load plugin repository! $url")
+            return null
+        }
+        val loader = getLoaderByTypeOrNull(meta.type) ?: return null
+        return loader.load(url, meta)
+    }
+
+    override suspend fun addLoader(plugin: Plugin, loader: RepositoryLoader) {
+        checkPluginLoaders(plugin)
+        loaderMutex.withLock {
+            loaders += plugin to listOf(*(loaders[plugin]!! + loader).toTypedArray())
+        }
+    }
+
+    private suspend fun checkPluginLoaders(plugin: Plugin) {
+        loaderMutex.withLock {
+            if (loaders.containsKey(plugin)) return@withLock
+            loaders += plugin to listOf()
+        }
+    }
+
+    override suspend fun removeLoader(plugin: Plugin, loader: RepositoryLoader) {
+        checkPluginLoaders(plugin)
+    }
+
+    override suspend fun removeLoaders(plugin: Plugin) {
+        loaderMutex.withLock {
+            if (loaders.containsKey(plugin)) return@withLock
+            loaders -= plugin
+        }
+    }
+
+    override suspend fun getLoaders(plugin: Plugin): Array<RepositoryLoader> {
+        checkPluginLoaders(plugin)
+        return loaderMutex.withLock {
+            loaders[plugin]!!.toTypedArray()
+        }
+    }
+
+    override suspend fun getLoaderByType(type: String): RepositoryLoader = getLoaderByTypeOrNull(type)!!
+
+    override suspend fun getLoaderByTypeOrNull(type: String): RepositoryLoader? {
+        loaderMutex.withLock {
+            loaders.entries.onEach {
+                for (loader in it.value) {
+                    if (loader.type.equals(type, true)) return loader
+                }
+            }
+        }
+        return null
+    }
+
+    @EventHandle
+    suspend fun onPluginDisable(event: PluginDisableEvent) {
+        removeLoaders(event.plugin)
     }
 
 }

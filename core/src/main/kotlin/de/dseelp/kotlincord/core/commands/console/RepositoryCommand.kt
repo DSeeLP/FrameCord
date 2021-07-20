@@ -9,21 +9,16 @@ import de.dseelp.kommon.command.CommandBuilder
 import de.dseelp.kommon.command.CommandContext
 import de.dseelp.kommon.command.CommandNode
 import de.dseelp.kommon.command.arguments.StringArgument
-import de.dseelp.kotlincord.api.InternalKotlinCordApi
-import de.dseelp.kotlincord.api.Version
+import de.dseelp.kotlincord.api.*
 import de.dseelp.kotlincord.api.command.Command
 import de.dseelp.kotlincord.api.command.ConsoleSender
-import de.dseelp.kotlincord.api.isValidUrl
 import de.dseelp.kotlincord.api.plugins.repository.Repository
 import de.dseelp.kotlincord.api.plugins.repository.RepositoryIndex
 import de.dseelp.kotlincord.api.plugins.repository.RepositoryManager
-import de.dseelp.kotlincord.api.round
 import de.dseelp.kotlincord.api.utils.CommandScope
 import de.dseelp.kotlincord.api.utils.koin.CordKoinComponent
 import de.dseelp.kotlincord.api.utils.literal
-import de.dseelp.kotlincord.api.merge
 import io.ktor.http.*
-import kotlinx.coroutines.runBlocking
 import org.koin.core.component.inject
 import kotlin.system.measureTimeMillis
 
@@ -37,7 +32,7 @@ object RepositoryCommand : Command<ConsoleSender>, CordKoinComponent {
                 val repositories = repositoryManager.repositories
                 sender.sendMessage(buildString {
                     repositories.onEach {
-                        append("${it.name}:${it.url}" + System.lineSeparator())
+                        append("${it.meta.name}:${it.url}" + System.lineSeparator())
                     }
                     if (repositories.isEmpty()) append("No Repositories found!")
                 }.removeLastLineSeparator())
@@ -78,7 +73,7 @@ object RepositoryCommand : Command<ConsoleSender>, CordKoinComponent {
                     val url = catching.getOrThrow()
                     val repo = repositoryManager.addRepository(url.toString())
                     repositoryManager.reloadRepositories()
-                    sender.sendMessage("The repository ${repo.name} (${repo.url}) was added")
+                    sender.sendMessage("The repository ${repo.meta.name} (${repo.url}) was added")
                 }
             }
         }
@@ -92,14 +87,14 @@ object RepositoryCommand : Command<ConsoleSender>, CordKoinComponent {
                     val raw: String = get("url/name")
                     val url = runCatching { Url(raw) }.isSuccess
                     val isUrl = isValidUrl(raw) && url
-                    val repo = repositories.firstOrNull { raw == if (isUrl) it.url else it.name }
+                    val repo = repositories.firstOrNull { raw == if (isUrl) it.url else it.meta.name }
                     if (repo == null) {
                         sender.sendMessage("Failed to find repo with ${if (isUrl) "url" else "name"} $raw")
                         return@execute
                     }
                     repositoryManager.removeRepository(repo.url)
                     repositoryManager.reloadRepositories()
-                    sender.sendMessage("The repository ${repo.name} (${repo.url}) was removed")
+                    sender.sendMessage("The repository ${repo.meta.name} (${repo.url}) was removed")
                 }
             }
         }
@@ -158,11 +153,11 @@ object RepositoryCommand : Command<ConsoleSender>, CordKoinComponent {
 
         argument(StringArgument("term")) {
             execute {
-                val results = findResults(exact) ?: return@execute
+                val results = findResults(exact, canAcceptOnlyArtifactId = true) ?: return@execute
                 sender.sendMessage(buildString {
                     for (result in results.toList()) {
                         val repo = result.first
-                        append(repo.name)
+                        append(repo.meta.name)
                         append(System.lineSeparator())
                         append(buildString {
                             result.second.onEach {
@@ -179,6 +174,7 @@ object RepositoryCommand : Command<ConsoleSender>, CordKoinComponent {
     suspend fun CommandContext<ConsoleSender>.findResults(
         exact: Boolean,
         mustHaveArtifactId: Boolean = false,
+        canAcceptOnlyArtifactId: Boolean = false,
         termModifier: (String) -> String = { it }
     ): Map<Repository, Array<RepositoryIndex>>? {
         val term: String = termModifier(get("term"))
@@ -189,6 +185,8 @@ object RepositoryCommand : Command<ConsoleSender>, CordKoinComponent {
                 return null
             }
             repositoryManager.find(splitted[0], splitted[1], exact, exact)
+        } else if (canAcceptOnlyArtifactId) {
+            repositoryManager.find("*", term, exactGroupId = false, exactArtifactId = false)
         } else if (!mustHaveArtifactId) {
             repositoryManager.find(term, exact)
         } else null)?.filter { it.value.isNotEmpty() }
