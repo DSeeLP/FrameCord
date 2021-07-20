@@ -15,7 +15,7 @@ interface RepositoryManager {
         name.lowercase().let { s -> repositories.filter { it.name.lowercase() == s } }.toTypedArray()
 
     fun getByUrl(url: String): Array<Repository> =
-        url.lowercase().let { s -> repositories.filter { it.name.lowercase() == s } }.toTypedArray()
+        url.lowercase().let { s -> repositories.filter { it.url.lowercase() == s } }.toTypedArray()
 
     suspend fun addRepository(url: URL): Repository
     suspend fun addRepository(urlString: String): Repository
