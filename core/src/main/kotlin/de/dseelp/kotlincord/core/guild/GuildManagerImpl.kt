@@ -22,29 +22,23 @@
  * SOFTWARE.
  */
 
-package de.dseelp.kotlincord.api.configs
+package de.dseelp.kotlincord.core.guild
 
-import com.uchuhimo.konf.Config
-import com.uchuhimo.konf.ConfigSpec
-import de.dseelp.kotlincord.api.randomAlphanumeric
+import de.dseelp.kotlincord.api.guild.GuildInfo
+import de.dseelp.kotlincord.api.guild.GuildManager
+import dev.kord.common.entity.Snowflake
+import org.jetbrains.exposed.sql.transactions.transaction
 
-data class BotConfig(val instanceId: String, val debug: Boolean, val invite: InviteConfig) {
-    companion object : ConfigSpec("") {
-        val instanceId by optional(randomAlphanumeric(4))
-        val debugMode by optional(false)
+class GuildManagerImpl : GuildManager {
+    override fun getGuildInfo(guildId: Snowflake): GuildInfo = transaction { findInfo(guildId).info }
 
-        object InviteSpec : ConfigSpec() {
-            val enabled by optional(false)
-            val clientId by optional(-1L)
-        }
-
-        fun fromConfig(config: Config): BotConfig = BotConfig(
-            config[instanceId],
-            config[debugMode],
-            InviteConfig(config[InviteSpec.enabled], config[InviteSpec.clientId])
-        )
+    fun findInfo(guildId: Snowflake) = DbGuildInfo.findById(guildId) ?: DbGuildInfo.new(guildId) {
+        prefix = "!"
     }
 
-
-    data class InviteConfig(val enabled: Boolean, val clientId: Long)
+    override fun setGuildInfo(info: GuildInfo): Unit = transaction {
+        findInfo(info.guildId).apply {
+            prefix = info.prefix
+        }
+    }
 }

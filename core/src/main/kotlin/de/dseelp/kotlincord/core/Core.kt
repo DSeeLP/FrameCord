@@ -69,6 +69,7 @@ object Core : CordKoinComponent {
         } catch (ex: Exception) {
             ex.printStackTrace()
         }
+        FakePlugin.enable()
         BotImpl.start()
         log.info("Startup complete")
         bot.job.join()
@@ -95,6 +96,7 @@ object Core : CordKoinComponent {
         val config = BotConfig.fromConfig(cfg)
         System.setProperty("debugMode", config.debug.toString())
         loadKoinModules(module {
+            single { config }
             single(qualifier("instanceId")) { config.instanceId }
             single(qualifier("config")) { this@module }
             single(qualifier("debugMode")) { config.debug }

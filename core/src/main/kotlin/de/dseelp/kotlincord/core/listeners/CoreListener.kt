@@ -31,10 +31,12 @@ import de.dseelp.kotlincord.api.InternalKotlinCordApi
 import de.dseelp.kotlincord.api.ReloadScope
 import de.dseelp.kotlincord.api.command.ConsoleSender
 import de.dseelp.kotlincord.api.command.GuildSender
+import de.dseelp.kotlincord.api.command.PrivateSender
 import de.dseelp.kotlincord.api.command.Sender
 import de.dseelp.kotlincord.api.event.EventHandle
 import de.dseelp.kotlincord.api.events.ConsoleMessageEvent
 import de.dseelp.kotlincord.api.events.ReloadEvent
+import de.dseelp.kotlincord.api.guild.info
 import de.dseelp.kotlincord.api.interactions.ButtonAction
 import de.dseelp.kotlincord.api.interactions.SelectionOptionClickContext
 import de.dseelp.kotlincord.api.logging.LogManager
@@ -55,6 +57,7 @@ import dev.kord.core.entity.interaction.ComponentInteraction
 import dev.kord.core.entity.interaction.SelectMenuInteraction
 import dev.kord.core.event.interaction.InteractionCreateEvent
 import dev.kord.core.event.message.MessageCreateEvent
+import kotlinx.coroutines.launch
 import org.koin.core.component.inject
 import org.koin.core.qualifier.qualifier
 import java.util.*
@@ -86,14 +89,18 @@ object CoreListener : CordKoinComponent {
     suspend fun onMessageReceived(event: MessageCreateEvent) {
         val message = event.message
         val content = message.content
-        if (!content.startsWith("!")) return
         if (message.author == bot.kord.getSelf()) return
         if (message.embeds.isNotEmpty()) return
-        (if (event.guildId != null) guildDispatcher else privateDispatcher).execute(
-            GuildSender(message),
-            content.replaceFirst("!", ""),
-            CommandUtils.Actions.noOperation()
-        )
+        val guild = event.getGuild()
+        val (sender, prefix) = if (guild != null) GuildSender(message) to guild.info.prefix else PrivateSender(message) to "!"
+        if (!content.startsWith(prefix)) return
+        bot.kord.launch {
+            (if (event.guildId != null) guildDispatcher else privateDispatcher).execute(
+                sender,
+                content.replaceFirst(prefix, ""),
+                CommandUtils.Actions.noOperation()
+            )
+        }
     }
 
     val rootLogger by logger(LogManager.ROOT)

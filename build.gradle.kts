@@ -128,7 +128,6 @@ allprojects {
                 from(File(rootProject.rootDir, "docs/bundled/html")) {
                     into("docs/html")
                 }
-                from(licenseFile)
                 from(File(rootProject.rootDir, "templates"))
                 dependsOn(javadocJar)
                 from(javadocJar.get().archiveFile) {

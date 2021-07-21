@@ -33,6 +33,8 @@ import de.dseelp.kotlincord.api.plugins.PluginData
 import de.dseelp.kotlincord.api.plugins.PluginMeta
 import de.dseelp.kotlincord.api.plugins.repository.RepositoryManager
 import de.dseelp.kotlincord.api.utils.koin.KoinModules
+import de.dseelp.kotlincord.core.commands.InviteCommand
+import de.dseelp.kotlincord.core.guild.DbGuildInfos
 import de.dseelp.kotlincord.core.plugin.repository.data.InstalledPackages
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.sql.SchemaUtils
@@ -91,7 +93,7 @@ object FakePlugin : Plugin() {
                 })
                 database {
                     transaction {
-                        SchemaUtils.createMissingTablesAndColumns(InstalledPackages)
+                        SchemaUtils.createMissingTablesAndColumns(InstalledPackages, DbGuildInfos)
                         commit()
                     }
                 }
@@ -100,5 +102,12 @@ object FakePlugin : Plugin() {
             ex.printStackTrace()
         }
         searchCommands("de.dseelp.kotlincord.core")
+    }
+
+    fun enable() {
+        val inviteConfig = InviteCommand.getConfig()
+        if (inviteConfig.enabled && inviteConfig.clientId > 0) {
+            register<InviteCommand>()
+        }
     }
 }

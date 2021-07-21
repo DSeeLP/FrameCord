@@ -22,29 +22,6 @@
  * SOFTWARE.
  */
 
-package de.dseelp.kotlincord.api.configs
+package de.dseelp.kotlincord.api.utils
 
-import com.uchuhimo.konf.Config
-import com.uchuhimo.konf.ConfigSpec
-import de.dseelp.kotlincord.api.randomAlphanumeric
-
-data class BotConfig(val instanceId: String, val debug: Boolean, val invite: InviteConfig) {
-    companion object : ConfigSpec("") {
-        val instanceId by optional(randomAlphanumeric(4))
-        val debugMode by optional(false)
-
-        object InviteSpec : ConfigSpec() {
-            val enabled by optional(false)
-            val clientId by optional(-1L)
-        }
-
-        fun fromConfig(config: Config): BotConfig = BotConfig(
-            config[instanceId],
-            config[debugMode],
-            InviteConfig(config[InviteSpec.enabled], config[InviteSpec.clientId])
-        )
-    }
-
-
-    data class InviteConfig(val enabled: Boolean, val clientId: Long)
-}
+//data class Permission()

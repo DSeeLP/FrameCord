@@ -35,6 +35,7 @@ import de.dseelp.kotlincord.api.command.PrivateSender
 import de.dseelp.kotlincord.api.console.Console
 import de.dseelp.kotlincord.api.database.DatabaseRegistry
 import de.dseelp.kotlincord.api.event.EventBus
+import de.dseelp.kotlincord.api.guild.GuildManager
 import de.dseelp.kotlincord.api.logging.LogManager.ROOT
 import de.dseelp.kotlincord.api.logging.logger
 import de.dseelp.kotlincord.api.plugins.PluginLoader
@@ -43,6 +44,7 @@ import de.dseelp.kotlincord.api.plugins.repository.RepositoryManager
 import de.dseelp.kotlincord.api.utils.IReflectionUtils
 import de.dseelp.kotlincord.api.utils.koin.CordKoinContext
 import de.dseelp.kotlincord.core.database.DatabaseRegistryImpl
+import de.dseelp.kotlincord.core.guild.GuildManagerImpl
 import de.dseelp.kotlincord.core.plugin.PluginLoaderImpl
 import de.dseelp.kotlincord.core.plugin.PluginManagerImpl
 import de.dseelp.kotlincord.core.plugin.repository.RepositoryManagerImpl
@@ -77,6 +79,7 @@ object CordBootstrap {
         single<URLClassLoader>(qualifier("pluginClassLoader")) { URLClassLoader.newInstance(arrayOf()) }
         single<IReflectionUtils> { ReflectionUtilsImpl() } bind ReflectionUtilsImpl::class
         single { version }
+        single<GuildManager> { GuildManagerImpl() }
     }
 
     val defaultModules = listOf(defaultModule, PathQualifiersImpl.module)

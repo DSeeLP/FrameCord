@@ -162,6 +162,7 @@ abstract class Plugin : PluginComponent<Plugin> {
     fun searchCommands(vararg packages: String) {
         ReflectionUtils.findClasses(packages.toList().toTypedArray()) {
             Criterion.isSubClassOf(Command::class).assert()
+            Criterion.hasAnnotation<DisableAutoLoad>().assertNot()
         }.onEach { clazz ->
             @Suppress("UNCHECKED_CAST")
             register(clazz as KClass<Command<*>>)

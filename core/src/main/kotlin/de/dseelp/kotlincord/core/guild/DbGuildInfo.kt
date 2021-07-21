@@ -22,29 +22,31 @@
  * SOFTWARE.
  */
 
-package de.dseelp.kotlincord.api.configs
+package de.dseelp.kotlincord.core.guild
 
-import com.uchuhimo.konf.Config
-import com.uchuhimo.konf.ConfigSpec
-import de.dseelp.kotlincord.api.randomAlphanumeric
+import de.dseelp.kotlincord.api.asSnowflake
+import de.dseelp.kotlincord.api.guild.GuildInfo
+import dev.kord.common.entity.Snowflake
+import org.jetbrains.exposed.dao.LongEntity
+import org.jetbrains.exposed.dao.LongEntityClass
+import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.dao.id.LongIdTable
 
-data class BotConfig(val instanceId: String, val debug: Boolean, val invite: InviteConfig) {
-    companion object : ConfigSpec("") {
-        val instanceId by optional(randomAlphanumeric(4))
-        val debugMode by optional(false)
-
-        object InviteSpec : ConfigSpec() {
-            val enabled by optional(false)
-            val clientId by optional(-1L)
-        }
-
-        fun fromConfig(config: Config): BotConfig = BotConfig(
-            config[instanceId],
-            config[debugMode],
-            InviteConfig(config[InviteSpec.enabled], config[InviteSpec.clientId])
-        )
+class DbGuildInfo(id: EntityID<Long>) : LongEntity(id) {
+    companion object : LongEntityClass<DbGuildInfo>(DbGuildInfos) {
+        fun findById(guildId: Snowflake) = findById(guildId.value)
+        fun new(guildId: Snowflake, init: DbGuildInfo.() -> Unit) = new(guildId.value, init)
     }
 
+    val guildId
+        get() = id.value.asSnowflake
 
-    data class InviteConfig(val enabled: Boolean, val clientId: Long)
+    var prefix by DbGuildInfos.prefix
+
+    val info
+        get() = GuildInfo(guildId, prefix)
+}
+
+object DbGuildInfos : LongIdTable() {
+    val prefix = varchar("prefix", 32)
 }
