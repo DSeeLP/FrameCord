@@ -89,5 +89,9 @@ enum class CommandScope {
     }
 }
 
-fun <S : Any> literal(name: String, aliases: Array<String>, block: CommandBuilder<S>.() -> Unit): CommandNode<S> =
+fun <S : Any> literal(
+    name: String,
+    aliases: Array<String> = arrayOf(),
+    block: CommandBuilder<S>.() -> Unit
+): CommandNode<S> =
     CommandBuilder<S>(name, aliases).apply(block).build()
