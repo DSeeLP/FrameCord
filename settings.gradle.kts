@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 KotlinCord team & contributors
+ * Copyright (c) 2021 DSeeLP & KotlinCord contributors
  *
  * MIT License
  *
@@ -26,3 +26,4 @@ rootProject.name = "kotlincord"
 include("core", "api")
 include("plugins")
 include("plugins:moderation")
+include("plugins:privatechannels")
