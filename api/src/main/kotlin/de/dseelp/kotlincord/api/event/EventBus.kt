@@ -81,7 +81,7 @@ class EventBus : CordKoinComponent {
     private val log by logger<EventBus>()
 
     fun searchPackages(plugin: Plugin? = null, vararg packages: String) {
-        ReflectionUtils.findClasses(packages.toList().toTypedArray()) {
+        ReflectionUtils.findClasses(packages.toList().toTypedArray(), plugin) {
             Criterion.hasAnnotation<Listener>().assert()
         }.onEach { clazz ->
             val p = if (plugin != null) plugin
@@ -93,7 +93,11 @@ class EventBus : CordKoinComponent {
                 log.error("Failed to determine plugin for class ${clazz.qualifiedName}")
                 return
             }
-            addHandler(Handler.ClassHandler(p, clazz))
+            if (handlers.find {
+                    if (it is Handler.ClassHandler<*>) {
+                        it.clazz == clazz
+                    } else false
+                } == null) addHandler(Handler.ClassHandler(p, clazz))
         }
     }
 

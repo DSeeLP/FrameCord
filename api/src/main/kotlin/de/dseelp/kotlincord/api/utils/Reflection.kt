@@ -25,6 +25,7 @@
 package de.dseelp.kotlincord.api.utils
 
 import de.dseelp.kotlincord.api.InternalKotlinCordApi
+import de.dseelp.kotlincord.api.plugins.Plugin
 import de.dseelp.kotlincord.api.utils.koin.CordKoinComponent
 import org.koin.core.component.inject
 import kotlin.reflect.KClass
@@ -35,22 +36,43 @@ import kotlin.reflect.full.isSubclassOf
 @OptIn(InternalKotlinCordApi::class)
 object ReflectionUtils : CordKoinComponent {
     private val internalUtils: IReflectionUtils by inject()
+    fun findClasses(packages: Array<String>, plugin: Plugin? = null, criteria: CriterionBuilder.() -> Unit) =
+        internalUtils.findClasses(
+            packages,
+            CriterionBuilder().apply(criteria),
+            if (plugin == null) arrayOf() else arrayOf(plugin)
+        )
+
     fun findClasses(packages: Array<String>, criteria: CriterionBuilder.() -> Unit) =
-        internalUtils.findClasses(packages, CriterionBuilder().apply(criteria))
+        internalUtils.findClasses(packages, CriterionBuilder().apply(criteria), arrayOf<ClassLoader>())
+
+    fun findClasses(packages: Array<String>, classLoader: ClassLoader, criteria: CriterionBuilder.() -> Unit) =
+        internalUtils.findClasses(packages, CriterionBuilder().apply(criteria), arrayOf(classLoader))
+
+    fun findClasses(packages: Array<String>, plugins: Array<Plugin>, criteria: CriterionBuilder.() -> Unit) =
+        internalUtils.findClasses(packages, CriterionBuilder().apply(criteria), plugins)
+
+    fun findClasses(packages: Array<String>, classLoaders: Array<ClassLoader>, criteria: CriterionBuilder.() -> Unit) =
+        internalUtils.findClasses(packages, CriterionBuilder().apply(criteria), classLoaders)
 
     fun findClasses(packages: Array<String>, criteria: Array<Criterion>) =
         internalUtils.findClasses(packages, CriterionBuilder().apply {
             criteria.onEach {
                 it.assert()
             }
-        })
+        }, arrayOf<ClassLoader>())
 
     fun findClasses(packageName: String, criteria: CriterionBuilder.() -> Unit) =
         findClasses(arrayOf(packageName), criteria)
 }
 
 interface IReflectionUtils {
-    fun findClasses(packages: Array<String>, criteria: CriterionBuilder): Array<KClass<Any>>
+    fun findClasses(packages: Array<String>, criteria: CriterionBuilder, plugins: Array<Plugin>): Array<KClass<Any>>
+    fun findClasses(
+        packages: Array<String>,
+        criteria: CriterionBuilder,
+        classLoaders: Array<ClassLoader>
+    ): Array<KClass<Any>>
 }
 
 class CriterionBuilder {

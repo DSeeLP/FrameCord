@@ -24,21 +24,38 @@
 
 package de.dseelp.kotlincord.core.utils
 
+import de.dseelp.kotlincord.api.InternalKotlinCordApi
+import de.dseelp.kotlincord.api.plugins.Plugin
 import de.dseelp.kotlincord.api.utils.CriterionBuilder
 import de.dseelp.kotlincord.api.utils.IReflectionUtils
+import de.dseelp.kotlincord.api.utils.koin.CordKoinComponent
 import io.github.classgraph.ClassGraph
 import java.util.concurrent.Executors
 import kotlin.reflect.KClass
 
-class ReflectionUtilsImpl : IReflectionUtils {
+@OptIn(InternalKotlinCordApi::class)
+class ReflectionUtilsImpl : IReflectionUtils, CordKoinComponent {
     val scanExecutor = Executors.newFixedThreadPool(4)
+    override fun findClasses(
+        packages: Array<String>,
+        criteria: CriterionBuilder,
+        plugins: Array<Plugin>
+    ): Array<KClass<Any>> = findClasses(packages, criteria, plugins.map { it::class.java.classLoader }.toTypedArray())
+
 
     @Suppress("UNCHECKED_CAST")
-    override fun findClasses(packages: Array<String>, criteria: CriterionBuilder) =
-        ClassGraph().enableClassInfo().acceptPackages(*packages)
+    override fun findClasses(
+        packages: Array<String>,
+        criteria: CriterionBuilder,
+        classLoaders: Array<ClassLoader>
+    ): Array<KClass<Any>> {
+        return ClassGraph().enableClassInfo().acceptPackages(*packages)
+            .apply { classLoaders.forEach { addClassLoader(it) } }
             .scan()
             .allClasses
-            .map { it.loadClass().kotlin }
+            .filter { packages.any { n -> it.packageName.startsWith(n) } }
+            .filter { !it.name.contains('$') }
+            .mapNotNull { kotlin.runCatching { it.loadClass().kotlin }.getOrNull() }
             .filter {
                 try {
                     criteria.check(it)
@@ -47,4 +64,6 @@ class ReflectionUtilsImpl : IReflectionUtils {
                 }
             }
             .toTypedArray() as Array<KClass<Any>>
+    }
+
 }
