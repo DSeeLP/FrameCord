@@ -57,10 +57,10 @@ data class SelectionMenu(
     }
 
     @OptIn(KordPreview::class)
-    val discordComponentBuilder by lazy {
+    fun discordComponentBuilder(): SelectMenuBuilder {
         val discordOptions = options.map { it.discordOptionBuilder }
         val compressed = Base64.getEncoder().encodeToString(id.encodeToByteArray())
-        SelectMenuBuilder(QUALIFIER + compressed).apply {
+        return SelectMenuBuilder(QUALIFIER + compressed).apply {
             options.addAll(discordOptions)
             allowedValues = this@SelectionMenu.allowedValues
             placeholder = this@SelectionMenu.placeholder

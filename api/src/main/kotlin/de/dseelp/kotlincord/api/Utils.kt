@@ -34,12 +34,9 @@ import de.dseelp.kotlincord.api.plugins.Plugin
 import de.dseelp.kotlincord.api.utils.koin.CordKoinContext
 import dev.kord.common.annotation.KordPreview
 import dev.kord.common.entity.*
-import dev.kord.core.behavior.interaction.ComponentInteractionBehavior
-import dev.kord.core.behavior.interaction.EphemeralInteractionResponseBehavior
 import dev.kord.core.entity.Member
 import dev.kord.core.entity.channel.GuildChannel
 import dev.kord.rest.builder.component.ActionRowBuilder
-import dev.kord.rest.builder.interaction.UpdateMessageInteractionResponseCreateBuilder
 import kotlinx.datetime.Instant
 import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.IColumnType
@@ -55,9 +52,6 @@ import java.util.regex.Matcher
 import java.util.regex.Pattern
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
-import kotlin.contracts.ExperimentalContracts
-import kotlin.contracts.InvocationKind
-import kotlin.contracts.contract
 import kotlin.math.round
 import kotlin.random.Random
 
@@ -194,33 +188,14 @@ suspend fun Member.checkPermissions(channel: GuildChannel, permissions: Permissi
     it.contains(permissions) || it.contains(Permission.Administrator)
 }
 
-@KordPreview
-@OptIn(ExperimentalContracts::class)
-suspend fun ComponentInteractionBehavior.acknowledgeEphemeralUpdateCreate(
-    builder: UpdateMessageInteractionResponseCreateBuilder.() -> Unit
-): EphemeralInteractionResponseBehavior {
-    contract { callsInPlace(builder, InvocationKind.EXACTLY_ONCE) }
-
-    val request = UpdateMessageInteractionResponseCreateBuilder(
-        flags = MessageFlags(MessageFlag.Ephemeral)
-    ).apply(builder).toRequest()
-
-    kord.rest.interaction.createInteractionResponse(
-        id,
-        token,
-        request
-    )
-
-    return EphemeralInteractionResponseBehavior(applicationId, token, kord)
-}
-
 @OptIn(KordPreview::class)
 fun ActionRowBuilder.action(
     action: ButtonAction,
     style: ButtonStyle,
     command: String,
     label: String? = null,
-    emoji: DiscordPartialEmoji? = null
+    emoji: DiscordPartialEmoji? = null,
+    disabled: Boolean = false
 ) {
     if (style == ButtonStyle.Link) throw UnsupportedOperationException("Link Buttons are not support as actions!")
     val id = action.id + ButtonAction.DELIMITER + command
@@ -228,14 +203,16 @@ fun ActionRowBuilder.action(
     interactionButton(style, ButtonAction.QUALIFIER + compressed) {
         this.label = label
         this.emoji = emoji
+        this.disabled = disabled
     }
 }
 
 @OptIn(KordPreview::class)
 fun ActionRowBuilder.selectionMenu(
-    selectionMenu: SelectionMenu
+    selectionMenu: SelectionMenu,
+    disabled: Boolean = false
 ) {
-    components.add(selectionMenu.discordComponentBuilder)
+    components.add(selectionMenu.discordComponentBuilder())
 }
 
 @OptIn(KordPreview::class)

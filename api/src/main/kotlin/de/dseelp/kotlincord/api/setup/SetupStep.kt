@@ -22,22 +22,19 @@
  * SOFTWARE.
  */
 
-package de.dseelp.kotlincord.api.plugins
+package de.dseelp.kotlincord.api.setup
 
-import de.dseelp.kotlincord.api.InternalKotlinCordApi
-import de.dseelp.kotlincord.api.utils.koin.BaseKoinComponent
-import de.dseelp.kotlincord.api.utils.koin.registerKoinModules
-import org.koin.core.Koin
-import org.koin.core.module.Module
+import dev.kord.core.entity.Member
+import dev.kord.core.entity.Message
+import dev.kord.core.entity.channel.GuildMessageChannel
 
-interface PluginComponent<P : Plugin> : BaseKoinComponent {
-    val plugin: P
+interface SetupStep {
 
-    @OptIn(InternalKotlinCordApi::class)
-    override fun getKoin(): Koin = plugin.koinApp.koin
+    suspend fun send(
+        setup: Setup<*>,
+        channel: GuildMessageChannel,
+        checkAccess: suspend (member: Member, channel: GuildMessageChannel) -> Boolean
+    ): Message
 
-    @OptIn(InternalKotlinCordApi::class)
-    override fun loadKoinModules(modules: List<Module>) = plugin.registerKoinModules(modules)
-
-    override fun unloadKoinModules(modules: List<Module>) = throw UnsupportedOperationException()
+    fun cancel(message: Message)
 }

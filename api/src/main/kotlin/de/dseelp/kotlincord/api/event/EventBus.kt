@@ -42,10 +42,7 @@ import java.util.concurrent.Executors
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
-import kotlin.reflect.full.callSuspend
-import kotlin.reflect.full.declaredMemberFunctions
-import kotlin.reflect.full.hasAnnotation
-import kotlin.reflect.full.isSubclassOf
+import kotlin.reflect.full.*
 
 @OptIn(InternalKotlinCordApi::class)
 @Listener
@@ -98,6 +95,10 @@ class EventBus : CordKoinComponent {
             }
             addHandler(Handler.ClassHandler(p, clazz))
         }
+    }
+
+    fun removeHandler(handler: Handler) {
+        handlers.remove(handler)
     }
 
     fun searchPackage(packageName: String, plugin: Plugin? = null) = searchPackages(plugin, packageName)
@@ -157,7 +158,7 @@ class EventBus : CordKoinComponent {
         class ClassHandler<T : Any>(plugin: Plugin, override val clazz: KClass<out T>, obj: T? = null) :
             Handler(plugin),
             CordKoinComponent {
-            val methods = clazz.declaredMemberFunctions
+            val methods = (clazz.memberFunctions + clazz.declaredMemberFunctions).distinct()
                 .filter { it.hasAnnotation<EventHandle>() }
                 .map {
                     it to it.parameters
@@ -185,7 +186,7 @@ class EventBus : CordKoinComponent {
                     } catch (e: Throwable) {
                         log.error(
                             "Failed to call method ${method.name} in ${clazz.qualifiedName}",
-                            if (e.cause != null) e.cause else e
+                            e
                         )
                     }
                 }

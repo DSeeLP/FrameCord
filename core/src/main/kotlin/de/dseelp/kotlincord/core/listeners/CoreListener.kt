@@ -89,7 +89,7 @@ object CoreListener : CordKoinComponent {
     suspend fun onMessageReceived(event: MessageCreateEvent) {
         val message = event.message
         val content = message.content
-        if (message.author == bot.kord.getSelf()) return
+        if (message.author == bot.kord.getSelf() || message.author == null) return
         if (message.embeds.isNotEmpty()) return
         val guild = event.getGuild()
         val (sender, prefix) = if (guild != null) GuildSender(message) to guild.info.prefix else PrivateSender(message) to "!"
