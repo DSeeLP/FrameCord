@@ -45,6 +45,7 @@ import org.koin.core.component.inject
 import org.koin.dsl.koinApplication
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
+import kotlin.io.path.exists
 import kotlin.reflect.KClass
 import kotlin.reflect.full.createInstance
 
@@ -153,14 +154,20 @@ abstract class Plugin : PluginComponent<Plugin> {
         return _meta?.hashCode() ?: 0
     }
 
+    fun checkDataFolder() {
+        if (!dataFolder.exists()) dataFolder.toFile().mkdirs()
+    }
+
     suspend fun registerDatabase(info: DatabaseInfo) = databaseRegistry.registerDatabase(this, info)
 
     fun <T> database(block: DatabaseScope.() -> T) = block.invoke(databaseRegistry.getScope(this))
+    suspend fun <T> suspendingDatabase(block: suspend DatabaseScope.() -> T) =
+        block.invoke(databaseRegistry.getScope(this))
 
     fun searchEvents(vararg packages: String) = eventBus.searchPackages(this, *packages)
 
     fun searchCommands(vararg packages: String) {
-        ReflectionUtils.findClasses(packages.toList().toTypedArray()) {
+        ReflectionUtils.findClasses(packages.toList().toTypedArray(), this) {
             Criterion.isSubClassOf(Command::class).assert()
             Criterion.hasAnnotation<DisableAutoLoad>().assertNot()
         }.onEach { clazz ->
