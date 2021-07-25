@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 /*
  * Copyright (c) 2021 DSeeLP & KotlinCord contributors
  *
@@ -71,7 +73,9 @@ dependencies {
     api("com.zaxxer:HikariCP:$hikaricpVersion")
     api("io.ktor:ktor-client-core:$ktorVersion")
     api("io.ktor:ktor-client-serialization:$ktorVersion")
-    api("io.github.dseelp:discord-oauth2-api:0.2")
+    api("io.github.dseelp:discord-oauth2-api:0.2") {
+        isChanging = true
+    }
 }
 
 val implementationVersion = version
@@ -90,4 +94,8 @@ tasks {
     build {
         dependsOn(shadowJar)
     }
+}
+val compileKotlin: KotlinCompile by tasks
+compileKotlin.kotlinOptions {
+    languageVersion = "1.5"
 }
