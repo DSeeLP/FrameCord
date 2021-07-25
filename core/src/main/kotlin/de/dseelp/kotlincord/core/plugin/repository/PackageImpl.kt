@@ -76,6 +76,7 @@ data class PackageImpl(
             } else {
                 repository.log.error("The first version that supports this KotlinCord version is ${firstSupported.version}")
             }
+            return
         }
         val lazyFailMessage = { "Failed to install the package $groupId:$artifactId@$version" }
         if (isInstalled) {
@@ -98,7 +99,7 @@ data class PackageImpl(
             }
             url {
                 takeFrom(Url(repository.url))
-                path(groupId.replace('.', '/'), artifactId, version.toString(), fileName)
+                pathComponents(groupId.replace('.', '/'), artifactId, version.toString(), fileName)
             }
         }.downloadFile(file)
         resultDeferred.invokeOnCompletion {

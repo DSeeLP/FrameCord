@@ -71,7 +71,7 @@ class RepositoryImpl(
             return httpClient.get {
                 url {
                     takeFrom(parsedUrl)
-                    path("index.json")
+                    pathComponents("index.json")
                 }
             }
         } catch (ex: Throwable) {
@@ -107,8 +107,8 @@ class RepositoryImpl(
     override suspend fun toPackage(index: RepositoryIndex): Package<*> {
         val response: HttpResponse = httpClient.get {
             url {
-                takeFrom(url)
-                path(index.groupId.replace('.', '/'), index.artifactId, "package.json")
+                takeFrom(this@RepositoryImpl.url)
+                pathComponents(index.groupId.replace('.', '/'), index.artifactId, "package.json")
             }
         }
         if (response.status == HttpStatusCode.NotFound) {

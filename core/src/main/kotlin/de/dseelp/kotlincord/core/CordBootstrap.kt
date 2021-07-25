@@ -63,7 +63,7 @@ import java.util.logging.LogManager
 @OptIn(InternalKotlinCordApi::class)
 object CordBootstrap {
     val log by logger(ROOT)
-    val version = Version(0, 0, 1)
+    val version = Version(0, 3, 1)
 
     val defaultModule = module {
         single<Console> { ConsoleImpl } bind ConsoleImpl::class
