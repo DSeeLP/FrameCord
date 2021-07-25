@@ -28,7 +28,7 @@ import com.uchuhimo.konf.Config
 import com.uchuhimo.konf.ConfigSpec
 import de.dseelp.kotlincord.api.randomAlphanumeric
 
-data class BotConfig(val instanceId: String, val debug: Boolean, val invite: InviteConfig) {
+data class BotConfig(val instanceId: String, val debug: Boolean, val invite: InviteConfig, val intents: IntentsConfig) {
     companion object : ConfigSpec("") {
         val instanceId by optional(randomAlphanumeric(4))
         val debugMode by optional(false)
@@ -38,13 +38,20 @@ data class BotConfig(val instanceId: String, val debug: Boolean, val invite: Inv
             val clientId by optional(-1L)
         }
 
+        object IntentsSpec : ConfigSpec() {
+            val presence by optional(false)
+            val guildMembers by optional(false)
+        }
+
         fun fromConfig(config: Config): BotConfig = BotConfig(
             config[instanceId],
             config[debugMode],
-            InviteConfig(config[InviteSpec.enabled], config[InviteSpec.clientId])
+            InviteConfig(config[InviteSpec.enabled], config[InviteSpec.clientId]),
+            IntentsConfig(config[IntentsSpec.presence], config[IntentsSpec.guildMembers])
         )
     }
 
 
     data class InviteConfig(val enabled: Boolean, val clientId: Long)
+    data class IntentsConfig(val presence: Boolean, val guildMembers: Boolean)
 }

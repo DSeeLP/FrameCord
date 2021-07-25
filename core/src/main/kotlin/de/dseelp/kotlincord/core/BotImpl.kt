@@ -27,10 +27,14 @@ package de.dseelp.kotlincord.core
 import de.dseelp.kotlincord.api.Bot
 import de.dseelp.kotlincord.api.InternalKotlinCordApi
 import de.dseelp.kotlincord.api.bot
+import de.dseelp.kotlincord.api.configs.BotConfig
 import de.dseelp.kotlincord.api.logging.logger
 import de.dseelp.kotlincord.api.utils.koin.CordKoinComponent
 import de.dseelp.kotlincord.core.listeners.EventBusListener
 import dev.kord.core.Kord
+import dev.kord.gateway.Intent
+import dev.kord.gateway.Intents
+import dev.kord.gateway.PrivilegedIntent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -52,9 +56,18 @@ object BotImpl : Bot, CordKoinComponent {
 
     val logger by logger<Bot>()
 
+    @OptIn(PrivilegedIntent::class)
     suspend fun start() {
         val token by inject<String>(qualifier("token"))
-        _kord = Kord(token)
+        val config by inject<BotConfig>()
+        val intentConfig = config.intents
+        _kord = Kord(token) {
+            intents = Intents {
+                +Intents.all
+                if (!intentConfig.presence) -Intent.GuildPresences
+                if (!intentConfig.guildMembers) -Intent.GuildMembers
+            }
+        }
         bot.launch {
             kord.login()
         }
