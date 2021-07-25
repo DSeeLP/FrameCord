@@ -53,9 +53,9 @@ class DatabaseRegistryImpl : DatabaseRegistry {
     }
 
     override suspend fun registerDatabase(plugin: Plugin, databaseInfo: DatabaseInfo): CordDatabase {
-        if (checkClassLoader(plugin::class.java.classLoader) {
+        /*if (checkClassLoader(plugin::class.java.classLoader) {
                 //log.error("This method is not called from the plugin provided.")
-            }) throw DatabaseConfigurationException("This method is not called from the plugin provided.")
+            }) throw DatabaseConfigurationException("This method is not called from the plugin provided.")*/
         mutex.withLock {
             databaseInfo.config.poolName = plugin.name
             databaseInfo.config.validate()
