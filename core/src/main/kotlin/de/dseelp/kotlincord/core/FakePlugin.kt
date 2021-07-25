@@ -80,16 +80,18 @@ object FakePlugin : Plugin() {
             ))
         eventBus.searchPackage("de.dseelp.kotlincord.core", FakePlugin)
         eventBus.searchPackage("de.dseelp.kotlincord.api", FakePlugin)
+        val dbConfig = DatabaseConfig.load(
+            this@FakePlugin,
+            default = DatabaseConfig.defaultDatabaseConfig(this@FakePlugin).copy(databaseName = "cord")
+        )
         try {
             runBlocking {
                 val db = registerDatabase(
-                    DatabaseConfig.load(
-                        this@FakePlugin,
-                        default = DatabaseConfig.defaultDatabaseConfig(this@FakePlugin).copy(databaseName = "cord")
-                    ).toDatabaseInfo(this@FakePlugin)
+                    dbConfig.toDatabaseInfo(this@FakePlugin)
                 )
                 loadKoinModules(module {
                     single(named("cord")) { db }
+                    single { dbConfig }
                 })
                 database {
                     transaction {
