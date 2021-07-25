@@ -29,7 +29,8 @@ import dev.kord.core.entity.Message
 import dev.kord.core.entity.channel.GuildMessageChannel
 import dev.kord.rest.builder.message.MessageCreateBuilder
 
-class UserStep(messageBuilder: MessageCreateBuilder.(GuildMessageChannel) -> Unit) : MessageStep(messageBuilder) {
+class UserStep(messageBuilder: suspend MessageCreateBuilder.(GuildMessageChannel) -> Unit) :
+    MessageStep(messageBuilder) {
     override suspend fun handleMessage(message: Message): Boolean {
         val user = MentionUtils.user(message.content) ?: return false
         setup.completeStep(user)
@@ -37,7 +38,8 @@ class UserStep(messageBuilder: MessageCreateBuilder.(GuildMessageChannel) -> Uni
     }
 }
 
-class MemberStep(messageBuilder: MessageCreateBuilder.(GuildMessageChannel) -> Unit) : MessageStep(messageBuilder) {
+class MemberStep(messageBuilder: suspend MessageCreateBuilder.(GuildMessageChannel) -> Unit) :
+    MessageStep(messageBuilder) {
     override suspend fun handleMessage(message: Message): Boolean {
         val user = MentionUtils.member(channel.getGuild(), message.content) ?: return false
         setup.completeStep(user)
@@ -45,7 +47,8 @@ class MemberStep(messageBuilder: MessageCreateBuilder.(GuildMessageChannel) -> U
     }
 }
 
-class RoleStep(messageBuilder: MessageCreateBuilder.(GuildMessageChannel) -> Unit) : MessageStep(messageBuilder) {
+class RoleStep(messageBuilder: suspend MessageCreateBuilder.(GuildMessageChannel) -> Unit) :
+    MessageStep(messageBuilder) {
     override suspend fun handleMessage(message: Message): Boolean {
         val role = MentionUtils.role(channel.getGuild(), message.content) ?: return false
         setup.completeStep(role)
@@ -53,7 +56,34 @@ class RoleStep(messageBuilder: MessageCreateBuilder.(GuildMessageChannel) -> Uni
     }
 }
 
-class TextChannelStep(messageBuilder: MessageCreateBuilder.(GuildMessageChannel) -> Unit) :
+class ChannelStep(messageBuilder: suspend MessageCreateBuilder.(GuildMessageChannel) -> Unit) :
+    MessageStep(messageBuilder) {
+    override suspend fun handleMessage(message: Message): Boolean {
+        val channel = MentionUtils.channel(channel.getGuild(), message.content) ?: return false
+        setup.completeStep(channel)
+        return true
+    }
+}
+
+class VoiceChannelStep(messageBuilder: suspend MessageCreateBuilder.(GuildMessageChannel) -> Unit) :
+    MessageStep(messageBuilder) {
+    override suspend fun handleMessage(message: Message): Boolean {
+        val channel = MentionUtils.voiceChannel(channel.getGuild(), message.content) ?: return false
+        setup.completeStep(channel)
+        return true
+    }
+}
+
+class MessageChannelStep(messageBuilder: suspend MessageCreateBuilder.(GuildMessageChannel) -> Unit) :
+    MessageStep(messageBuilder) {
+    override suspend fun handleMessage(message: Message): Boolean {
+        val channel = MentionUtils.messageChannel(channel.getGuild(), message.content) ?: return false
+        setup.completeStep(channel)
+        return true
+    }
+}
+
+class TextChannelStep(messageBuilder: suspend MessageCreateBuilder.(GuildMessageChannel) -> Unit) :
     MessageStep(messageBuilder) {
     override suspend fun handleMessage(message: Message): Boolean {
         val channel = MentionUtils.textChannel(channel.getGuild(), message.content) ?: return false
@@ -62,19 +92,10 @@ class TextChannelStep(messageBuilder: MessageCreateBuilder.(GuildMessageChannel)
     }
 }
 
-class NewsChannelStep(messageBuilder: MessageCreateBuilder.(GuildMessageChannel) -> Unit) :
+class NewsChannelStep(messageBuilder: suspend MessageCreateBuilder.(GuildMessageChannel) -> Unit) :
     MessageStep(messageBuilder) {
     override suspend fun handleMessage(message: Message): Boolean {
         val channel = MentionUtils.newsChannel(channel.getGuild(), message.content) ?: return false
-        setup.completeStep(channel)
-        return true
-    }
-}
-
-class MessageChannelStep(messageBuilder: MessageCreateBuilder.(GuildMessageChannel) -> Unit) :
-    MessageStep(messageBuilder) {
-    override suspend fun handleMessage(message: Message): Boolean {
-        val channel = MentionUtils.messageChannel(channel.getGuild(), message.content) ?: return false
         setup.completeStep(channel)
         return true
     }

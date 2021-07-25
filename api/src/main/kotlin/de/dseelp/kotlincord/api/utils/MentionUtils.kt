@@ -32,10 +32,7 @@ import dev.kord.core.entity.Guild
 import dev.kord.core.entity.Member
 import dev.kord.core.entity.Role
 import dev.kord.core.entity.User
-import dev.kord.core.entity.channel.GuildChannel
-import dev.kord.core.entity.channel.GuildMessageChannel
-import dev.kord.core.entity.channel.NewsChannel
-import dev.kord.core.entity.channel.TextChannel
+import dev.kord.core.entity.channel.*
 
 object MentionUtils {
     private fun getSnowflake(message: String): Snowflake? {
@@ -59,9 +56,17 @@ object MentionUtils {
         } else null
     }
 
+    suspend fun channel(guild: Guild, message: String): GuildChannel? = getChannel(guild, message)
+
     suspend fun textChannel(guild: Guild, message: String): GuildChannel? {
         val channel = getChannel(guild, message) ?: return null
         return if (channel.type == ChannelType.GuildText) channel as TextChannel
+        else null
+    }
+
+    suspend fun voiceChannel(guild: Guild, message: String): GuildChannel? {
+        val channel = getChannel(guild, message) ?: return null
+        return if (channel.type == ChannelType.GuildVoice) channel as VoiceChannel
         else null
     }
 
