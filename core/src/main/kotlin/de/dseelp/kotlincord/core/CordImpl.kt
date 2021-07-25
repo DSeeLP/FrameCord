@@ -86,6 +86,7 @@ object CordImpl : Cord, CordKoinComponent {
         if (!file.exists()) file.mkdir()
         for (path in file.listFiles()!!) {
             try {
+                if (!(path.isFile && path.extension == "jar")) continue
                 val load = Core.pluginService.load(path)
                 Core.pluginService.enable(load.plugin!!)
             } catch (t: Throwable) {
