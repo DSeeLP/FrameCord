@@ -1,6 +1,25 @@
 /*
- * Created by Dirk in 2021.
- * © Copyright by DSeeLP
+ * Copyright (c) 2021 DSeeLP & KotlinCord contributors
+ *
+ * MIT License
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
 
 package de.dseelp.kotlincord.api.database
@@ -33,16 +52,6 @@ data class DatabaseInfo(val type: DatabaseType, val config: HikariConfig) {
             config["serverName"] = host
             config["port"] = port
             config["databaseName"] = databaseName
-            config["cachePrepStmts"] = true
-            config["prepStmtCacheSize"] = 250
-            config["prepStmtCacheSqlLimit"] = 2048
-            config["useServerPrepStmts"] = true
-            config["useLocalSessionState"] = true
-            config["rewriteBatchedStatements"] = true
-            config["cacheResultSetMetadata"] = true
-            config["cacheServerConfiguration"] = true
-            config["elideSetAutoCommits"] = true
-            config["maintainTimeStats"] = false
             return DatabaseInfo(type, config)
         }
 
@@ -52,7 +61,6 @@ data class DatabaseInfo(val type: DatabaseType, val config: HikariConfig) {
         private fun sqlite(pathString: String): DatabaseInfo {
             val config = HikariConfig()
             config.dataSourceClassName = DatabaseType.SQLITE.dataSourceClass
-            //config.driverClassName = "org.sqlite.JDBC"
             config["url"] = "jdbc:sqlite:$pathString"
             return DatabaseInfo(DatabaseType.SQLITE, config)
         }

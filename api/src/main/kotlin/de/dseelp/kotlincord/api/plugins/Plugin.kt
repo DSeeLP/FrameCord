@@ -1,6 +1,25 @@
 /*
- * Created by Dirk in 2021.
- * © Copyright by DSeeLP
+ * Copyright (c) 2021 DSeeLP & KotlinCord contributors
+ *
+ * MIT License
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
 
 package de.dseelp.kotlincord.api.plugins
@@ -8,13 +27,15 @@ package de.dseelp.kotlincord.api.plugins
 import de.dseelp.kommon.command.CommandNode
 import de.dseelp.kotlincord.api.InternalKotlinCordApi
 import de.dseelp.kotlincord.api.Version
-import de.dseelp.kotlincord.api.buttons.ButtonAction
-import de.dseelp.kotlincord.api.buttons.ButtonContext
 import de.dseelp.kotlincord.api.command.Command
 import de.dseelp.kotlincord.api.database.DatabaseInfo
 import de.dseelp.kotlincord.api.database.DatabaseRegistry
 import de.dseelp.kotlincord.api.database.DatabaseScope
 import de.dseelp.kotlincord.api.event.EventBus
+import de.dseelp.kotlincord.api.interactions.ButtonAction
+import de.dseelp.kotlincord.api.interactions.ButtonContext
+import de.dseelp.kotlincord.api.interactions.SelectionMenu
+import de.dseelp.kotlincord.api.interactions.SelectionMenuBuilder
 import de.dseelp.kotlincord.api.logging.logger
 import de.dseelp.kotlincord.api.utils.Criterion
 import de.dseelp.kotlincord.api.utils.ReflectionUtils
@@ -24,6 +45,7 @@ import org.koin.core.component.inject
 import org.koin.dsl.koinApplication
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
+import kotlin.io.path.exists
 import kotlin.reflect.KClass
 import kotlin.reflect.full.createInstance
 
@@ -63,6 +85,11 @@ abstract class Plugin : PluginComponent<Plugin> {
 
     private val _buttonActions = mutableListOf<ButtonAction>()
 
+    val selectionMenus: Array<SelectionMenu>
+        get() = _selectionMenus.toTypedArray()
+
+    private val _selectionMenus = mutableListOf<SelectionMenu>()
+
     fun registerButtonAction(name: String, node: CommandNode<ButtonContext>): ButtonAction {
 
         val action = ButtonAction(this, name, node)
@@ -77,7 +104,26 @@ abstract class Plugin : PluginComponent<Plugin> {
         return action
     }
 
+    fun unregisterButtonAction(action: ButtonAction) {
+        _buttonActions.remove(action)
+    }
+
     fun getButtonAction(name: String): ButtonAction? = _buttonActions.firstOrNull { it.name.equals(name, true) }
+
+    fun registerSelectionMenu(menu: SelectionMenu) {
+        _selectionMenus.add(menu)
+    }
+
+    fun registerSelectionMenu(block: SelectionMenuBuilder.() -> Unit): SelectionMenu {
+        val menu = SelectionMenuBuilder().apply(block).build(this)
+        registerSelectionMenu(menu)
+        return menu
+    }
+
+    fun unregisterSelectionMenu(menu: SelectionMenu) {
+        _selectionMenus.remove(menu)
+    }
+
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -108,16 +154,24 @@ abstract class Plugin : PluginComponent<Plugin> {
         return _meta?.hashCode() ?: 0
     }
 
+    fun checkDataFolder() {
+        if (!dataFolder.exists()) dataFolder.toFile().mkdirs()
+    }
+
     suspend fun registerDatabase(info: DatabaseInfo) = databaseRegistry.registerDatabase(this, info)
 
     fun <T> database(block: DatabaseScope.() -> T) = block.invoke(databaseRegistry.getScope(this))
+    suspend fun <T> suspendingDatabase(block: suspend DatabaseScope.() -> T) =
+        block.invoke(databaseRegistry.getScope(this))
 
     fun searchEvents(vararg packages: String) = eventBus.searchPackages(this, *packages)
 
     fun searchCommands(vararg packages: String) {
-        ReflectionUtils.findClasses(packages.toList().toTypedArray()) {
+        ReflectionUtils.findClasses(packages.toList().toTypedArray(), this) {
             Criterion.isSubClassOf(Command::class).assert()
+            Criterion.hasAnnotation<DisableAutoLoad>().assertNot()
         }.onEach { clazz ->
+            @Suppress("UNCHECKED_CAST")
             register(clazz as KClass<Command<*>>)
         }
     }

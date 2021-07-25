@@ -1,6 +1,25 @@
 /*
- * Created by Dirk in 2021.
- * © Copyright by DSeeLP
+ * Copyright (c) 2021 DSeeLP & KotlinCord contributors
+ *
+ * MIT License
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
 
 package de.dseelp.kotlincord.api.event
@@ -15,22 +34,21 @@ import de.dseelp.kotlincord.api.plugins.PluginLoader
 import de.dseelp.kotlincord.api.utils.Criterion
 import de.dseelp.kotlincord.api.utils.ReflectionUtils
 import de.dseelp.kotlincord.api.utils.koin.CordKoinComponent
-import kotlinx.coroutines.*
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.koin.core.component.inject
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
-import kotlin.reflect.full.callSuspend
-import kotlin.reflect.full.declaredMemberFunctions
-import kotlin.reflect.full.hasAnnotation
-import kotlin.reflect.full.isSubclassOf
+import kotlin.reflect.full.*
 
 @OptIn(InternalKotlinCordApi::class)
 @Listener
-class EventBus : CordKoinComponent {
-    private val handlers = mutableListOf<Handler>()
+open class EventBus : CordKoinComponent {
+    private val handlers = Collections.synchronizedList(mutableListOf<Handler>())
 
     private val eventExecutorService = Executors.newFixedThreadPool(4)
 
@@ -39,6 +57,7 @@ class EventBus : CordKoinComponent {
         val eventClass = event::class
         withContext(bot.coroutineContext) {
             val executeFunction = suspend {
+                val handlers = handlers.map { it }
                 for (index in 0..handlers.lastIndex) {
                     val handler = handlers.getOrNull(index) ?: continue
                     if (handler is Handler.ClassHandler<*>) handler.invoke(event)
@@ -64,7 +83,7 @@ class EventBus : CordKoinComponent {
     private val log by logger<EventBus>()
 
     fun searchPackages(plugin: Plugin? = null, vararg packages: String) {
-        ReflectionUtils.findClasses(packages.toList().toTypedArray()) {
+        ReflectionUtils.findClasses(packages.toList().toTypedArray(), plugin) {
             Criterion.hasAnnotation<Listener>().assert()
         }.onEach { clazz ->
             val p = if (plugin != null) plugin
@@ -76,8 +95,17 @@ class EventBus : CordKoinComponent {
                 log.error("Failed to determine plugin for class ${clazz.qualifiedName}")
                 return
             }
-            addHandler(Handler.ClassHandler(p, clazz))
+            val handler = Handler.ClassHandler(p, clazz)
+            if (handlers.find {
+                    if (it is Handler.ClassHandler<*>) {
+                        it.clazz == clazz
+                    } else false
+                } == null) handlers.add(handler)
         }
+    }
+
+    fun removeHandler(handler: Handler) {
+        handlers.remove(handler)
     }
 
     fun searchPackage(packageName: String, plugin: Plugin? = null) = searchPackages(plugin, packageName)
@@ -137,7 +165,7 @@ class EventBus : CordKoinComponent {
         class ClassHandler<T : Any>(plugin: Plugin, override val clazz: KClass<out T>, obj: T? = null) :
             Handler(plugin),
             CordKoinComponent {
-            val methods = clazz.declaredMemberFunctions
+            val methods = (clazz.memberFunctions + clazz.declaredMemberFunctions).distinct()
                 .filter { it.hasAnnotation<EventHandle>() }
                 .map {
                     it to it.parameters
@@ -165,10 +193,14 @@ class EventBus : CordKoinComponent {
                     } catch (e: Throwable) {
                         log.error(
                             "Failed to call method ${method.name} in ${clazz.qualifiedName}",
-                            if (e.cause != null) e.cause else e
+                            e
                         )
                     }
                 }
+            }
+
+            override fun toString(): String {
+                return "ClassHandler(clazz=$clazz)"
             }
         }
     }

@@ -1,11 +1,31 @@
 /*
- * Created by Dirk in 2021.
- * © Copyright by DSeeLP
+ * Copyright (c) 2021 DSeeLP & KotlinCord contributors
+ *
+ * MIT License
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
 
 package de.dseelp.kotlincord.api.utils
 
 import de.dseelp.kotlincord.api.InternalKotlinCordApi
+import de.dseelp.kotlincord.api.plugins.Plugin
 import de.dseelp.kotlincord.api.utils.koin.CordKoinComponent
 import org.koin.core.component.inject
 import kotlin.reflect.KClass
@@ -16,22 +36,43 @@ import kotlin.reflect.full.isSubclassOf
 @OptIn(InternalKotlinCordApi::class)
 object ReflectionUtils : CordKoinComponent {
     private val internalUtils: IReflectionUtils by inject()
+    fun findClasses(packages: Array<String>, plugin: Plugin? = null, criteria: CriterionBuilder.() -> Unit) =
+        internalUtils.findClasses(
+            packages,
+            CriterionBuilder().apply(criteria),
+            if (plugin == null) arrayOf() else arrayOf(plugin)
+        )
+
     fun findClasses(packages: Array<String>, criteria: CriterionBuilder.() -> Unit) =
-        internalUtils.findClasses(packages, CriterionBuilder().apply(criteria))
+        internalUtils.findClasses(packages, CriterionBuilder().apply(criteria), arrayOf<ClassLoader>())
+
+    fun findClasses(packages: Array<String>, classLoader: ClassLoader, criteria: CriterionBuilder.() -> Unit) =
+        internalUtils.findClasses(packages, CriterionBuilder().apply(criteria), arrayOf(classLoader))
+
+    fun findClasses(packages: Array<String>, plugins: Array<Plugin>, criteria: CriterionBuilder.() -> Unit) =
+        internalUtils.findClasses(packages, CriterionBuilder().apply(criteria), plugins)
+
+    fun findClasses(packages: Array<String>, classLoaders: Array<ClassLoader>, criteria: CriterionBuilder.() -> Unit) =
+        internalUtils.findClasses(packages, CriterionBuilder().apply(criteria), classLoaders)
 
     fun findClasses(packages: Array<String>, criteria: Array<Criterion>) =
         internalUtils.findClasses(packages, CriterionBuilder().apply {
             criteria.onEach {
                 it.assert()
             }
-        })
+        }, arrayOf<ClassLoader>())
 
     fun findClasses(packageName: String, criteria: CriterionBuilder.() -> Unit) =
         findClasses(arrayOf(packageName), criteria)
 }
 
 interface IReflectionUtils {
-    fun findClasses(packages: Array<String>, criteria: CriterionBuilder): Array<KClass<Any>>
+    fun findClasses(packages: Array<String>, criteria: CriterionBuilder, plugins: Array<Plugin>): Array<KClass<Any>>
+    fun findClasses(
+        packages: Array<String>,
+        criteria: CriterionBuilder,
+        classLoaders: Array<ClassLoader>
+    ): Array<KClass<Any>>
 }
 
 class CriterionBuilder {

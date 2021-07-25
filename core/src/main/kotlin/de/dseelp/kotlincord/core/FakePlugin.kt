@@ -1,19 +1,40 @@
 /*
- * Created by Dirk in 2021.
- * © Copyright by DSeeLP
+ * Copyright (c) 2021 DSeeLP & KotlinCord contributors
+ *
+ * MIT License
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
 
 package de.dseelp.kotlincord.core
 
 import de.dseelp.kotlincord.api.InternalKotlinCordApi
 import de.dseelp.kotlincord.api.Version
-import de.dseelp.kotlincord.api.database.DatabaseInfo
 import de.dseelp.kotlincord.api.event.Listener
+import de.dseelp.kotlincord.api.plugins.DatabaseConfig
 import de.dseelp.kotlincord.api.plugins.Plugin
 import de.dseelp.kotlincord.api.plugins.PluginData
 import de.dseelp.kotlincord.api.plugins.PluginMeta
 import de.dseelp.kotlincord.api.plugins.repository.RepositoryManager
 import de.dseelp.kotlincord.api.utils.koin.KoinModules
+import de.dseelp.kotlincord.core.commands.InviteCommand
+import de.dseelp.kotlincord.core.guild.DbGuildInfos
 import de.dseelp.kotlincord.core.plugin.repository.data.InstalledPackages
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.sql.SchemaUtils
@@ -59,20 +80,22 @@ object FakePlugin : Plugin() {
             ))
         eventBus.searchPackage("de.dseelp.kotlincord.core", FakePlugin)
         eventBus.searchPackage("de.dseelp.kotlincord.api", FakePlugin)
-        try {
-            repositoryManager.reloadRepositories()
-        } catch (ex: Exception) {
-            ex.printStackTrace()
-        }
+        val dbConfig = DatabaseConfig.load(
+            this@FakePlugin,
+            default = DatabaseConfig.defaultDatabaseConfig(this@FakePlugin).copy(databaseName = "cord")
+        )
         try {
             runBlocking {
-                val db = registerDatabase(DatabaseInfo.sqlite(dataFolder / "cord.db"))
+                val db = registerDatabase(
+                    dbConfig.toDatabaseInfo(this@FakePlugin)
+                )
                 loadKoinModules(module {
                     single(named("cord")) { db }
+                    single { dbConfig }
                 })
                 database {
                     transaction {
-                        SchemaUtils.createMissingTablesAndColumns(InstalledPackages)
+                        SchemaUtils.createMissingTablesAndColumns(InstalledPackages, DbGuildInfos)
                         commit()
                     }
                 }
@@ -81,5 +104,12 @@ object FakePlugin : Plugin() {
             ex.printStackTrace()
         }
         searchCommands("de.dseelp.kotlincord.core")
+    }
+
+    fun enable() {
+        val inviteConfig = InviteCommand.getConfig()
+        if (inviteConfig.enabled && inviteConfig.clientId > 0) {
+            register<InviteCommand>()
+        }
     }
 }
