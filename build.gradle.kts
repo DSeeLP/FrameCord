@@ -46,7 +46,7 @@ if (isDeployingToCentral) println("Deploying to central...")
 
 val rootProject = project
 
-val excludedModules = arrayOf("moderation", "plugins")
+val excludedModules = arrayOf("moderation", "plugins", "privatechannels")
 allprojects {
 
     group = defaultGroupName
@@ -95,6 +95,7 @@ allprojects {
         val task = if (project == rootProject) {
             val dokkaHtmlMultiModule by tasks.getting(org.jetbrains.dokka.gradle.DokkaMultiModuleTask::class) {
                 configureTask(this)
+                removeChildTasks(subprojects.filter { excludedModules.contains(it.name) })
                 archiveBaseName.set("bundled")
             }
             dependsOn(dokkaHtmlMultiModule)
