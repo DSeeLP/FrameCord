@@ -40,7 +40,7 @@ import dev.kord.core.event.message.MessageCreateEvent
 import dev.kord.rest.builder.message.MessageCreateBuilder
 
 open class MessageStep(
-    val messageBuilder: MessageCreateBuilder.(channel: GuildMessageChannel) -> Unit,
+    val messageBuilder: suspend MessageCreateBuilder.(channel: GuildMessageChannel) -> Unit,
 ) : SetupStep {
     @OptIn(KordPreview::class)
     protected lateinit var channel: GuildMessageChannel

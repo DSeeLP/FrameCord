@@ -48,6 +48,7 @@ class ButtonStep(
     val messageBuilder: MessageCreateBuilder.(channel: GuildMessageChannel) -> Unit,
     actions: Array<ButtonStepAction>,
 ) : SetupStep {
+    val customCancel = actions.any { it.isCustomCancelButton }
     private val actions = actions.associateBy { randomAlphanumeric(16) }
     private var isDone = false
     private lateinit var buttonAction: ButtonAction
@@ -77,6 +78,10 @@ class ButtonStep(
                             buildActionRows(true).onEach { actionRow(it) }
                         }
                         isDone = true
+                        if (action.value.isCustomCancelButton) {
+                            setup.cancelSetup()
+                            return@execute
+                        }
                         setup.completeStep(action.value.resultBlock(this))
                     }
                 }
@@ -108,13 +113,15 @@ class ButtonStep(
 
     @OptIn(KordPreview::class)
     private fun buildActionRows(disabledButtons: Boolean = false): Array<ActionRowBuilder.() -> Unit> {
-        return arrayOf({
+        return arrayOf<ActionRowBuilder.() -> Unit>({
             for ((key, action) in actions) {
                 action(buttonAction, action.style, key, action.label, action.emoji, disabledButtons)
             }
-        }, {
-            action(buttonAction, ButtonStyle.Danger, "cancel", "Cancel", disabled = disabledButtons)
-        })
+        }).let {
+            if (customCancel) it else it + {
+                action(buttonAction, ButtonStyle.Danger, "cancel", "Cancel", disabled = disabledButtons)
+            }
+        }
     }
 
     override fun cancel(message: Message) {
@@ -127,5 +134,6 @@ data class ButtonStepAction @OptIn(KordPreview::class) constructor(
     val style: ButtonStyle,
     val label: String? = null,
     val emoji: DiscordPartialEmoji? = null,
+    val isCustomCancelButton: Boolean = false,
     val resultBlock: CommandContext<ButtonContext>.() -> Any?
 )

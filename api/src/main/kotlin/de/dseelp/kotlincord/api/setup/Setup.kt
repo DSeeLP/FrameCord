@@ -105,7 +105,7 @@ class Setup<P : Plugin> constructor(
         if (!isStarted || isDone) throw IllegalStateException("A step can only be cancelled when the setup is started!")
         if (currentStep == null) return
         currentMessage?.let { currentStep!!.cancel(it) }
-        inject<SetupManager>().value.removeSetup(this)
+        stop()
     }
 
     @OptIn(InternalKotlinCordApi::class)
@@ -123,11 +123,14 @@ class Setup<P : Plugin> constructor(
         setStep(0)
     }
 
+    @OptIn(InternalKotlinCordApi::class)
     internal suspend fun stop() {
         if (isDone) throw IllegalStateException("The setup is already completed/done!")
         _isStarted = false
         _wasStopped = true
         callComplete(currentStepIndex)
+        val setupManager: SetupManager by inject()
+        setupManager.removeSetup(this)
     }
 
     private suspend fun callComplete(lastStepIndex: Int? = null) {

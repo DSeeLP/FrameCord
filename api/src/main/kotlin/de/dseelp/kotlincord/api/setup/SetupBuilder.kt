@@ -25,6 +25,7 @@
 package de.dseelp.kotlincord.api.setup
 
 import de.dseelp.kommon.command.CommandContext
+import de.dseelp.kotlincord.api.apply
 import de.dseelp.kotlincord.api.interactions.ButtonContext
 import de.dseelp.kotlincord.api.plugins.Plugin
 import dev.kord.common.annotation.KordPreview
@@ -34,8 +35,17 @@ import dev.kord.core.entity.Member
 import dev.kord.core.entity.channel.GuildMessageChannel
 import dev.kord.rest.builder.message.MessageCreateBuilder
 
-fun <P : Plugin> setup(plugin: P, channel: GuildMessageChannel, block: SetupBuilder<P>.() -> Unit): Setup<P> =
-    SetupBuilder(plugin, channel).apply(block).build()
+suspend fun <P : Plugin> setup(
+    plugin: P,
+    channel: GuildMessageChannel,
+    block: suspend SetupBuilder<P>.() -> Unit
+): Setup<P> {
+    val builder = SetupBuilder(plugin, channel)
+    builder.apply { }
+    block.invoke(builder)
+    return builder.build()
+}
+
 
 class SetupBuilder<P : Plugin>(val plugin: P, val channel: GuildMessageChannel) {
     val steps = mutableListOf<SetupStep>()
@@ -54,39 +64,47 @@ class SetupBuilder<P : Plugin>(val plugin: P, val channel: GuildMessageChannel) 
         steps.add(step)
     }
 
-    fun buttonStep(block: ButtonStepBuilder.() -> Unit) {
+    suspend fun buttonStep(block: suspend ButtonStepBuilder.() -> Unit) {
         step(ButtonStepBuilder().apply(block).build(plugin))
     }
 
-    fun selectionStep(block: SelectionMenuStepBuilder.() -> Unit) {
+    suspend fun selectionStep(block: suspend SelectionMenuStepBuilder.() -> Unit) {
         step(SelectionMenuStepBuilder().apply(block).build(plugin))
     }
 
-    fun messageStep(messageBuilder: MessageCreateBuilder.(channel: GuildMessageChannel) -> Unit) {
+    fun messageStep(messageBuilder: suspend MessageCreateBuilder.(channel: GuildMessageChannel) -> Unit) {
         step(MessageStep(messageBuilder))
     }
 
-    fun messageChannelStep(messageBuilder: MessageCreateBuilder.(channel: GuildMessageChannel) -> Unit) {
+    fun channelStep(messageBuilder: suspend MessageCreateBuilder.(channel: GuildMessageChannel) -> Unit) {
+        step(ChannelStep(messageBuilder))
+    }
+
+    fun voiceChannelStep(messageBuilder: suspend MessageCreateBuilder.(channel: GuildMessageChannel) -> Unit) {
+        step(VoiceChannelStep(messageBuilder))
+    }
+
+    fun messageChannelStep(messageBuilder: suspend MessageCreateBuilder.(channel: GuildMessageChannel) -> Unit) {
         step(MessageChannelStep(messageBuilder))
     }
 
-    fun textChannelStep(messageBuilder: MessageCreateBuilder.(channel: GuildMessageChannel) -> Unit) {
+    fun textChannelStep(messageBuilder: suspend MessageCreateBuilder.(channel: GuildMessageChannel) -> Unit) {
         step(TextChannelStep(messageBuilder))
     }
 
-    fun newsChannelStep(messageBuilder: MessageCreateBuilder.(channel: GuildMessageChannel) -> Unit) {
+    fun newsChannelStep(messageBuilder: suspend MessageCreateBuilder.(channel: GuildMessageChannel) -> Unit) {
         step(NewsChannelStep(messageBuilder))
     }
 
-    fun roleStep(messageBuilder: MessageCreateBuilder.(channel: GuildMessageChannel) -> Unit) {
+    fun roleStep(messageBuilder: suspend MessageCreateBuilder.(channel: GuildMessageChannel) -> Unit) {
         step(RoleStep(messageBuilder))
     }
 
-    fun memberStep(messageBuilder: MessageCreateBuilder.(channel: GuildMessageChannel) -> Unit) {
+    fun memberStep(messageBuilder: suspend MessageCreateBuilder.(channel: GuildMessageChannel) -> Unit) {
         step(MemberStep(messageBuilder))
     }
 
-    fun userStep(messageBuilder: MessageCreateBuilder.(channel: GuildMessageChannel) -> Unit) {
+    fun userStep(messageBuilder: suspend MessageCreateBuilder.(channel: GuildMessageChannel) -> Unit) {
         step(UserStep(messageBuilder))
     }
 
@@ -110,7 +128,16 @@ class ButtonStepBuilder {
         emoji: DiscordPartialEmoji? = null,
         resultBlock: CommandContext<ButtonContext>.() -> Any?
     ) {
-        actions.add(ButtonStepAction(style, label, emoji, resultBlock))
+        actions.add(ButtonStepAction(style, label, emoji, false, resultBlock))
+    }
+
+    fun cancelAction(
+        style: ButtonStyle,
+        label: String? = null,
+        emoji: DiscordPartialEmoji? = null,
+        resultBlock: CommandContext<ButtonContext>.() -> Any?
+    ) {
+        actions.add(ButtonStepAction(style, label, emoji, true, resultBlock))
     }
 
     fun build(plugin: Plugin): ButtonStep = ButtonStep(plugin, messageBuilder, actions.toTypedArray())

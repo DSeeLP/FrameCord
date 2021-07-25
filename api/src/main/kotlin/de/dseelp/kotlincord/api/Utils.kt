@@ -52,6 +52,9 @@ import java.util.regex.Matcher
 import java.util.regex.Pattern
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 import kotlin.math.round
 import kotlin.random.Random
 
@@ -227,3 +230,12 @@ fun ActionRowBuilder.selectionMenu(
 @OptIn(InternalKotlinCordApi::class)
 val bot: Bot
     get() = CordKoinContext.app!!.koin.get()
+
+@OptIn(ExperimentalContracts::class)
+suspend inline fun <T> T.apply(block: suspend T.() -> Unit): T {
+    contract {
+        callsInPlace(block, InvocationKind.EXACTLY_ONCE)
+    }
+    block()
+    return this
+}
