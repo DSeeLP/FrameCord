@@ -48,7 +48,7 @@ jobs:
 
   docs:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
+    if: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
     steps:
       - uses: actions/checkout@v2
       - name: Set up JDK 11
