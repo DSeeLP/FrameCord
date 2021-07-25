@@ -24,7 +24,10 @@
 
 package de.dseelp.kotlincord.api.utils
 
+import dev.kord.common.entity.Overwrite
+import dev.kord.core.behavior.UserBehavior
 import dev.kord.core.entity.Member
+import dev.kord.core.entity.PermissionOverwriteEntity
 import dev.kord.core.entity.Role
 import kotlinx.coroutines.flow.first
 

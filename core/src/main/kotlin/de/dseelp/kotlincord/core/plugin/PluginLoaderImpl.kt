@@ -28,7 +28,7 @@ import de.dseelp.kotlincord.api.InternalKotlinCordApi
 import de.dseelp.kotlincord.api.plugins.PluginData
 import de.dseelp.kotlincord.api.plugins.PluginLoader
 
-class PluginLoaderImpl : PluginLoader {
+open class PluginLoaderImpl : PluginLoader {
 
     var plugins = mutableListOf<PluginData>()
 

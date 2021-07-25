@@ -22,23 +22,19 @@
  * SOFTWARE.
  */
 
-package de.dseelp.kotlincord.core.guild
+package de.dseelp.kotlincord.core
 
-import de.dseelp.kotlincord.api.guild.GuildInfo
-import de.dseelp.kotlincord.api.guild.GuildManager
-import dev.kord.common.entity.Snowflake
-import org.jetbrains.exposed.sql.transactions.transaction
+import de.dseelp.kotlincord.api.InternalKotlinCordApi
+import de.dseelp.kotlincord.api.event.EventBus
+import de.dseelp.kotlincord.api.setup.SetupManager
+import de.dseelp.kotlincord.core.guild.GuildManagerImpl
+import de.dseelp.kotlincord.core.plugin.PluginLoaderImpl
+import de.dseelp.kotlincord.core.plugin.PluginManagerImpl
 
-open class GuildManagerImpl : GuildManager {
-    override fun getGuildInfo(guildId: Snowflake): GuildInfo = transaction { findInfo(guildId).info }
+object StaticBus : EventBus()
+object StaticPluginLoader : PluginLoaderImpl()
+object StaticPluginManager : PluginManagerImpl()
+object StaticGuildManger : GuildManagerImpl()
 
-    fun findInfo(guildId: Snowflake) = DbGuildInfo.findById(guildId) ?: DbGuildInfo.new(guildId) {
-        prefix = "!"
-    }
-
-    override fun setGuildInfo(info: GuildInfo): Unit = transaction {
-        findInfo(info.guildId).apply {
-            prefix = info.prefix
-        }
-    }
-}
+@OptIn(InternalKotlinCordApi::class)
+object StaticSetupManager : SetupManager()

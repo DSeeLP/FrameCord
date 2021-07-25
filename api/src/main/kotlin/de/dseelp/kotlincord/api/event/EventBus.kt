@@ -37,6 +37,7 @@ import de.dseelp.kotlincord.api.utils.koin.CordKoinComponent
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.core.component.inject
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import kotlin.reflect.KClass
@@ -46,8 +47,8 @@ import kotlin.reflect.full.*
 
 @OptIn(InternalKotlinCordApi::class)
 @Listener
-class EventBus : CordKoinComponent {
-    private val handlers = mutableListOf<Handler>()
+open class EventBus : CordKoinComponent {
+    private val handlers = Collections.synchronizedList(mutableListOf<Handler>())
 
     private val eventExecutorService = Executors.newFixedThreadPool(4)
 
@@ -56,6 +57,7 @@ class EventBus : CordKoinComponent {
         val eventClass = event::class
         withContext(bot.coroutineContext) {
             val executeFunction = suspend {
+                val handlers = handlers.map { it }
                 for (index in 0..handlers.lastIndex) {
                     val handler = handlers.getOrNull(index) ?: continue
                     if (handler is Handler.ClassHandler<*>) handler.invoke(event)
@@ -93,11 +95,12 @@ class EventBus : CordKoinComponent {
                 log.error("Failed to determine plugin for class ${clazz.qualifiedName}")
                 return
             }
+            val handler = Handler.ClassHandler(p, clazz)
             if (handlers.find {
                     if (it is Handler.ClassHandler<*>) {
                         it.clazz == clazz
                     } else false
-                } == null) addHandler(Handler.ClassHandler(p, clazz))
+                } == null) handlers.add(handler)
         }
     }
 
@@ -194,6 +197,10 @@ class EventBus : CordKoinComponent {
                         )
                     }
                 }
+            }
+
+            override fun toString(): String {
+                return "ClassHandler(clazz=$clazz)"
             }
         }
     }

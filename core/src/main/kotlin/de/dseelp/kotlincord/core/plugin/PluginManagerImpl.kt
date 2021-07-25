@@ -49,7 +49,7 @@ import kotlin.reflect.full.hasAnnotation
 
 @Listener
 @OptIn(InternalKotlinCordApi::class)
-class PluginManagerImpl : PluginManager {
+open class PluginManagerImpl : PluginManager {
 
     val loader: PluginLoader by inject()
     val parentLoader: URLClassLoader by inject(qualifier("pluginClassLoader"))

@@ -48,7 +48,8 @@ object Commands : CordKoinComponent {
     val pluginCommands = hashMapOf<Plugin, MutableList<Pair<CommandScope, CommandNode<out Sender>>>>()
 
     fun unregister(plugin: Plugin) {
-        for (pair in pluginCommands[plugin]!!) {
+        val cmds = pluginCommands[plugin] ?: return
+        for (pair in cmds) {
             when (pair.first) {
                 GUILD -> guild.unregister(pair.second)
                 PRIVATE -> private.unregister(pair.second)

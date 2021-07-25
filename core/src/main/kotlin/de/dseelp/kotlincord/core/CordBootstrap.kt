@@ -68,20 +68,20 @@ object CordBootstrap {
     val defaultModule = module {
         single<Console> { ConsoleImpl } bind ConsoleImpl::class
         single<Cord> { CordImpl } bind CordImpl::class
-        single { EventBus() }
+        single<EventBus> { StaticBus }
         single<Bot> { BotImpl } bind BotImpl::class
         single<DatabaseRegistry> { DatabaseRegistryImpl() } bind DatabaseRegistryImpl::class
         single<RepositoryManager> { RepositoryManagerImpl() } bind RepositoryManagerImpl::class
         single(qualifier("console")) { CommandDispatcher<ConsoleSender>() }
         single(qualifier("guild")) { CommandDispatcher<GuildSender>() }
         single(qualifier("private")) { CommandDispatcher<PrivateSender>() }
-        single<PluginLoader> { PluginLoaderImpl() } bind PluginLoaderImpl::class
-        single<PluginManager> { PluginManagerImpl() } bind PluginManagerImpl::class
+        single<PluginLoader> { StaticPluginLoader } bind PluginLoaderImpl::class
+        single<PluginManager> { StaticPluginManager } bind PluginManagerImpl::class
         single<URLClassLoader>(qualifier("pluginClassLoader")) { URLClassLoader.newInstance(arrayOf()) }
         single<IReflectionUtils> { ReflectionUtilsImpl() } bind ReflectionUtilsImpl::class
         single { version }
-        single<GuildManager> { GuildManagerImpl() }
-        single { SetupManager() }
+        single<GuildManager> { StaticGuildManger }
+        single<SetupManager> { StaticSetupManager }
     }
 
     val defaultModules = listOf(defaultModule, PathQualifiersImpl.module)

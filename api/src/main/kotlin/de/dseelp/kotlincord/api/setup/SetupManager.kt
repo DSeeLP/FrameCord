@@ -37,7 +37,7 @@ import kotlinx.coroutines.sync.withLock
 
 @Listener
 @InternalKotlinCordApi
-class SetupManager : CordKoinComponent {
+open class SetupManager : CordKoinComponent {
     private val setups = mutableListOf<Setup<*>>()
     private val mutex = Mutex()
 
