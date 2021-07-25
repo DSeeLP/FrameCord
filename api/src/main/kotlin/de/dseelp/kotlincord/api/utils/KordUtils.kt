@@ -35,3 +35,7 @@ fun Role.canInteract(other: Role): Boolean {
 suspend fun Member.canInteract(other: Member): Boolean {
     return roles.first().canInteract(other.roles.first())
 }
+
+val PermissionOverwriteEntity.asOverwrite: Overwrite get() = Overwrite(data.id, data.type, data.allowed, data.denied)
+
+val UserBehavior.clientMention get() = "<@!${id.asString}>"

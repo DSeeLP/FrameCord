@@ -45,6 +45,7 @@ import de.dseelp.kotlincord.api.plugins.PluginLoader
 import de.dseelp.kotlincord.api.plugins.PluginManager
 import de.dseelp.kotlincord.api.utils.CommandUtils
 import de.dseelp.kotlincord.api.utils.CommandUtils.execute
+import de.dseelp.kotlincord.api.utils.clientMention
 import de.dseelp.kotlincord.api.utils.koin.CordKoinComponent
 import de.dseelp.kotlincord.core.CordImpl
 import de.dseelp.kotlincord.core.Core
@@ -89,15 +90,18 @@ object CoreListener : CordKoinComponent {
     suspend fun onMessageReceived(event: MessageCreateEvent) {
         val message = event.message
         val content = message.content
-        if (message.author == bot.kord.getSelf() || message.author == null) return
+        val self = bot.kord.getSelf()
+        if (message.author == self || message.author == null) return
         if (message.embeds.isNotEmpty()) return
         val guild = event.getGuild()
         val (sender, prefix) = if (guild != null) GuildSender(message) to guild.info.prefix else PrivateSender(message) to "!"
-        if (!content.startsWith(prefix)) return
+        val tagPrefix = self.clientMention
+        val taggedPrefix = content.startsWith(tagPrefix)
+        if (!content.startsWith(prefix) && !taggedPrefix) return
         bot.kord.launch {
             (if (event.guildId != null) guildDispatcher else privateDispatcher).execute(
                 sender,
-                content.replaceFirst(prefix, ""),
+                content.replaceFirst((if (taggedPrefix) "$tagPrefix " else prefix), ""),
                 CommandUtils.Actions.noOperation()
             )
         }
