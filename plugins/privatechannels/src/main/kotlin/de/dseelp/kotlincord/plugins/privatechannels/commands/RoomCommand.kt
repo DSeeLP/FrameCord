@@ -24,11 +24,14 @@
 
 package de.dseelp.kotlincord.plugins.privatechannels.commands
 
+import de.dseelp.kommon.command.CommandBuilder
 import de.dseelp.kommon.command.CommandNode
 import de.dseelp.kotlincord.api.InternalKotlinCordApi
 import de.dseelp.kotlincord.api.asSnowflake
+import de.dseelp.kotlincord.api.checkPermissions
 import de.dseelp.kotlincord.api.command.Command
 import de.dseelp.kotlincord.api.command.GuildSender
+import de.dseelp.kotlincord.api.command.arguments.MentionArgument
 import de.dseelp.kotlincord.api.setup.setup
 import de.dseelp.kotlincord.api.utils.CommandScope
 import de.dseelp.kotlincord.api.utils.green
@@ -41,14 +44,57 @@ import de.dseelp.kotlincord.plugins.privatechannels.db.ActivePrivateChannels
 import de.dseelp.kotlincord.plugins.privatechannels.db.PrivateChannel
 import de.dseelp.kotlincord.plugins.privatechannels.db.PrivateChannels
 import dev.kord.common.Color
-import dev.kord.common.entity.ButtonStyle
-import dev.kord.common.entity.Snowflake
+import dev.kord.common.entity.*
 import dev.kord.core.behavior.channel.createEmbed
+import dev.kord.core.cache.data.PermissionOverwriteData
+import dev.kord.core.entity.Member
+import dev.kord.core.entity.PermissionOverwrite
 import dev.kord.core.entity.channel.VoiceChannel
 import org.jetbrains.exposed.sql.and
 
 class RoomCommand : Command<GuildSender> {
     override val scopes: Array<CommandScope> = arrayOf(CommandScope.GUILD)
+
+    private fun CommandBuilder<GuildSender>.adminCheck() {
+        checkAccess {
+            sender.getMember().checkPermissions(Permission.ManageChannels)
+        }
+        noAccess {
+            sender.getChannel().createEmbed {
+                title = "Permission denied"
+                color = Color.red
+                description = "You need the ManageChannel Permission to use this command"
+            }
+        }
+    }
+
+    private fun CommandBuilder<GuildSender>.userCheck() {
+        checkAccess {
+            val member = sender.getMember()
+            val channel = getMemberChannel(member) ?: return@checkAccess false
+            suspendingDatabase {
+                suspendedTransaction {
+                    channel.ownerId == member.id.value || channel.executiveId == member.id.value
+                }
+            }
+        }
+        noAccess {
+            sender.getChannel().createEmbed {
+                title = "Permission denied"
+                color = Color.red
+                description = "You are not the room owner or not in any room."
+            }
+        }
+    }
+
+    suspend fun getMemberChannel(member: Member): ActivePrivateChannel? = suspendingDatabase {
+        suspendedTransaction {
+            val voiceState = member.getVoiceStateOrNull() ?: return@suspendedTransaction null
+            val channelId = voiceState.channelId?.value ?: return@suspendedTransaction null
+            val channel = ActivePrivateChannel.find { ActivePrivateChannels.channelId eq channelId }.firstOrNull()
+            return@suspendedTransaction channel
+        }
+    }
 
     @OptIn(InternalKotlinCordApi::class, dev.kord.common.annotation.KordPreview::class)
     override val node: CommandNode<GuildSender> = literal("room") {
@@ -56,10 +102,100 @@ class RoomCommand : Command<GuildSender> {
 
         }
 
-        literal("create") {
+        literal("ban") {
+            execute {
+                sender.getChannel().createEmbed {
+                    title = "Error!"
+                    description = "Please provide the member that should be banned from your channel!"
+                }
+            }
+
+            argument(MentionArgument.member("member")) {
+                userCheck()
+                execute {
+                    suspendingDatabase {
+                        val member = sender.getMember()
+                        val target = get<Member>("member")
+                        val activeChannel = getMemberChannel(member)!!
+                        val channel = suspendedTransaction {
+                            sender.getGuild().getChannel(activeChannel.channelId.asSnowflake)
+                        }
+                        val targetId = target.id.value
+                        if (!suspendedTransaction {
+                                activeChannel.ownerId == targetId || activeChannel.executiveId == targetId
+                            }) {
+                            channel.addOverwrite(
+                                PermissionOverwrite(
+                                    PermissionOverwriteData(
+                                        target.id,
+                                        OverwriteType.Member,
+                                        Permissions(),
+                                        Permissions(Permission.Connect)
+                                    )
+                                )
+                            )
+                            sender.getChannel().createEmbed {
+                                title = "User banned"
+                                description = "The user ${target.mention} was banned from ${channel.mention}"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        literal("unban") {
+            execute {
+                sender.getChannel().createEmbed {
+                    title = "Error!"
+                    description = "Please provide the member that should be unbanned from your channel!"
+                }
+            }
+
+            argument(MentionArgument.member("member")) {
+                userCheck()
+                execute {
+                    suspendingDatabase {
+                        val member = sender.getMember()
+                        val target = get<Member>("member")
+                        val activeChannel = getMemberChannel(member)!!
+                        val channel = suspendedTransaction {
+                            sender.getGuild().getChannel(activeChannel.channelId.asSnowflake)
+                        }
+                        val targetId = target.id.value
+                        if (!suspendedTransaction {
+                                activeChannel.ownerId == targetId || activeChannel.executiveId == targetId
+                            }) {
+                            channel.addOverwrite(
+                                PermissionOverwrite(
+                                    PermissionOverwriteData(
+                                        target.id,
+                                        OverwriteType.Member,
+                                        Permissions(),
+                                        Permissions()
+                                    )
+                                )
+                            )
+                            sender.getChannel().createEmbed {
+                                title = "User unbanned"
+                                description = "The user ${target.mention} was unbanned from ${channel.mention}"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        literal("create", arrayOf("add")) {
+            adminCheck()
             execute {
                 val channel = sender.getChannel()
+                val member = sender.getMember()
                 setup(PrivateChannelPlugin, channel) {
+                    checkAccess { executor, channel ->
+                        executor.id == member.id
+                    }
+
                     voiceChannelStep {
                         embed {
                             title = "Create Private Channel"
@@ -132,7 +268,8 @@ class RoomCommand : Command<GuildSender> {
             }
         }
 
-        literal("remove") {
+        literal("remove", arrayOf("delete")) {
+            adminCheck()
             execute {
                 suspendingDatabase {
                     val channel = sender.getChannel()
@@ -142,7 +279,11 @@ class RoomCommand : Command<GuildSender> {
                         val channels = PrivateChannel.find { PrivateChannels.guildId eq guildId }
                         channels to channels.count()
                     }
+                    val member = sender.getMember()
                     if (count != 0L) setup(PrivateChannelPlugin, channel) {
+                        checkAccess { executor, channel ->
+                            executor.id == member.id
+                        }
                         selectionStep {
                             message {
                                 embed {
