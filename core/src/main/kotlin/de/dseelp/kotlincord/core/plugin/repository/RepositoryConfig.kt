@@ -50,7 +50,7 @@ data class RepositoryConfig(val repositories: Array<String>) {
     }
 
     private object Spec : ConfigSpec("") {
-        val repositories by optional(arrayOf("https://api.tdrstudios.de/cord"))
+        val repositories by optional(arrayOf("https://cord.tdrstudios.de/"))
     }
 
     companion object {
