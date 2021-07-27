@@ -35,18 +35,22 @@ import dev.kord.core.entity.User
 import dev.kord.core.entity.channel.*
 
 object MentionUtils {
-    private fun getSnowflake(message: String): Snowflake? {
-        if (!(message.startsWith("<@!") && message.endsWith('>'))) return null
-        return Snowflake(message.replaceFirst("<@!", "").replaceFirst(">", ""))
+    fun getUserSnowflake(message: String): Snowflake? {
+        val msg = when {
+            message.startsWith("<@!") && message.endsWith('>') -> message.replaceFirst("<@!", "")
+            message.startsWith("<@") && message.endsWith('>') -> message.replaceFirst("<@", "")
+            else -> null
+        }?.replaceFirst(">", "") ?: return null
+        return Snowflake(msg)
     }
 
     suspend fun user(message: String): User? {
-        val snowflake = getSnowflake(message) ?: return null
+        val snowflake = getUserSnowflake(message) ?: return null
         return bot.kord.getUser(snowflake)
     }
 
     suspend fun member(guild: Guild, message: String): Member? {
-        val snowflake = getSnowflake(message) ?: return null
+        val snowflake = getUserSnowflake(message) ?: return null
         return guild.getMemberOrNull(snowflake)
     }
 

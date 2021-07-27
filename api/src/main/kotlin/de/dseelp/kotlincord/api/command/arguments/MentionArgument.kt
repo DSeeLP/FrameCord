@@ -28,12 +28,12 @@ import de.dseelp.kommon.command.CommandContext
 import de.dseelp.kommon.command.arguments.Argument
 import de.dseelp.kotlincord.api.Bot
 import de.dseelp.kotlincord.api.InternalKotlinCordApi
-import de.dseelp.kotlincord.api.asSnowflake
 import de.dseelp.kotlincord.api.command.DiscordSender
 import de.dseelp.kotlincord.api.command.GuildSender
+import de.dseelp.kotlincord.api.utils.MentionUtils
+import de.dseelp.kotlincord.api.utils.MentionUtils.getUserSnowflake
 import de.dseelp.kotlincord.api.utils.koin.CordKoinComponent
 import dev.kord.common.entity.ChannelType
-import dev.kord.common.entity.Snowflake
 import dev.kord.core.entity.Member
 import dev.kord.core.entity.Role
 import dev.kord.core.entity.User
@@ -53,29 +53,21 @@ class MentionArgument<S : DiscordSender<out MessageChannel>, M : Any>(
     companion object : CordKoinComponent {
         private val bot: Bot by inject()
 
-        private fun getSnowflake(message: String): Snowflake? {
-            if (!(message.startsWith("<@!") && message.endsWith('>'))) return null
-            return Snowflake(message.replaceFirst("<@!", "").replaceFirst(">", ""))
-        }
-
         fun <S : DiscordSender<out GuildMessageChannel>> user(name: String) =
             MentionArgument<S, User>(name) { message ->
-                val snowflake = getSnowflake(message) ?: return@MentionArgument null
+                val snowflake = getUserSnowflake(message) ?: return@MentionArgument null
                 bot.kord.getUser(snowflake)
             }
 
         fun <S : DiscordSender<out GuildMessageChannel>> member(name: String) =
             MentionArgument<S, Member>(name) { message ->
-                val snowflake = getSnowflake(message) ?: return@MentionArgument null
+                val snowflake = getUserSnowflake(message) ?: return@MentionArgument null
                 sender.message.getGuild().getMemberOrNull(snowflake)
             }
 
         private suspend fun <S : DiscordSender<out MessageChannel>> CommandContext<S>.getChannel(message: String): GuildChannel? {
             if (sender !is GuildSender) throw UnsupportedOperationException("This mention argument is only supported by Guilds")
-            return if (message.startsWith("<#") && message.endsWith('>')) {
-                sender.message.getGuild()
-                    .getChannel(message.replaceFirst("<#", "").replaceFirst(">", "").asSnowflake)
-            }else null
+            return MentionUtils.channel(sender.message.getGuild(), message)
         }
 
         fun <S : DiscordSender<out MessageChannel>> channel(name: String) =
@@ -106,8 +98,7 @@ class MentionArgument<S : DiscordSender<out MessageChannel>, M : Any>(
 
         fun <S : DiscordSender<out GuildMessageChannel>> role(name: String) = MentionArgument<S, Role>(name) { message ->
             if (sender !is GuildSender) throw UnsupportedOperationException("This mention argument is only supported by Guilds")
-            if (!(message.startsWith("<@&") && message.endsWith('>'))) return@MentionArgument null
-            (sender as GuildSender).getGuild().getRole(Snowflake(message.replaceFirst("<@&", "").replaceFirst(">", "")))
+            MentionUtils.role((sender as GuildSender).getGuild(), message)
         }
     }
 }
