@@ -42,8 +42,10 @@ import dev.kord.core.entity.VoiceState
 import dev.kord.core.entity.channel.VoiceChannel
 import dev.kord.core.event.channel.VoiceChannelDeleteEvent
 import dev.kord.core.event.user.VoiceStateUpdateEvent
+import dev.kord.core.supplier.EntitySupplyStrategy
 import dev.kord.rest.builder.channel.VoiceChannelCreateBuilder
 import kotlinx.coroutines.flow.count
+import kotlinx.coroutines.flow.first
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.or
 
@@ -78,12 +80,29 @@ object ChannelListener {
                 val channelId = state.channelId ?: return false
                 val channel = getChannel(state.guildId.value, channelId.value) ?: return false
                 val guildChannel = state.getGuild().getChannelOrNull(channel.channelId.asSnowflake) ?: return false
-                if (guildChannel.type == ChannelType.GuildVoice) if (((guildChannel as VoiceChannel).voiceStates.count() == 0)) {
-                    guildChannel.delete()
-                    transaction {
-                        channel.delete()
+                if (guildChannel.type == ChannelType.GuildVoice) {
+                    guildChannel as VoiceChannel
+                    if (guildChannel.voiceStates.count() == 0) {
+                        guildChannel.delete()
+                        transaction {
+                            channel.delete()
+                        }
+                        return true
+                    } else {
+                        if (newId == null) {
+                            val userId = event.old!!.userId.value
+                            if (suspendedTransaction {
+                                    if (channel.ownerId == userId || channel.executiveId == userId) {
+                                        val id =
+                                            guildChannel.withStrategy(EntitySupplyStrategy.rest).voiceStates.first().userId.value
+                                        if (id != channel.ownerId)
+                                            channel.executiveId = id
+                                        else channel.executiveId = null
+                                        true
+                                    } else false
+                                }) return true
+                        }
                     }
-                    return true
                 }
                 return false
             }
@@ -118,6 +137,15 @@ object ChannelListener {
 
     suspend fun handleJoin(state: VoiceState) = suspendingDatabase {
         val channelId = state.channelId ?: return@suspendingDatabase
+        val userId = state.userId.value
+        getChannel(state.guildId.value, channelId.value)?.let { channel ->
+            if (suspendedTransaction {
+                    if (channel.ownerId == userId) {
+                        channel.executiveId = null
+                        true
+                    } else false
+                }) return@suspendingDatabase
+        }
         val joinChannel = getJoinChannel(state.guildId.value, channelId.value) ?: return@suspendingDatabase
         val guild = state.getGuild()
         val member = state.getMember()
@@ -129,7 +157,7 @@ object ChannelListener {
                 Overwrite(
                     member.id,
                     OverwriteType.Member,
-                    Permissions(Permission.Connect, Permission.MoveMembers),
+                    Permissions(Permission.Connect),
                     Permissions()
                 )
             )
