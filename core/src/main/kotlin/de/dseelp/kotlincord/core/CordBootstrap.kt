@@ -45,7 +45,6 @@ import de.dseelp.kotlincord.api.setup.SetupManager
 import de.dseelp.kotlincord.api.utils.IReflectionUtils
 import de.dseelp.kotlincord.api.utils.koin.CordKoinContext
 import de.dseelp.kotlincord.core.database.DatabaseRegistryImpl
-import de.dseelp.kotlincord.core.guild.GuildManagerImpl
 import de.dseelp.kotlincord.core.plugin.PluginLoaderImpl
 import de.dseelp.kotlincord.core.plugin.PluginManagerImpl
 import de.dseelp.kotlincord.core.plugin.repository.RepositoryManagerImpl
@@ -63,7 +62,7 @@ import java.util.logging.LogManager
 @OptIn(InternalKotlinCordApi::class)
 object CordBootstrap {
     val log by logger(ROOT)
-    val version = Version(0, 3, 1)
+    val version = Version(0, 3, 2)
 
     val defaultModule = module {
         single<Console> { ConsoleImpl } bind ConsoleImpl::class
