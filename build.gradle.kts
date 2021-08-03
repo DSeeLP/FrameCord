@@ -36,6 +36,7 @@ plugins {
     id("org.jetbrains.dokka") version "1.5.0" apply false
 
     kotlin("jvm") version "1.5.21" apply false
+    kotlin("multiplatform") version "1.5.21" apply false
     id("com.github.johnrengelman.shadow") version "6.1.0" apply false
     kotlin("plugin.serialization") version "1.5.21" apply false
 }
@@ -45,6 +46,8 @@ val isDeployingToCentral = System.getenv().containsKey("DEPLOY_CENTRAL")
 if (isDeployingToCentral) println("Deploying to central...")
 
 val rootProject = project
+
+val multiplatformProjects = arrayOf<String>()
 
 val excludedModules = arrayOf("moderation", "plugins", "privatechannels")
 allprojects {
@@ -64,7 +67,9 @@ allprojects {
     }
 
     apply(plugin = "maven-publish")
-    apply(plugin = "org.jetbrains.kotlin.jvm")
+    if (multiplatformProjects.contains(project.name))
+        apply(plugin = "org.jetbrains.kotlin.multiplatform")
+    else apply(plugin = "org.jetbrains.kotlin.jvm")
     apply(plugin = "signing")
     apply(plugin = "org.jetbrains.dokka")
     apply(plugin = "java")
