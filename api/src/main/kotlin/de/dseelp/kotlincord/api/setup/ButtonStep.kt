@@ -45,7 +45,7 @@ import dev.kord.rest.builder.message.MessageCreateBuilder
 
 class ButtonStep(
     val plugin: Plugin,
-    val messageBuilder: MessageCreateBuilder.(channel: GuildMessageChannel) -> Unit,
+    val messageBuilder: suspend MessageCreateBuilder.(channel: GuildMessageChannel) -> Unit,
     actions: Array<ButtonStepAction>,
 ) : SetupStep {
     val customCancel = actions.any { it.isCustomCancelButton }

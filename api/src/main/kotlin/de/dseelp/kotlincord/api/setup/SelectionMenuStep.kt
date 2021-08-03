@@ -45,7 +45,7 @@ import dev.kord.rest.builder.message.MessageCreateBuilder
 
 class SelectionMenuStep(
     val plugin: Plugin,
-    val messageBuilder: MessageCreateBuilder.(channel: GuildMessageChannel) -> Unit,
+    val messageBuilder: suspend MessageCreateBuilder.(channel: GuildMessageChannel) -> Unit,
     options: Array<SelectionMenuStepOption>,
     val placeholder: String? = null,
     val allowedValues: IntRange = 1..1,

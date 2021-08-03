@@ -116,9 +116,9 @@ class SetupBuilder<P : Plugin>(val plugin: P, val channel: GuildMessageChannel) 
 @OptIn(KordPreview::class)
 class ButtonStepBuilder {
     val actions = mutableListOf<ButtonStepAction>()
-    var messageBuilder: MessageCreateBuilder.(channel: GuildMessageChannel) -> Unit = {}
+    var messageBuilder: suspend MessageCreateBuilder.(channel: GuildMessageChannel) -> Unit = {}
 
-    fun message(messageBuilder: MessageCreateBuilder.(channel: GuildMessageChannel) -> Unit) {
+    fun message(messageBuilder: suspend MessageCreateBuilder.(channel: GuildMessageChannel) -> Unit) {
         this.messageBuilder = messageBuilder
     }
 
@@ -146,11 +146,11 @@ class ButtonStepBuilder {
 @OptIn(KordPreview::class)
 class SelectionMenuStepBuilder {
     val options = mutableListOf<SelectionMenuStepOption>()
-    var messageBuilder: MessageCreateBuilder.(channel: GuildMessageChannel) -> Unit = {}
+    var messageBuilder: suspend MessageCreateBuilder.(channel: GuildMessageChannel) -> Unit = {}
     var placeholder: String? = null
     var allowedValues: IntRange = 1..1
 
-    fun message(messageBuilder: MessageCreateBuilder.(channel: GuildMessageChannel) -> Unit) {
+    fun message(messageBuilder: suspend MessageCreateBuilder.(channel: GuildMessageChannel) -> Unit) {
         this.messageBuilder = messageBuilder
     }
 

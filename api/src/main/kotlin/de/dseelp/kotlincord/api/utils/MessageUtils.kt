@@ -25,7 +25,14 @@
 package de.dseelp.kotlincord.api.utils
 
 import dev.kord.core.behavior.MessageBehavior
+import dev.kord.core.behavior.UserBehavior
+import dev.kord.rest.builder.message.EmbedBuilder
 import dev.kord.rest.request.RestRequestException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlin.time.Duration
+import kotlin.time.ExperimentalTime
 
 suspend fun MessageBehavior.deleteIgnoringNotFound() {
     try {
@@ -36,3 +43,44 @@ suspend fun MessageBehavior.deleteIgnoringNotFound() {
         }
     }
 }
+
+@ExperimentalTime
+fun MessageBehavior.deleteAfterAsync(duration: Duration) = kord.async {
+    delay(duration.inWholeMilliseconds)
+    deleteIgnoringNotFound()
+}
+
+@OptIn(ExperimentalTime::class)
+fun MessageBehavior.deleteAfter(duration: Duration) = kord.launch {
+    delay(duration.inWholeMilliseconds)
+    deleteIgnoringNotFound()
+}
+
+@ExperimentalTime
+fun MessageBehavior.afterAsync(duration: Duration, block: suspend (MessageBehavior) -> Unit) = kord.async {
+    delay(duration.inWholeMilliseconds)
+    this@afterAsync.asMessageOrNull() ?: return@async
+    block(this@afterAsync)
+}
+
+@ExperimentalTime
+fun MessageBehavior.after(duration: Duration, block: suspend (MessageBehavior) -> Unit) = kord.launch {
+    delay(duration.inWholeMilliseconds)
+    this@after.asMessageOrNull() ?: return@launch
+    block(this@after)
+}
+
+@ExperimentalTime
+suspend fun MessageBehavior.after(block: suspend (MessageBehavior) -> Unit) {
+    block(this)
+}
+
+suspend fun UserBehavior.footer(): EmbedBuilder.Footer {
+    val member = asUser()
+    return EmbedBuilder.Footer().apply {
+        text = member.tag
+        icon = member.avatar.url
+    }
+}
+
+
