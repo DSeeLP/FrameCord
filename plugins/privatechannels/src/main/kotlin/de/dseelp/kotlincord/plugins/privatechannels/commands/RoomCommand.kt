@@ -33,10 +33,7 @@ import de.dseelp.kotlincord.api.command.Command
 import de.dseelp.kotlincord.api.command.GuildSender
 import de.dseelp.kotlincord.api.command.arguments.MentionArgument
 import de.dseelp.kotlincord.api.setup.setup
-import de.dseelp.kotlincord.api.utils.CommandScope
-import de.dseelp.kotlincord.api.utils.green
-import de.dseelp.kotlincord.api.utils.literal
-import de.dseelp.kotlincord.api.utils.red
+import de.dseelp.kotlincord.api.utils.*
 import de.dseelp.kotlincord.plugins.privatechannels.PrivateChannelPlugin
 import de.dseelp.kotlincord.plugins.privatechannels.PrivateChannelPlugin.suspendingDatabase
 import de.dseelp.kotlincord.plugins.privatechannels.db.ActivePrivateChannel
@@ -44,17 +41,23 @@ import de.dseelp.kotlincord.plugins.privatechannels.db.ActivePrivateChannels
 import de.dseelp.kotlincord.plugins.privatechannels.db.PrivateChannel
 import de.dseelp.kotlincord.plugins.privatechannels.db.PrivateChannels
 import dev.kord.common.Color
-import dev.kord.common.entity.*
+import dev.kord.common.entity.ButtonStyle
+import dev.kord.common.entity.Permission
+import dev.kord.common.entity.Snowflake
 import dev.kord.core.behavior.channel.createEmbed
-import dev.kord.core.cache.data.PermissionOverwriteData
+import dev.kord.core.behavior.channel.editMemberPermission
+import dev.kord.core.behavior.channel.editRolePermission
+import dev.kord.core.behavior.edit
 import dev.kord.core.entity.Member
-import dev.kord.core.entity.PermissionOverwrite
 import dev.kord.core.entity.channel.VoiceChannel
 import org.jetbrains.exposed.sql.and
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.ExperimentalTime
 
 class RoomCommand : Command<GuildSender> {
     override val scopes: Array<CommandScope> = arrayOf(CommandScope.GUILD)
 
+    @OptIn(ExperimentalTime::class)
     private fun CommandBuilder<GuildSender>.adminCheck() {
         checkAccess {
             sender.getMember().checkPermissions(Permission.ManageChannels)
@@ -64,10 +67,12 @@ class RoomCommand : Command<GuildSender> {
                 title = "Permission denied"
                 color = Color.red
                 description = "You need the ManageChannel Permission to use this command"
-            }
+                footer = sender.getMember().footer()
+            }.deleteAfter(seconds(10))
         }
     }
 
+    @OptIn(ExperimentalTime::class)
     private fun CommandBuilder<GuildSender>.userCheck() {
         checkAccess {
             val member = sender.getMember()
@@ -83,7 +88,8 @@ class RoomCommand : Command<GuildSender> {
                 title = "Permission denied"
                 color = Color.red
                 description = "You are not the room owner or not in any room."
-            }
+                footer = sender.getMember().footer()
+            }.deleteAfter(seconds(10))
         }
     }
 
@@ -96,10 +102,27 @@ class RoomCommand : Command<GuildSender> {
         }
     }
 
-    @OptIn(InternalKotlinCordApi::class, dev.kord.common.annotation.KordPreview::class)
+    @OptIn(
+        InternalKotlinCordApi::class, dev.kord.common.annotation.KordPreview::class,
+        ExperimentalTime::class
+    )
     override val node: CommandNode<GuildSender> = literal("room") {
         execute {
-
+            sender.message.deleteIgnoringNotFound()
+            sender.getChannel().createEmbed {
+                title = "Rooms Help"
+                description = """
+                    room create - Creates a join channel
+                    room remove - Removes a created join channel
+                    room ban <@Member> - Bans the provided member from the channel
+                    room unban <@Member> - Unbans the provided member from the channel
+                    room kick <@Member> - Kicks the provided member from the channel
+                    room lock - Locks the channel
+                    room unlock - Unlocks the channel
+                    room info - Shows an info about the room you are in
+                """.trimIndent()
+                footer = sender.getMember().footer()
+            }
         }
 
         literal("ban") {
@@ -107,12 +130,13 @@ class RoomCommand : Command<GuildSender> {
                 sender.getChannel().createEmbed {
                     title = "Error!"
                     description = "Please provide the member that should be banned from your channel!"
-                }
+                }.deleteAfter(seconds(10))
             }
 
             argument(MentionArgument.member("member")) {
                 userCheck()
                 execute {
+                    sender.message.deleteIgnoringNotFound()
                     suspendingDatabase {
                         val member = sender.getMember()
                         val target = get<Member>("member")
@@ -124,7 +148,7 @@ class RoomCommand : Command<GuildSender> {
                         if (!suspendedTransaction {
                                 activeChannel.ownerId == targetId || activeChannel.executiveId == targetId
                             }) {
-                            channel.addOverwrite(
+                            /*channel.addOverwrite(
                                 PermissionOverwrite(
                                     PermissionOverwriteData(
                                         target.id,
@@ -133,12 +157,58 @@ class RoomCommand : Command<GuildSender> {
                                         Permissions(Permission.Connect)
                                     )
                                 )
-                            )
+                            )*/
+                            channel.editMemberPermission(target.id) {
+                                denied += Permission.Connect
+                            }
+                            target.edit {
+                                voiceChannelId = null
+                            }
                             sender.getChannel().createEmbed {
                                 title = "User banned"
                                 description = "The user ${target.mention} was banned from ${channel.mention}"
-                            }
+                            }.deleteAfter(seconds(10))
                         }
+                    }
+                }
+            }
+        }
+
+        literal("info") {
+            checkAccess {
+                getMemberChannel(sender.getMember()) != null
+            }
+            noAccess {
+                sender.getChannel().createEmbed {
+                    title = "No Room found"
+                    color = Color.red
+                    description = "You must be in a room to execute this command"
+                    footer = sender.getMember().footer()
+                }.deleteAfter(seconds(10))
+            }
+
+            execute {
+                sender.message.deleteIgnoringNotFound()
+                val member = sender.getMember()
+                suspendingDatabase {
+                    val channel = getMemberChannel(member)!!
+                    val guildChannel = suspendedTransaction {
+                        sender.getGuild().getChannel(channel.channelId.asSnowflake)
+                    }
+                    val kord = sender.message.kord
+                    suspendedTransaction {
+                        sender.getChannel().createEmbed {
+                            title = guildChannel.name
+                            field("Owner", inline = true) { kord.getUser(channel.ownerId.asSnowflake)!!.mention }
+                            field("Executive Owner", inline = true) {
+                                channel.executiveId?.asSnowflake?.let {
+                                    kord.getUser(
+                                        it
+                                    )?.mention
+                                } ?: "NaN"
+                            }
+                            footer = member.footer()
+                        }.deleteAfter(seconds(30))
                     }
                 }
             }
@@ -146,15 +216,17 @@ class RoomCommand : Command<GuildSender> {
 
         literal("unban") {
             execute {
+                sender.message.deleteIgnoringNotFound()
                 sender.getChannel().createEmbed {
                     title = "Error!"
                     description = "Please provide the member that should be unbanned from your channel!"
-                }
+                }.deleteAfter(seconds(10))
             }
 
             argument(MentionArgument.member("member")) {
                 userCheck()
                 execute {
+                    sender.message.deleteIgnoringNotFound()
                     suspendingDatabase {
                         val member = sender.getMember()
                         val target = get<Member>("member")
@@ -166,7 +238,7 @@ class RoomCommand : Command<GuildSender> {
                         if (!suspendedTransaction {
                                 activeChannel.ownerId == targetId || activeChannel.executiveId == targetId
                             }) {
-                            channel.addOverwrite(
+                            /*channel.addOverwrite(
                                 PermissionOverwrite(
                                     PermissionOverwriteData(
                                         target.id,
@@ -175,20 +247,123 @@ class RoomCommand : Command<GuildSender> {
                                         Permissions()
                                     )
                                 )
-                            )
+                            )*/
+                            channel.editMemberPermission(target.id) {
+                                denied -= Permission.Connect
+                            }
                             sender.getChannel().createEmbed {
                                 title = "User unbanned"
                                 description = "The user ${target.mention} was unbanned from ${channel.mention}"
-                            }
+                            }.deleteAfter(seconds(10))
                         }
                     }
                 }
             }
         }
 
-        literal("create", arrayOf("add")) {
+        literal("kick") {
+            execute {
+                sender.message.deleteIgnoringNotFound()
+                sender.getChannel().createEmbed {
+                    title = "Error!"
+                    description = "Please provide the member that should be unbanned from your channel!"
+                }.deleteAfter(seconds(10))
+            }
+
+            argument(MentionArgument.member("member")) {
+                userCheck()
+                execute {
+                    sender.message.deleteIgnoringNotFound()
+                    suspendingDatabase {
+                        val member = sender.getMember()
+                        val target = get<Member>("member")
+                        val activeChannel = getMemberChannel(member)!!
+                        val channel = suspendedTransaction {
+                            sender.getGuild().getChannel(activeChannel.channelId.asSnowflake) as VoiceChannel
+                        }
+                        val targetId = target.id.value
+                        if (!suspendedTransaction {
+                                activeChannel.ownerId == targetId || activeChannel.executiveId == targetId
+                            }) {
+                            target.edit {
+                                voiceChannelId = null
+                            }
+                            sender.getChannel().createEmbed {
+                                title = "User kicked"
+                                description = "The user ${target.mention} was kicked from ${channel.mention}"
+                            }.deleteAfter(seconds(10))
+                        }
+                    }
+                }
+            }
+        }
+
+        literal("lock") {
+            execute {
+                sender.message.deleteIgnoringNotFound()
+                suspendingDatabase {
+                    val member = sender.getMember()
+                    val activeChannel = getMemberChannel(member)!!
+                    val channel = suspendedTransaction {
+                        sender.getGuild().getChannel(activeChannel.channelId.asSnowflake)
+                    }
+                    channel.editRolePermission(channel.guildId) {
+                        denied += Permission.Connect
+                        allowed -= Permission.Connect
+                    }
+                    sender.getChannel().createEmbed {
+                        title = "Channel locked"
+                        description = "The channel ${channel.mention} is now locked"
+                        footer = member.footer()
+                    }.deleteAfter(seconds(10))
+                }
+            }
+        }
+
+        literal("delete") {
+            execute {
+                sender.message.deleteIgnoringNotFound()
+                suspendingDatabase {
+                    val member = sender.getMember()
+                    val activeChannel = getMemberChannel(member)!!
+                    val channel = suspendedTransaction {
+                        sender.getGuild().getChannel(activeChannel.channelId.asSnowflake)
+                    }
+                    channel.asChannelOrNull()?.delete()
+                    sender.getChannel().createEmbed {
+                        title = "Channel deleted"
+                        description = "The channel `${channel.name}` was deleted"
+                        footer = member.footer()
+                    }.deleteAfter(seconds(10))
+                }
+            }
+        }
+
+        literal("unlock") {
+            execute {
+                sender.message.deleteIgnoringNotFound()
+                suspendingDatabase {
+                    val member = sender.getMember()
+                    val activeChannel = getMemberChannel(member)!!
+                    val channel = suspendedTransaction {
+                        sender.getGuild().getChannel(activeChannel.channelId.asSnowflake)
+                    }
+                    channel.editRolePermission(channel.guildId) {
+                        denied -= Permission.Connect
+                    }
+                    sender.getChannel().createEmbed {
+                        title = "Channel unlocked"
+                        description = "The channel ${channel.mention} is now unlocked"
+                        footer = member.footer()
+                    }.deleteAfter(seconds(10))
+                }
+            }
+        }
+
+        literal("create") {
             adminCheck()
             execute {
+                sender.message.deleteIgnoringNotFound()
                 val channel = sender.getChannel()
                 val member = sender.getMember()
                 setup(PrivateChannelPlugin, channel) {
@@ -201,6 +376,7 @@ class RoomCommand : Command<GuildSender> {
                             title = "Create Private Channel"
                             description =
                                 "Please tag a voice channel where the users should join to create a Private Channel \n To tag a voice channel use `#!Channel`"
+                            footer = member.footer()
                         }
                     }
                     messageStep {
@@ -218,6 +394,7 @@ class RoomCommand : Command<GuildSender> {
                                 name = "%game%"
                                 value = "The game that the user creating the channel plays"
                             }
+                            footer = member.footer()
                         }
                     }
                     messageStep {
@@ -227,6 +404,7 @@ class RoomCommand : Command<GuildSender> {
                                 Please enter a text that is shown when someone not plays a game.
                                 The default text is: `a Game`
                             """.trimIndent()
+                            footer = member.footer()
                         }
                     }
                     onCompletion { result ->
@@ -234,6 +412,7 @@ class RoomCommand : Command<GuildSender> {
                             channel.createEmbed {
                                 title = "Private Channel creation cancelled"
                                 description = "The creation of a private channel was cancelled"
+                                footer = member.footer()
                             }
                             return@onCompletion
                         }
@@ -260,6 +439,7 @@ class RoomCommand : Command<GuildSender> {
                                     title = "Private Channel created"
                                     color = Color.green
                                     description = "${joinChannel.mention} is now a Private Channel"
+                                    footer = member.footer()
                                 }
                             }
                         }
@@ -268,9 +448,10 @@ class RoomCommand : Command<GuildSender> {
             }
         }
 
-        literal("remove", arrayOf("delete")) {
+        literal("remove") {
             adminCheck()
             execute {
+                sender.message.deleteIgnoringNotFound()
                 suspendingDatabase {
                     val channel = sender.getChannel()
                     val guildId = channel.guildId.value
@@ -289,6 +470,7 @@ class RoomCommand : Command<GuildSender> {
                                 embed {
                                     title = "Remove PrivateChannel"
                                     description = "Please select the PrivateChannel you want to delete"
+                                    footer = member.footer()
                                 }
                             }
                             suspendedTransaction {
@@ -308,6 +490,7 @@ class RoomCommand : Command<GuildSender> {
                                     title = "Confirm Deletion"
                                     description =
                                         "Do you really want to delete this private channel. All users using it will be kicked out of their channels."
+                                    footer = member.footer()
                                 }
                             }
                             action(ButtonStyle.Danger, "Delete") { true }
@@ -329,6 +512,7 @@ class RoomCommand : Command<GuildSender> {
                                 channel.createEmbed {
                                     title = "Private Channels"
                                     description = "The room ${pChannel.name} was removed"
+                                    footer = member.footer()
                                 }
                                 pChannel.delete()
                                 suspendedTransaction {
@@ -348,11 +532,10 @@ class RoomCommand : Command<GuildSender> {
                         }
                     }.start(true)
                     else {
-                        sender.sendMessage {
-                            embed {
-                                title = "Error!"
-                                description = "There are no private channels in this guild!"
-                            }
+                        sender.getChannel().createEmbed {
+                            title = "Error!"
+                            description = "There are no private channels in this guild!"
+                            footer = member.footer()
                         }
                     }
                 }
