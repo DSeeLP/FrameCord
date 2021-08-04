@@ -33,6 +33,7 @@ import de.dseelp.kotlincord.api.checkPermissions
 import de.dseelp.kotlincord.api.command.Command
 import de.dseelp.kotlincord.api.command.GuildSender
 import de.dseelp.kotlincord.api.command.arguments.MentionArgument
+import de.dseelp.kotlincord.api.command.createMessage
 import de.dseelp.kotlincord.api.utils.CommandScope
 import de.dseelp.kotlincord.plugins.moderation.ModerationPlugin
 import dev.kord.common.annotation.KordPreview
@@ -101,7 +102,7 @@ object DeleteCommand : Command<GuildSender> {
             execute {
                 val deleted: GuildMessageChannel = get("channel")
                 sender.message.delete()
-                sender.sendMessage {
+                sender.createMessage {
                     embed {
                         title = "Delete channel"
                         description = "Please confirm that the channel ${deleted.mention} should be deleted!"

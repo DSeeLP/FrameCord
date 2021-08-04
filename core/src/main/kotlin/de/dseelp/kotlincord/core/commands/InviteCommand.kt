@@ -28,6 +28,7 @@ import de.dseelp.kommon.command.CommandNode
 import de.dseelp.kotlincord.api.InternalKotlinCordApi
 import de.dseelp.kotlincord.api.command.Command
 import de.dseelp.kotlincord.api.command.DiscordSender
+import de.dseelp.kotlincord.api.command.createEmbed
 import de.dseelp.kotlincord.api.configs.BotConfig
 import de.dseelp.kotlincord.api.plugins.DisableAutoLoad
 import de.dseelp.kotlincord.api.utils.CommandScope
@@ -91,11 +92,9 @@ class InviteCommand : Command<DiscordSender<MessageChannel>>, CordKoinComponent 
             }
             checkClient(inviteConfig)
             val link = oauth2Client.createBotInvite(GuildPermission.ADMINISTRATOR)
-            sender.sendMessage {
-                embed {
-                    title = "KotlinCord"
-                    description = "You can invite the bot by clicking [this link]($link)"
-                }
+            sender.createEmbed {
+                title = "KotlinCord"
+                description = "You can invite the bot by clicking [this link]($link)"
             }
         }
     }

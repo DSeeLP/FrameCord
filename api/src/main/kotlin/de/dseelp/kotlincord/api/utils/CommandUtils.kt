@@ -30,12 +30,13 @@ import de.dseelp.kotlincord.api.Bot
 import de.dseelp.kotlincord.api.InternalKotlinCordApi
 import de.dseelp.kotlincord.api.checkPermissions
 import de.dseelp.kotlincord.api.command.GuildSender
+import de.dseelp.kotlincord.api.command.createEmbedSafe
 import de.dseelp.kotlincord.api.interactions.ButtonContext
 import de.dseelp.kotlincord.api.logging.logger
 import de.dseelp.kotlincord.api.utils.koin.CordKoinComponent
 import dev.kord.common.entity.Permission
 import dev.kord.common.kColor
-import dev.kord.core.behavior.channel.createMessage
+import dev.kord.core.behavior.channel.createEmbed
 import dev.kord.rest.json.JsonErrorCode
 import dev.kord.rest.request.RestRequestException
 import org.koin.core.component.inject
@@ -76,23 +77,19 @@ object CommandUtils {
                     val selfMember = sender.getGuild().getMember(bot.kord.selfId)
                     logger.debug("", throwable)
                     if (selfMember.checkPermissions(sender.getChannel(), Permission.SendMessages)) {
-                        sender.sendMessage {
-                            embed {
-                                title = "Not enough permissions!"
-                                color = Color.RED.kColor
-                                description = "The bot is missing permissions please grant him Administrator permissions!"
-                            }
+                        sender.createEmbedSafe {
+                            title = "Not enough permissions!"
+                            color = Color.RED.kColor
+                            description = "The bot is missing permissions please grant him Administrator permissions!"
                         }
                     } else {
                         val guild = sender.getGuild()
                         val owner = guild.owner.asMember()
-                        owner.getDmChannelOrNull()?.createMessage {
-                            embed {
-                                title = "Not enough permissions!"
-                                color = Color.RED.kColor
-                                description =
-                                    "The bot is missing permissions on the guild ${guild.name} please grant him Administrator permissions!"
-                            }
+                        owner.getDmChannelOrNull()?.createEmbed {
+                            title = "Not enough permissions!"
+                            color = Color.RED.kColor
+                            description =
+                                "The bot is missing permissions on the guild ${guild.name} please grant him Administrator permissions!"
                         }
                     }
                 } else if (sender is ButtonContext) {

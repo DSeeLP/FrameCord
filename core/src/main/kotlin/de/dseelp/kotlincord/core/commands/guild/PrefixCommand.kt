@@ -28,26 +28,28 @@ import de.dseelp.kommon.command.CommandNode
 import de.dseelp.kommon.command.arguments.StringArgument
 import de.dseelp.kotlincord.api.command.Command
 import de.dseelp.kotlincord.api.command.GuildSender
+import de.dseelp.kotlincord.api.command.createEmbed
 import de.dseelp.kotlincord.api.guild.info
 import de.dseelp.kotlincord.api.utils.*
 import dev.kord.common.Color
 import dev.kord.core.behavior.channel.createMessage
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.ExperimentalTime
 
 class PrefixCommand : Command<GuildSender> {
     override val scopes: Array<CommandScope> = arrayOf(CommandScope.GUILD)
+
+    @OptIn(ExperimentalTime::class)
     override val node: CommandNode<GuildSender> = literal("prefix") {
         execute {
             val guildInfo = sender.getGuild().info
-            val message = sender.getChannel().createMessage {
-                embed {
-                    title = "Prefix"
-                    description = "The guild prefix is ${guildInfo.prefix}"
-                }
-            }
             sender.message.asMessageOrNull()?.delete()
-            delay(10000)
-            message.deleteIgnoringNotFound()
+            sender.createEmbed {
+                title = "Prefix"
+                description = "The guild prefix is ${guildInfo.prefix}"
+                footer = sender.footer()
+            }.deleteAfter(seconds(10))
         }
 
         argument(StringArgument("prefix")) {
@@ -64,11 +66,9 @@ class PrefixCommand : Command<GuildSender> {
                 }
                 val guild = sender.getGuild()
                 guild.info = guild.info.copy(prefix = prefix)
-                sender.sendMessage {
-                    embed {
-                        color = Color.green
-                        title = "Prefix set to $prefix"
-                    }
+                sender.createEmbed {
+                    color = Color.green
+                    title = "Prefix set to $prefix"
                 }
             }
         }
