@@ -43,6 +43,6 @@ object PrivateChannels : LongIdTable() {
     val guildId = long("guildId")
     val joinChannelId = long("joinChannelId")
     val nameTemplate = varchar("nameTemplate", 1000).default("%user%'s Room")
-    val defaultGame = varchar("defaultGame", 1000).default("a Game")
+    val defaultGame = varchar("defaultGame", 100).default("a Game")
     var userLimit = integer("userLimit").nullable()
 }

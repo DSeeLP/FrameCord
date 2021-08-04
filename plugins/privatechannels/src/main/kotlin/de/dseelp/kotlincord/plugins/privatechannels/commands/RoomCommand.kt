@@ -25,6 +25,7 @@
 package de.dseelp.kotlincord.plugins.privatechannels.commands
 
 import de.dseelp.kommon.command.CommandBuilder
+import de.dseelp.kommon.command.CommandContext
 import de.dseelp.kommon.command.CommandNode
 import de.dseelp.kotlincord.api.InternalKotlinCordApi
 import de.dseelp.kotlincord.api.asSnowflake
@@ -32,6 +33,7 @@ import de.dseelp.kotlincord.api.checkPermissions
 import de.dseelp.kotlincord.api.command.Command
 import de.dseelp.kotlincord.api.command.GuildSender
 import de.dseelp.kotlincord.api.command.arguments.MentionArgument
+import de.dseelp.kotlincord.api.command.createEmbed
 import de.dseelp.kotlincord.api.setup.setup
 import de.dseelp.kotlincord.api.utils.*
 import de.dseelp.kotlincord.plugins.privatechannels.PrivateChannelPlugin
@@ -40,6 +42,9 @@ import de.dseelp.kotlincord.plugins.privatechannels.db.ActivePrivateChannel
 import de.dseelp.kotlincord.plugins.privatechannels.db.ActivePrivateChannels
 import de.dseelp.kotlincord.plugins.privatechannels.db.PrivateChannel
 import de.dseelp.kotlincord.plugins.privatechannels.db.PrivateChannels
+import de.dseelp.kotlincord.plugins.privatechannels.isRateLimited
+import de.dseelp.kotlincord.plugins.privatechannels.remainingRateLimited
+import de.dseelp.kotlincord.plugins.privatechannels.updateChannel
 import dev.kord.common.Color
 import dev.kord.common.entity.ButtonStyle
 import dev.kord.common.entity.Permission
@@ -50,6 +55,7 @@ import dev.kord.core.behavior.channel.editRolePermission
 import dev.kord.core.behavior.edit
 import dev.kord.core.entity.Member
 import dev.kord.core.entity.channel.VoiceChannel
+import dev.kord.rest.builder.message.EmbedBuilder
 import org.jetbrains.exposed.sql.and
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
@@ -70,6 +76,34 @@ class RoomCommand : Command<GuildSender> {
                 footer = sender.getMember().footer()
             }.deleteAfter(seconds(10))
         }
+    }
+
+    fun EmbedBuilder.applyPlaceholders() {
+        field {
+            name = "%user%"
+            value = "The user name of the user creating the channel"
+        }
+        field {
+            name = "%game%"
+            value = "The game that the user creating the channel plays"
+        }
+    }
+
+    @OptIn(ExperimentalTime::class)
+    suspend fun CommandContext<GuildSender>.checkRateLimit(channel: ActivePrivateChannel): Boolean {
+        if (channel.isRateLimited) {
+            channel.remainingRateLimited?.toComponents { minutes, seconds, _ ->
+                sender.createEmbed {
+                    color = Color.red
+                    title = "Command blocked"
+                    description =
+                        "You can execute the command again in ${if (minutes == 0) "$seconds seconds" else "$minutes minutes"}"
+                    footer = sender.footer()
+                }.deleteAfter(seconds(20))
+            }
+            return true
+        }
+        return false
     }
 
     @OptIn(ExperimentalTime::class)
@@ -117,11 +151,70 @@ class RoomCommand : Command<GuildSender> {
                     room ban <@Member> - Bans the provided member from the channel
                     room unban <@Member> - Unbans the provided member from the channel
                     room kick <@Member> - Kicks the provided member from the channel
+                    room rename - Renames your private channel
+                    room update - Updates the private channel
                     room lock - Locks the channel
                     room unlock - Unlocks the channel
                     room info - Shows an info about the room you are in
                 """.trimIndent()
                 footer = sender.getMember().footer()
+            }
+        }
+
+        literal("rename") {
+            userCheck()
+            execute {
+                sender.message.deleteIgnoringNotFound()
+                val member = sender.getMember()
+                val channel = getMemberChannel(member)!!
+                val gFooter = sender.footer()
+                if (checkRateLimit(channel)) return@execute
+                setup(PrivateChannelPlugin, sender.getChannel()) {
+                    messageStep {
+                        embed {
+                            title = "Channel rename"
+                            description = "Please enter the new name for the channel! You can use placeholders."
+                            footer = gFooter
+                            applyPlaceholders()
+                        }
+                    }
+                    onCompletion {
+                        if (it.wasCancelled) {
+                            sender.createEmbed {
+                                title = "Rename cancelled"
+                                description = "The channel wasn't renamed"
+                                footer = gFooter
+                            }
+                        }
+                        val nameTemplate = it.results[0] as String
+                        suspendingDatabase {
+                            suspendedTransaction {
+                                channel.customNameTemplate = nameTemplate
+                                updateChannel(channel)
+                            }
+                        }
+                        sender.createEmbed {
+                            title = "Channel renamed"
+                            description = "The channel has been renamed to `$name`"
+                            footer = gFooter
+                        }
+                    }
+                }.start(true)
+            }
+        }
+
+        literal("update") {
+            userCheck()
+            execute {
+                sender.message.deleteIgnoringNotFound()
+                suspendingDatabase {
+                    suspendedTransaction {
+                        getMemberChannel(sender.getMember())?.let { channel ->
+                            if (checkRateLimit(channel)) return@let
+                            updateChannel(channel)
+                        }
+                    }
+                }
             }
         }
 
@@ -386,14 +479,7 @@ class RoomCommand : Command<GuildSender> {
                                 Please enter a name template for the created channels.
                                 The default template is: `%user%'s Room`
                             """.trimIndent()
-                            field {
-                                name = "%user%"
-                                value = "The user name of the user creating the channel"
-                            }
-                            field {
-                                name = "%game%"
-                                value = "The game that the user creating the channel plays"
-                            }
+                            applyPlaceholders()
                             footer = member.footer()
                         }
                     }

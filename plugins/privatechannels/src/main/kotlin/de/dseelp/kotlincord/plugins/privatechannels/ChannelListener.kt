@@ -25,6 +25,7 @@
 package de.dseelp.kotlincord.plugins.privatechannels
 
 import de.dseelp.kotlincord.api.asSnowflake
+import de.dseelp.kotlincord.api.bot
 import de.dseelp.kotlincord.api.event.EventHandle
 import de.dseelp.kotlincord.api.event.Listener
 import de.dseelp.kotlincord.api.utils.asOverwrite
@@ -36,8 +37,10 @@ import de.dseelp.kotlincord.plugins.privatechannels.db.PrivateChannel
 import de.dseelp.kotlincord.plugins.privatechannels.db.PrivateChannels
 import dev.kord.common.entity.*
 import dev.kord.core.behavior.channel.createVoiceChannel
+import dev.kord.core.behavior.channel.edit
 import dev.kord.core.behavior.createVoiceChannel
 import dev.kord.core.behavior.edit
+import dev.kord.core.entity.Member
 import dev.kord.core.entity.VoiceState
 import dev.kord.core.entity.channel.VoiceChannel
 import dev.kord.core.event.channel.VoiceChannelDeleteEvent
@@ -48,6 +51,9 @@ import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.flow.first
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.or
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.ExperimentalTime
 
 @Listener
 object ChannelListener {
@@ -162,9 +168,7 @@ object ChannelListener {
                 )
             )
         }
-        val name = joinChannel.nameTemplate.replace("%user%", member.displayName).replace(
-            "%game%",
-            member.getPresenceOrNull()?.activities?.firstOrNull()?.name ?: transaction { joinChannel.defaultGame })
+        val name = suspendedTransaction { calculateChannelName(joinChannel, member) }
         val created =
             channel.category?.createVoiceChannel(name, createBuilder) ?: guild.createVoiceChannel(
                 name,
@@ -182,3 +186,38 @@ object ChannelListener {
         }
     }
 }
+
+suspend fun calculateChannelName(channel: PrivateChannel, member: Member, template: String = channel.nameTemplate) =
+    template.replace("%user%", member.displayName).replace(
+        "%game%",
+        member.getPresenceOrNull()?.activities?.firstOrNull()?.name ?: channel.defaultGame
+    )
+
+suspend fun updateChannel(channel: ActivePrivateChannel) {
+    val guild = bot.kord.getGuild(channel.privateChannel.guildId.asSnowflake) ?: return
+    val guildChannel = guild.getChannel(channel.channelId.asSnowflake)
+    val member = if (channel.executiveId == null) guild.getMember(channel.ownerId.asSnowflake) else guild.getMember(
+        channel.executiveId!!.asSnowflake
+    )
+    val template = channel.customNameTemplate ?: channel.privateChannel.nameTemplate
+    val calculated = calculateChannelName(channel.privateChannel, member, template)
+    if (guildChannel is VoiceChannel && guildChannel.name != calculated && !channel.isRateLimited) {
+        channel.lastUpdated = System.currentTimeMillis()
+        guildChannel.edit {
+            name = calculated
+        }
+    }
+}
+
+@OptIn(ExperimentalTime::class)
+private val tenMinutesInMillis = minutes(10).inWholeMilliseconds
+
+val ActivePrivateChannel.isRateLimited: Boolean
+    get() = lastUpdated.let { if (it == null) false else System.currentTimeMillis() - it < tenMinutesInMillis }
+
+@OptIn(ExperimentalTime::class)
+val ActivePrivateChannel.remainingRateLimited: Duration?
+    get() {
+        if (!isRateLimited) return null
+        return Duration.milliseconds((lastUpdated!! + tenMinutesInMillis) - System.currentTimeMillis())
+    }

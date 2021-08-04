@@ -24,6 +24,7 @@
 
 package de.dseelp.kotlincord.plugins.privatechannels
 
+import de.dseelp.kotlincord.api.configs.BotConfig
 import de.dseelp.kotlincord.api.plugins.DatabaseConfig
 import de.dseelp.kotlincord.api.plugins.Plugin
 import de.dseelp.kotlincord.api.plugins.PluginAction
@@ -45,7 +46,11 @@ object PrivateChannelPlugin : Plugin() {
     @PluginAction(PluginAction.Action.ENABLE)
     suspend fun enable() {
         println("Enabling Private Channel")
-
+        val config by inject<BotConfig>()
+        if (!config.intents.presence) {
+            logger.warn("The Presence Intent isn't enabled! Without that intent enabled it can't show the games people play in the channel names")
+            logger.warn("You can enable the intent in the config.json of the bot. You need to enable it in the bot dashboard too.")
+        }
         val packageName = "de.dseelp.kotlincord.plugins.privatechannels"
         searchCommands(packageName)
         searchEvents(packageName)

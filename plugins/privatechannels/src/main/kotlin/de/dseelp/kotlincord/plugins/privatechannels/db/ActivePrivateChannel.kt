@@ -36,8 +36,8 @@ class ActivePrivateChannel(id: EntityID<Long>) : LongEntity(id) {
     var channelId by ActivePrivateChannels.channelId
     var ownerId by ActivePrivateChannels.ownerId
     var executiveId by ActivePrivateChannels.executiveId
-    var nameChanged by ActivePrivateChannels.nameChanged
-    var customName by ActivePrivateChannels.customName
+    var customNameTemplate by ActivePrivateChannels.customNameTemplate
+    var lastUpdated by ActivePrivateChannels.lastUpdated
 }
 
 object ActivePrivateChannels : LongIdTable() {
@@ -45,6 +45,6 @@ object ActivePrivateChannels : LongIdTable() {
     val channelId = long("channelId")
     val ownerId = long("ownerId")
     val executiveId = long("executiveId").nullable()
-    val nameChanged = bool("nameChanged").default(false)
-    val customName = varchar("customName", 1000).nullable()
+    val customNameTemplate = varchar("customNameTemplate", 1000).nullable()
+    val lastUpdated = long("lastUpdatedMillis").nullable()
 }
