@@ -34,6 +34,5 @@ class PrivateSender(override val message: Message) : DiscordSender<DmChannel> {
     override val isGuild: Boolean = false
     override val isPrivate: Boolean = true
     override suspend fun getChannel(): DmChannel = message.channel.asChannel() as DmChannel
-    override val isConsole: Boolean = false
     override val name: String = author.username
 }

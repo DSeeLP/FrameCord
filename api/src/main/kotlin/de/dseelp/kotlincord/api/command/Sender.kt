@@ -33,5 +33,9 @@ sealed interface Sender {
 
     suspend fun sendMessage(vararg messages: String, parseColors: Boolean = true)
 
+    @Deprecated(
+        "Please use createMessage instead! This will be removed in a future release",
+        ReplaceWith("createMessage(message)")
+    )
     suspend fun sendMessage(message: MessageCreateBuilder.() -> Unit)
 }

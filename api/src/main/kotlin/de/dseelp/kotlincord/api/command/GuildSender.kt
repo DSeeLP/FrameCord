@@ -33,7 +33,6 @@ class GuildSender(override val message: Message) : DiscordSender<GuildMessageCha
     override val isGuild: Boolean = true
     override val isPrivate: Boolean = false
     override suspend fun getChannel(): GuildMessageChannel = message.channel.asChannel() as GuildMessageChannel
-    override val isConsole: Boolean = false
     override val name: String = author.username
     suspend fun getGuild() = message.getGuild()
     suspend fun getMember() = message.getAuthorAsMember()!!
