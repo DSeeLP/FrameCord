@@ -48,6 +48,7 @@ val jansiVersion: String by project
 val exposedVersion: String by project
 val hikaricpVersion: String by project
 val ktorVersion: String by project
+val kordxEmojiVersion: String by project
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
@@ -72,6 +73,7 @@ dependencies {
     api("io.github.dseelp:discord-oauth2-api:0.2") {
         isChanging = true
     }
+    api("dev.kord.x:emoji:$kordxEmojiVersion")
 }
 
 val implementationVersion = version
