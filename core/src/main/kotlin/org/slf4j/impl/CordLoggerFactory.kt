@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 DSeeLP & KotlinCord contributors
+ * Copyright (c) 2021 DSeeLP & FrameCord contributors
  *
  * MIT License
  *
@@ -24,7 +24,7 @@
 
 package org.slf4j.impl
 
-import de.dseelp.kotlincord.api.logging.KLogger
+import io.github.dseelp.framecord.api.logging.KLogger
 import org.slf4j.ILoggerFactory
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap

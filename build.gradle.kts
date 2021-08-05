@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 DSeeLP & KotlinCord contributors
+ * Copyright (c) 2021 DSeeLP & FrameCord contributors
  *
  * MIT License
  *
@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-val defaultGroupName = "io.github.dseelp.kotlincord"
+val defaultGroupName = "io.github.dseelp.framecord"
 val projectVersion: String by project
 
 group = defaultGroupName
@@ -154,7 +154,7 @@ allprojects {
             if (project != rootProject) return@register
             from(distributionDir)
             //from(File(distributionDir, "core.jar"))
-            archiveFileName.set("kotlincord.zip")
+            archiveFileName.set("framecord.zip")
         }
     }
 
@@ -182,8 +182,8 @@ allprojects {
 
                 pom {
                     url.set("https://github.com/DSeeLP/Kommon")
-                    name.set("KotlinCord")
-                    description.set("KotlinCord, an simple DiscordBot Framework for Kotlin")
+                    name.set("FrameCord")
+                    description.set("FrameCord, an simple DiscordBot Framework for Kotlin")
                     developers {
                         developer {
                             name.set("DSeeLP")
@@ -198,9 +198,9 @@ allprojects {
                         }
                     }
                     scm {
-                        connection.set("scm:git:git://github.com/DSeeLP/KotlinCord.git")
-                        developerConnection.set("scm:git:git://github.com/DSeeLP/KotlinCord.git")
-                        url.set("https://github.com/DSeeLP/KotlinCord/")
+                        connection.set("scm:git:git://github.com/DSeeLP/FrameCord.git")
+                        developerConnection.set("scm:git:git://github.com/DSeeLP/FrameCord.git")
+                        url.set("https://github.com/DSeeLP/FrameCord/")
                     }
                 }
             }

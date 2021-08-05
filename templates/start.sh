@@ -1,1 +1,1 @@
-screen -S KotlinCord java -jar core.jar
+screen -S FrameCord java -jar core.jar

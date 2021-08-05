@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 DSeeLP & KotlinCord contributors
+ * Copyright (c) 2021 DSeeLP & FrameCord contributors
  *
  * MIT License
  *
@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-rootProject.name = "kotlincord"
+rootProject.name = "framecord"
 include("core", "api")
 include("plugins")
 include("plugins:moderation")
