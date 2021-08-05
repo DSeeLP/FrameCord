@@ -27,12 +27,14 @@ package de.dseelp.kotlincord.core.commands.guild
 import de.dseelp.kommon.command.CommandNode
 import de.dseelp.kommon.command.arguments.StringArgument
 import de.dseelp.kotlincord.api.command.Command
+import de.dseelp.kotlincord.api.command.CommandScope
 import de.dseelp.kotlincord.api.command.GuildSender
 import de.dseelp.kotlincord.api.command.createEmbed
 import de.dseelp.kotlincord.api.guild.info
 import de.dseelp.kotlincord.api.utils.*
 import dev.kord.common.Color
 import dev.kord.core.behavior.channel.createMessage
+import dev.kord.rest.builder.message.create.embed
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime

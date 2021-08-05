@@ -31,26 +31,26 @@ import dev.kord.core.entity.Message
 import dev.kord.core.entity.User
 import dev.kord.core.entity.channel.MessageChannel
 import dev.kord.rest.builder.message.EmbedBuilder
-import dev.kord.rest.builder.message.MessageCreateBuilder
+import dev.kord.rest.builder.message.create.MessageCreateBuilder
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 
 sealed interface DiscordSender<T : MessageChannel> : Sender {
+    /**
+     * The user who executed the command
+     */
     val author: User
     val isGuild: Boolean
     val isPrivate: Boolean
+    val isThread: Boolean
     suspend fun getChannel(): T
     val message: Message
     override val isConsole: Boolean
         get() = false
 
-    override suspend fun sendMessage(message: MessageCreateBuilder.() -> Unit) {
-        createMessage(message)
-    }
-
     override suspend fun sendMessage(vararg messages: String, parseColors: Boolean) {
-        val channel = getChannel().asChannelOrNull() ?: return
+        val channel = (if (this is ThreadSender) getThread() else getChannel()).asChannelOrNull() ?: return
         messages.onEach { channel.createMessage(it) }
     }
 
@@ -72,7 +72,7 @@ suspend inline fun DiscordSender<out MessageChannel>.createMessage(message: Mess
     contract {
         callsInPlace(message, InvocationKind.EXACTLY_ONCE)
     }
-    return getChannel().createMessage(message)
+    return (if (this is ThreadSender) getThread() else getChannel()).createMessage(message)
 }
 
 @OptIn(ExperimentalContracts::class)
@@ -80,5 +80,5 @@ suspend inline fun DiscordSender<out MessageChannel>.createEmbed(message: EmbedB
     contract {
         callsInPlace(message, InvocationKind.EXACTLY_ONCE)
     }
-    return getChannel().createEmbed(message)
+    return (if (this is ThreadSender) getThread() else getChannel()).createEmbed(message)
 }

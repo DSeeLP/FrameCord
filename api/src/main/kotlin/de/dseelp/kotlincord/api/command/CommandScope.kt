@@ -24,9 +24,13 @@
 
 package de.dseelp.kotlincord.api.command
 
-import de.dseelp.kommon.command.CommandNode
+enum class CommandScope {
+    GUILD,
+    PRIVATE,
+    THREAD,
+    CONSOLE;
 
-interface Command<S : Sender> {
-    val scopes: Array<CommandScope>
-    val node: CommandNode<S>
+    companion object {
+        val ALL = values()
+    }
 }

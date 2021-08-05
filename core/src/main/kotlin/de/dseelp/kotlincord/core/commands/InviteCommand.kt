@@ -27,11 +27,11 @@ package de.dseelp.kotlincord.core.commands
 import de.dseelp.kommon.command.CommandNode
 import de.dseelp.kotlincord.api.InternalKotlinCordApi
 import de.dseelp.kotlincord.api.command.Command
+import de.dseelp.kotlincord.api.command.CommandScope
 import de.dseelp.kotlincord.api.command.DiscordSender
 import de.dseelp.kotlincord.api.command.createEmbed
 import de.dseelp.kotlincord.api.configs.BotConfig
 import de.dseelp.kotlincord.api.plugins.DisableAutoLoad
-import de.dseelp.kotlincord.api.utils.CommandScope
 import de.dseelp.kotlincord.api.utils.deleteIgnoringNotFound
 import de.dseelp.kotlincord.api.utils.koin.CordKoinComponent
 import de.dseelp.kotlincord.api.utils.literal
@@ -41,6 +41,7 @@ import de.dseelp.oauth2.discord.api.entities.GuildPermission
 import dev.kord.common.Color
 import dev.kord.core.behavior.channel.createMessage
 import dev.kord.core.entity.channel.MessageChannel
+import dev.kord.rest.builder.message.create.embed
 import io.ktor.client.*
 import kotlinx.coroutines.delay
 import org.koin.core.component.inject

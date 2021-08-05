@@ -22,11 +22,19 @@
  * SOFTWARE.
  */
 
-package de.dseelp.kotlincord.api.command
+package de.dseelp.kotlincord.api
 
-import de.dseelp.kommon.command.CommandNode
+import dev.kord.core.entity.Guild
+import dev.kord.core.entity.Member
 
-interface Command<S : Sender> {
-    val scopes: Array<CommandScope>
-    val node: CommandNode<S>
+interface GuildSenderBehavior {
+    /**
+     * @return The guild where the command was executed in.
+     */
+    suspend fun getGuild(): Guild
+
+    /**
+     * @return The member who executed the command
+     */
+    suspend fun getMember(): Member
 }

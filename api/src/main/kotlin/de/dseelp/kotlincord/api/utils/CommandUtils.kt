@@ -30,7 +30,7 @@ import de.dseelp.kotlincord.api.Bot
 import de.dseelp.kotlincord.api.InternalKotlinCordApi
 import de.dseelp.kotlincord.api.checkPermissions
 import de.dseelp.kotlincord.api.command.GuildSender
-import de.dseelp.kotlincord.api.command.createEmbedSafe
+import de.dseelp.kotlincord.api.command.createEmbed
 import de.dseelp.kotlincord.api.interactions.ButtonContext
 import de.dseelp.kotlincord.api.logging.logger
 import de.dseelp.kotlincord.api.utils.koin.CordKoinComponent
@@ -77,7 +77,7 @@ object CommandUtils {
                     val selfMember = sender.getGuild().getMember(bot.kord.selfId)
                     logger.debug("", throwable)
                     if (selfMember.checkPermissions(sender.getChannel(), Permission.SendMessages)) {
-                        sender.createEmbedSafe {
+                        sender.createEmbed {
                             title = "Not enough permissions!"
                             color = Color.RED.kColor
                             description = "The bot is missing permissions please grant him Administrator permissions!"

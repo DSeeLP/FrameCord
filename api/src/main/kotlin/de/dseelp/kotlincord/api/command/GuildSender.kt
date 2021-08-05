@@ -24,16 +24,18 @@
 
 package de.dseelp.kotlincord.api.command
 
+import de.dseelp.kotlincord.api.GuildSenderBehavior
 import dev.kord.core.entity.Message
 import dev.kord.core.entity.User
-import dev.kord.core.entity.channel.GuildMessageChannel
+import dev.kord.core.entity.channel.TopGuildMessageChannel
 
-class GuildSender(override val message: Message) : DiscordSender<GuildMessageChannel> {
+class GuildSender(override val message: Message) : DiscordSender<TopGuildMessageChannel>, GuildSenderBehavior {
     override val author: User = message.author!!
     override val isGuild: Boolean = true
     override val isPrivate: Boolean = false
-    override suspend fun getChannel(): GuildMessageChannel = message.channel.asChannel() as GuildMessageChannel
+    override val isThread: Boolean = false
+    override suspend fun getChannel(): TopGuildMessageChannel = message.channel.asChannel() as TopGuildMessageChannel
     override val name: String = author.username
-    suspend fun getGuild() = message.getGuild()
-    suspend fun getMember() = message.getAuthorAsMember()!!
+    override suspend fun getGuild() = message.getGuild()
+    override suspend fun getMember() = message.getAuthorAsMember()!!
 }

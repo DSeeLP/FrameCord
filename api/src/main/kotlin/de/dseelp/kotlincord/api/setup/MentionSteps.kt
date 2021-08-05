@@ -27,7 +27,7 @@ package de.dseelp.kotlincord.api.setup
 import de.dseelp.kotlincord.api.utils.MentionUtils
 import dev.kord.core.entity.Message
 import dev.kord.core.entity.channel.GuildMessageChannel
-import dev.kord.rest.builder.message.MessageCreateBuilder
+import dev.kord.rest.builder.message.create.MessageCreateBuilder
 
 class UserStep(messageBuilder: suspend MessageCreateBuilder.(GuildMessageChannel) -> Unit) :
     MessageStep(messageBuilder) {

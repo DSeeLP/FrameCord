@@ -74,6 +74,7 @@ object CordBootstrap {
         single(qualifier("console")) { CommandDispatcher<ConsoleSender>() }
         single(qualifier("guild")) { CommandDispatcher<GuildSender>() }
         single(qualifier("private")) { CommandDispatcher<PrivateSender>() }
+        single(qualifier("thread")) { CommandDispatcher<PrivateSender>() }
         single<PluginLoader> { StaticPluginLoader } bind PluginLoaderImpl::class
         single<PluginManager> { StaticPluginManager } bind PluginManagerImpl::class
         single<URLClassLoader>(qualifier("pluginClassLoader")) { URLClassLoader.newInstance(arrayOf()) }

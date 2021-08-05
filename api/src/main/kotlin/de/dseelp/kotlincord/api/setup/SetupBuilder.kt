@@ -33,7 +33,7 @@ import dev.kord.common.entity.ButtonStyle
 import dev.kord.common.entity.DiscordPartialEmoji
 import dev.kord.core.entity.Member
 import dev.kord.core.entity.channel.GuildMessageChannel
-import dev.kord.rest.builder.message.MessageCreateBuilder
+import dev.kord.rest.builder.message.create.MessageCreateBuilder
 
 suspend fun <P : Plugin> setup(
     plugin: P,

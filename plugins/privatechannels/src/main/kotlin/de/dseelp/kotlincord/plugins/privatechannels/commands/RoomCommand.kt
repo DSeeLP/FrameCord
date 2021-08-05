@@ -31,6 +31,7 @@ import de.dseelp.kotlincord.api.InternalKotlinCordApi
 import de.dseelp.kotlincord.api.asSnowflake
 import de.dseelp.kotlincord.api.checkPermissions
 import de.dseelp.kotlincord.api.command.Command
+import de.dseelp.kotlincord.api.command.CommandScope
 import de.dseelp.kotlincord.api.command.GuildSender
 import de.dseelp.kotlincord.api.command.arguments.MentionArgument
 import de.dseelp.kotlincord.api.command.createEmbed
@@ -54,8 +55,10 @@ import dev.kord.core.behavior.channel.editMemberPermission
 import dev.kord.core.behavior.channel.editRolePermission
 import dev.kord.core.behavior.edit
 import dev.kord.core.entity.Member
+import dev.kord.core.entity.channel.TopGuildChannel
 import dev.kord.core.entity.channel.VoiceChannel
 import dev.kord.rest.builder.message.EmbedBuilder
+import dev.kord.rest.builder.message.create.embed
 import org.jetbrains.exposed.sql.and
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
@@ -235,22 +238,12 @@ class RoomCommand : Command<GuildSender> {
                         val target = get<Member>("member")
                         val activeChannel = getMemberChannel(member)!!
                         val channel = suspendedTransaction {
-                            sender.getGuild().getChannel(activeChannel.channelId.asSnowflake)
+                            sender.getGuild().getChannel(activeChannel.channelId.asSnowflake) as TopGuildChannel
                         }
                         val targetId = target.id.value
                         if (!suspendedTransaction {
                                 activeChannel.ownerId == targetId || activeChannel.executiveId == targetId
                             }) {
-                            /*channel.addOverwrite(
-                                PermissionOverwrite(
-                                    PermissionOverwriteData(
-                                        target.id,
-                                        OverwriteType.Member,
-                                        Permissions(),
-                                        Permissions(Permission.Connect)
-                                    )
-                                )
-                            )*/
                             channel.editMemberPermission(target.id) {
                                 denied += Permission.Connect
                             }
@@ -325,7 +318,7 @@ class RoomCommand : Command<GuildSender> {
                         val target = get<Member>("member")
                         val activeChannel = getMemberChannel(member)!!
                         val channel = suspendedTransaction {
-                            sender.getGuild().getChannel(activeChannel.channelId.asSnowflake)
+                            sender.getGuild().getChannel(activeChannel.channelId.asSnowflake) as TopGuildChannel
                         }
                         val targetId = target.id.value
                         if (!suspendedTransaction {
@@ -398,7 +391,7 @@ class RoomCommand : Command<GuildSender> {
                     val member = sender.getMember()
                     val activeChannel = getMemberChannel(member)!!
                     val channel = suspendedTransaction {
-                        sender.getGuild().getChannel(activeChannel.channelId.asSnowflake)
+                        sender.getGuild().getChannel(activeChannel.channelId.asSnowflake) as TopGuildChannel
                     }
                     channel.editRolePermission(channel.guildId) {
                         denied += Permission.Connect
@@ -439,7 +432,7 @@ class RoomCommand : Command<GuildSender> {
                     val member = sender.getMember()
                     val activeChannel = getMemberChannel(member)!!
                     val channel = suspendedTransaction {
-                        sender.getGuild().getChannel(activeChannel.channelId.asSnowflake)
+                        sender.getGuild().getChannel(activeChannel.channelId.asSnowflake) as TopGuildChannel
                     }
                     channel.editRolePermission(channel.guildId) {
                         denied -= Permission.Connect

@@ -35,7 +35,7 @@ import de.dseelp.kotlincord.api.utils.koin.CordKoinContext
 import dev.kord.common.annotation.KordPreview
 import dev.kord.common.entity.*
 import dev.kord.core.entity.Member
-import dev.kord.core.entity.channel.GuildChannel
+import dev.kord.core.entity.channel.TopGuildChannel
 import dev.kord.rest.builder.component.ActionRowBuilder
 import kotlinx.datetime.Instant
 import org.jetbrains.exposed.sql.Column
@@ -183,13 +183,15 @@ suspend fun Member.checkPermissions(vararg permissions: Permission) = checkPermi
 
 suspend fun Member.checkPermissions(permissions: Permissions) = getPermissions().contains(Permission.Administrator) || getPermissions().contains(permissions)
 
-suspend fun Member.checkPermissions(channel: GuildChannel, vararg permissions: Permission) = checkPermissions(channel, Permissions {
-    permissions.onEach { +it }
-})
+suspend fun Member.checkPermissions(channel: TopGuildChannel, vararg permissions: Permission) =
+    checkPermissions(channel, Permissions {
+        permissions.onEach { +it }
+    })
 
-suspend fun Member.checkPermissions(channel: GuildChannel, permissions: Permissions) = channel.getEffectivePermissions(id).let {
-    it.contains(permissions) || it.contains(Permission.Administrator)
-}
+suspend fun Member.checkPermissions(channel: TopGuildChannel, permissions: Permissions) =
+    channel.getEffectivePermissions(id).let {
+        it.contains(permissions) || it.contains(Permission.Administrator)
+    }
 
 @OptIn(KordPreview::class)
 fun ActionRowBuilder.action(

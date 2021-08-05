@@ -24,16 +24,34 @@
 
 package de.dseelp.kotlincord.api.command
 
+import de.dseelp.kotlincord.api.GuildSenderBehavior
 import dev.kord.core.entity.Message
 import dev.kord.core.entity.User
-import dev.kord.core.entity.channel.DmChannel
+import dev.kord.core.entity.channel.ThreadParentChannel
+import dev.kord.core.entity.channel.thread.ThreadChannel
 
-
-class PrivateSender(override val message: Message) : DiscordSender<DmChannel> {
+class ThreadSender(override val message: Message) : DiscordSender<ThreadParentChannel>, GuildSenderBehavior {
     override val author: User = message.author!!
     override val isGuild: Boolean = false
-    override val isPrivate: Boolean = true
+    override val isPrivate: Boolean = false
     override val isThread: Boolean = true
-    override suspend fun getChannel(): DmChannel = message.channel.asChannel() as DmChannel
     override val name: String = author.username
+
+    /**
+     * @return The Parent channel of the thread where the command was executed in.
+     */
+    override suspend fun getChannel(): ThreadParentChannel = (message.channel.asChannel() as ThreadChannel).getParent()
+
+    /**
+     * @return The ThreadChannel where the command was executed in.
+     */
+    suspend fun getThread(): ThreadChannel = message.channel.asChannel() as ThreadChannel
+
+    override suspend fun getGuild() = message.getGuild()
+    override suspend fun getMember() = message.getAuthorAsMember()!!
+
+    override suspend fun sendMessage(vararg messages: String, parseColors: Boolean) {
+        val channel = getChannel().asChannelOrNull() ?: return
+        messages.onEach { channel.createMessage(it) }
+    }
 }

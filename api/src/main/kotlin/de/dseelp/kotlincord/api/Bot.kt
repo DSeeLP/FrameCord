@@ -28,6 +28,9 @@ import dev.kord.core.Kord
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 
+/**
+ * The Bot interface holds the kord instance and an coroutine context
+ */
 interface Bot: CoroutineScope {
     val kord: Kord
     val isStarted: Boolean

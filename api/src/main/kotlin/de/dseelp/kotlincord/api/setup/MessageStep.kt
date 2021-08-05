@@ -37,7 +37,9 @@ import dev.kord.core.entity.Member
 import dev.kord.core.entity.Message
 import dev.kord.core.entity.channel.GuildMessageChannel
 import dev.kord.core.event.message.MessageCreateEvent
-import dev.kord.rest.builder.message.MessageCreateBuilder
+import dev.kord.rest.builder.message.create.MessageCreateBuilder
+import dev.kord.rest.builder.message.create.actionRow
+import dev.kord.rest.builder.message.modify.actionRow
 
 open class MessageStep(
     val messageBuilder: suspend MessageCreateBuilder.(channel: GuildMessageChannel) -> Unit,

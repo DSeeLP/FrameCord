@@ -28,12 +28,13 @@ import de.dseelp.kommon.command.CommandBuilder
 import de.dseelp.kommon.command.CommandDispatcher
 import de.dseelp.kommon.command.CommandNode
 import de.dseelp.kotlincord.api.InternalKotlinCordApi
+import de.dseelp.kotlincord.api.command.CommandScope
+import de.dseelp.kotlincord.api.command.CommandScope.*
 import de.dseelp.kotlincord.api.command.Sender
 import de.dseelp.kotlincord.api.event.EventHandle
 import de.dseelp.kotlincord.api.event.Listener
 import de.dseelp.kotlincord.api.events.PluginDisableEvent
 import de.dseelp.kotlincord.api.plugins.Plugin
-import de.dseelp.kotlincord.api.utils.CommandScope.*
 import de.dseelp.kotlincord.api.utils.koin.CordKoinComponent
 import org.koin.core.component.inject
 import org.koin.core.qualifier.qualifier
@@ -44,6 +45,7 @@ object Commands : CordKoinComponent {
     internal val guild: CommandDispatcher<Sender> by inject(qualifier("guild"))
     internal val private: CommandDispatcher<Sender> by inject(qualifier("private"))
     internal val console: CommandDispatcher<Sender> by inject(qualifier("console"))
+    internal val thread: CommandDispatcher<Sender> by inject(qualifier("thread"))
 
     val pluginCommands = hashMapOf<Plugin, MutableList<Pair<CommandScope, CommandNode<out Sender>>>>()
 
@@ -54,6 +56,7 @@ object Commands : CordKoinComponent {
                 GUILD -> guild.unregister(pair.second)
                 PRIVATE -> private.unregister(pair.second)
                 CONSOLE -> console.unregister(pair.second)
+                THREAD -> thread.unregister(pair.second)
             }
         }
     }
@@ -64,7 +67,7 @@ object Commands : CordKoinComponent {
     }
 }
 
-@JvmName("registervArray")
+@JvmName("registerArray")
 fun Plugin.register(node: CommandNode<Sender>, scopes: Array<CommandScope>) = register(node, *scopes)
 
 @OptIn(InternalKotlinCordApi::class)
@@ -74,21 +77,12 @@ fun Plugin.register(node: CommandNode<out Sender>, vararg scopes: CommandScope) 
             GUILD -> Commands.guild.register(node)
             PRIVATE -> Commands.private.register(node)
             CONSOLE -> Commands.console.register(node)
+            THREAD -> Commands.thread.register(node)
         }
         Commands.pluginCommands.getOrPut(this) { mutableListOf() }.add(scope to node)
     }
 }
 
-
-enum class CommandScope {
-    GUILD,
-    PRIVATE,
-    CONSOLE;
-
-    companion object {
-        val ALL = values()
-    }
-}
 
 fun <S : Any> literal(
     name: String,

@@ -29,10 +29,7 @@ import de.dseelp.kommon.command.ParsedResult
 import de.dseelp.kotlincord.api.Bot
 import de.dseelp.kotlincord.api.InternalKotlinCordApi
 import de.dseelp.kotlincord.api.ReloadScope
-import de.dseelp.kotlincord.api.command.ConsoleSender
-import de.dseelp.kotlincord.api.command.GuildSender
-import de.dseelp.kotlincord.api.command.PrivateSender
-import de.dseelp.kotlincord.api.command.Sender
+import de.dseelp.kotlincord.api.command.*
 import de.dseelp.kotlincord.api.event.EventHandle
 import de.dseelp.kotlincord.api.events.ConsoleMessageEvent
 import de.dseelp.kotlincord.api.events.ReloadEvent
@@ -52,6 +49,7 @@ import de.dseelp.kotlincord.core.Core
 import de.dseelp.kotlincord.core.FakePlugin
 import dev.kord.common.annotation.KordPreview
 import dev.kord.common.entity.InteractionType
+import dev.kord.core.entity.channel.TopGuildMessageChannel
 import dev.kord.core.entity.component.ButtonComponent
 import dev.kord.core.entity.component.SelectMenuComponent
 import dev.kord.core.entity.interaction.ComponentInteraction
@@ -94,7 +92,10 @@ object CoreListener : CordKoinComponent {
         if (message.author == self || message.author == null) return
         if (message.embeds.isNotEmpty()) return
         val guild = event.getGuild()
-        val (sender, prefix) = if (guild != null) GuildSender(message) to guild.info.prefix else PrivateSender(message) to "!"
+        val channel = message.channel
+        val (sender, prefix) = if (guild != null) {
+            (if (channel is TopGuildMessageChannel) GuildSender(message) else ThreadSender(message)) to guild.info.prefix
+        } else PrivateSender(message) to "!"
         val tagPrefix = self.clientMention
         val taggedPrefix = content.startsWith(tagPrefix)
         if (!content.startsWith(prefix) && !taggedPrefix) return

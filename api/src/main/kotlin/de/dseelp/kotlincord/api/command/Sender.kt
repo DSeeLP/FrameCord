@@ -24,18 +24,14 @@
 
 package de.dseelp.kotlincord.api.command
 
-import dev.kord.rest.builder.message.MessageCreateBuilder
-
 
 sealed interface Sender {
     val isConsole: Boolean
+
+    /**
+     * The name of the sender. If the command is executed from the console it is "Console"
+     */
     val name: String
 
     suspend fun sendMessage(vararg messages: String, parseColors: Boolean = true)
-
-    @Deprecated(
-        "Please use createMessage instead! This will be removed in a future release",
-        ReplaceWith("createMessage(message)")
-    )
-    suspend fun sendMessage(message: MessageCreateBuilder.() -> Unit)
 }
