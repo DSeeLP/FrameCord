@@ -30,11 +30,11 @@ import de.dseelp.kommon.command.CommandNode
 import de.dseelp.kommon.command.arguments.StringArgument
 import de.dseelp.kotlincord.api.*
 import de.dseelp.kotlincord.api.command.Command
+import de.dseelp.kotlincord.api.command.CommandScope
 import de.dseelp.kotlincord.api.command.ConsoleSender
 import de.dseelp.kotlincord.api.plugins.repository.Repository
 import de.dseelp.kotlincord.api.plugins.repository.RepositoryIndex
 import de.dseelp.kotlincord.api.plugins.repository.RepositoryManager
-import de.dseelp.kotlincord.api.utils.CommandScope
 import de.dseelp.kotlincord.api.utils.koin.CordKoinComponent
 import de.dseelp.kotlincord.api.utils.literal
 import io.ktor.http.*

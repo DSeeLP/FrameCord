@@ -29,11 +29,11 @@ import de.dseelp.kommon.command.arguments.StringArgument
 import de.dseelp.kotlincord.api.InternalKotlinCordApi
 import de.dseelp.kotlincord.api.PathQualifiers
 import de.dseelp.kotlincord.api.command.Command
+import de.dseelp.kotlincord.api.command.CommandScope
 import de.dseelp.kotlincord.api.command.ConsoleSender
 import de.dseelp.kotlincord.api.plugins.PluginData
 import de.dseelp.kotlincord.api.plugins.PluginLoader
 import de.dseelp.kotlincord.api.plugins.PluginManager
-import de.dseelp.kotlincord.api.utils.CommandScope
 import de.dseelp.kotlincord.api.utils.koin.CordKoinComponent
 import de.dseelp.kotlincord.api.utils.literal
 import org.koin.core.component.inject

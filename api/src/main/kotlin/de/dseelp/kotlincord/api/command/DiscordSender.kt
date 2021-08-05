@@ -41,19 +41,22 @@ sealed interface DiscordSender<T : MessageChannel> : Sender {
      * The user who executed the command
      */
     val author: User
-    val isGuild: Boolean
-    val isPrivate: Boolean
-    val isThread: Boolean
-    suspend fun getChannel(): T
-    val message: Message
-    override val isConsole: Boolean
-        get() = false
 
+    suspend fun getChannel(): T
+
+    /**
+     * The message object of the executed command
+     */
+    val message: Message
     override suspend fun sendMessage(vararg messages: String, parseColors: Boolean) {
         val channel = (if (this is ThreadSender) getThread() else getChannel()).asChannelOrNull() ?: return
         messages.onEach { channel.createMessage(it) }
     }
 
+    /**
+     * Generates a footer based on the sender of the command
+     * @return The generated footer
+     */
     suspend fun footer() = EmbedBuilder.Footer().apply {
         if (message.channel is GuildChannelBehavior) {
             val member = message.getAuthorAsMember()!!
@@ -67,6 +70,11 @@ sealed interface DiscordSender<T : MessageChannel> : Sender {
     }
 }
 
+
+/**
+ * Sends a message to the channel/thread were the command was executed
+ * @return The message that was sent
+ */
 @OptIn(ExperimentalContracts::class)
 suspend inline fun DiscordSender<out MessageChannel>.createMessage(message: MessageCreateBuilder.() -> Unit): Message {
     contract {
@@ -75,6 +83,10 @@ suspend inline fun DiscordSender<out MessageChannel>.createMessage(message: Mess
     return (if (this is ThreadSender) getThread() else getChannel()).createMessage(message)
 }
 
+/**
+ * Sends an embed to the channel/thread were the command was executed
+ * @return The message that was sent
+ */
 @OptIn(ExperimentalContracts::class)
 suspend inline fun DiscordSender<out MessageChannel>.createEmbed(message: EmbedBuilder.() -> Unit): Message {
     contract {

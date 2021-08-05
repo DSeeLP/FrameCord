@@ -26,12 +26,20 @@ package de.dseelp.kotlincord.api.command
 
 
 sealed interface Sender {
-    val isConsole: Boolean
+    /**
+     * The scope where the command was executed
+     */
+    val type: CommandScope
 
     /**
      * The name of the sender. If the command is executed from the console it is "Console"
      */
     val name: String
 
+    /**
+     * Sends the messages to the sender.
+     * @param messages The messges that should be sent
+     * @param parseColors If the colors should be parsed. Only has an effect when the sender is a [ConsoleSender]
+     */
     suspend fun sendMessage(vararg messages: String, parseColors: Boolean = true)
 }

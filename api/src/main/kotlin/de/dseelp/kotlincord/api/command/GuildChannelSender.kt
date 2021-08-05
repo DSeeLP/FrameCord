@@ -24,18 +24,11 @@
 
 package de.dseelp.kotlincord.api.command
 
-import de.dseelp.kotlincord.api.console.ConsoleColor
-import de.dseelp.kotlincord.api.logging.logger
+import dev.kord.core.entity.channel.GuildMessageChannel
 
 /**
- * This Sender is used when a command was executed in the console
+ * Util class that combines a [DiscordSender] and [GuildSenderBehavior]
  * @author DSeeLP
+ * @since 0.4.0
  */
-object ConsoleSender : Sender {
-    private val log by logger("")
-    override val type: CommandScope = CommandScope.CONSOLE
-    override val name: String = "Console"
-    override suspend fun sendMessage(vararg messages: String, parseColors: Boolean) {
-        messages.onEach { log.command(if (parseColors) ConsoleColor.toColouredString('&', it) else it) }
-    }
-}
+sealed interface GuildChannelSender<T : GuildMessageChannel> : DiscordSender<T>, GuildSenderBehavior

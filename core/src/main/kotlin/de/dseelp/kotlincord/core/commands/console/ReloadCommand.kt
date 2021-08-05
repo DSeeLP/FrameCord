@@ -31,9 +31,9 @@ import de.dseelp.kotlincord.api.Cord
 import de.dseelp.kotlincord.api.InternalKotlinCordApi
 import de.dseelp.kotlincord.api.ReloadScope
 import de.dseelp.kotlincord.api.command.Command
+import de.dseelp.kotlincord.api.command.CommandScope
 import de.dseelp.kotlincord.api.command.Sender
 import de.dseelp.kotlincord.api.plugins.PluginComponent
-import de.dseelp.kotlincord.api.utils.CommandScope
 import de.dseelp.kotlincord.core.FakePlugin
 import org.koin.core.component.inject
 

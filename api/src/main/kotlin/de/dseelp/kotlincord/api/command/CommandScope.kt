@@ -24,10 +24,29 @@
 
 package de.dseelp.kotlincord.api.command
 
+/**
+ * Contains the Scopes a command can have.
+ * @author DSeeLP
+ */
 enum class CommandScope {
+    /**
+     * Used for commands executed in a text channel.
+     */
     GUILD,
+
+    /**
+     * Used for commands executed in a direct message.
+     */
     PRIVATE,
+
+    /**
+     * Used for commands executed in a thread on a guild.
+     */
     THREAD,
+
+    /**
+     * Used for commands executed in the console.
+     */
     CONSOLE;
 
     companion object {

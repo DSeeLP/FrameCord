@@ -31,10 +31,8 @@ import de.dseelp.kotlincord.api.configs.file
 import de.dseelp.kotlincord.api.configs.toFile
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import org.spongepowered.configurate.objectmapping.ConfigSerializable
 import java.nio.file.Path
 
-@ConfigSerializable
 data class RepositoryConfig(val repositories: Array<String>) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

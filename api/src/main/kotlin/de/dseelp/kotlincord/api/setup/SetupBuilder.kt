@@ -25,7 +25,7 @@
 package de.dseelp.kotlincord.api.setup
 
 import de.dseelp.kommon.command.CommandContext
-import de.dseelp.kotlincord.api.apply
+import de.dseelp.kotlincord.api.applySuspending
 import de.dseelp.kotlincord.api.interactions.ButtonContext
 import de.dseelp.kotlincord.api.plugins.Plugin
 import dev.kord.common.annotation.KordPreview
@@ -41,8 +41,7 @@ suspend fun <P : Plugin> setup(
     block: suspend SetupBuilder<P>.() -> Unit
 ): Setup<P> {
     val builder = SetupBuilder(plugin, channel)
-    builder.apply { }
-    block.invoke(builder)
+    builder.applySuspending(block)
     return builder.build()
 }
 
@@ -65,11 +64,11 @@ class SetupBuilder<P : Plugin>(val plugin: P, val channel: GuildMessageChannel) 
     }
 
     suspend fun buttonStep(block: suspend ButtonStepBuilder.() -> Unit) {
-        step(ButtonStepBuilder().apply(block).build(plugin))
+        step(ButtonStepBuilder().applySuspending(block).build(plugin))
     }
 
     suspend fun selectionStep(block: suspend SelectionMenuStepBuilder.() -> Unit) {
-        step(SelectionMenuStepBuilder().apply(block).build(plugin))
+        step(SelectionMenuStepBuilder().applySuspending(block).build(plugin))
     }
 
     fun messageStep(messageBuilder: suspend MessageCreateBuilder.(channel: GuildMessageChannel) -> Unit) {

@@ -22,18 +22,25 @@
  * SOFTWARE.
  */
 
-package de.dseelp.kotlincord.api
+package de.dseelp.kotlincord.api.command
 
 import dev.kord.core.entity.Guild
 import dev.kord.core.entity.Member
 
+/**
+ * Contains util methods for GuildSenders
+ * @author DSeeLP
+ * @since 0.4.0
+ */
 interface GuildSenderBehavior {
     /**
+     * Gets the guild where the command was executed asynchronously
      * @return The guild where the command was executed in.
      */
     suspend fun getGuild(): Guild
 
     /**
+     * Gets the member who executed the command asynchronously
      * @return The member who executed the command
      */
     suspend fun getMember(): Member

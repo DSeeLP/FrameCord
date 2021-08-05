@@ -24,26 +24,30 @@
 
 package de.dseelp.kotlincord.api.command
 
-import de.dseelp.kotlincord.api.GuildSenderBehavior
 import dev.kord.core.entity.Message
 import dev.kord.core.entity.User
 import dev.kord.core.entity.channel.ThreadParentChannel
 import dev.kord.core.entity.channel.thread.ThreadChannel
 
-class ThreadSender(override val message: Message) : DiscordSender<ThreadParentChannel>, GuildSenderBehavior {
+/**
+ * This Sender is used when a command was executed in a thread
+ * @author DSeeLP
+ * @since 0.4.0
+ */
+class ThreadSender(override val message: Message) : GuildChannelSender<ThreadParentChannel> {
     override val author: User = message.author!!
-    override val isGuild: Boolean = false
-    override val isPrivate: Boolean = false
-    override val isThread: Boolean = true
+    override val type: CommandScope = CommandScope.THREAD
     override val name: String = author.username
 
     /**
+     * Gets the parent of the thread where the command was executed asynchronously
      * @return The Parent channel of the thread where the command was executed in.
      */
     override suspend fun getChannel(): ThreadParentChannel = (message.channel.asChannel() as ThreadChannel).getParent()
 
     /**
-     * @return The ThreadChannel where the command was executed in.
+     * Gets the thread where the command was executed asynchronously
+     * @return The thread in which the command was executed
      */
     suspend fun getThread(): ThreadChannel = message.channel.asChannel() as ThreadChannel
 

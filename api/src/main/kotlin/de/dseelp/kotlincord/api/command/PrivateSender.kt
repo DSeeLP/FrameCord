@@ -28,12 +28,13 @@ import dev.kord.core.entity.Message
 import dev.kord.core.entity.User
 import dev.kord.core.entity.channel.DmChannel
 
-
+/**
+ * This Sender is used when a command was executed in a direct message
+ * @author DSeeLP
+ */
 class PrivateSender(override val message: Message) : DiscordSender<DmChannel> {
     override val author: User = message.author!!
-    override val isGuild: Boolean = false
-    override val isPrivate: Boolean = true
-    override val isThread: Boolean = true
+    override val type: CommandScope = CommandScope.PRIVATE
     override suspend fun getChannel(): DmChannel = message.channel.asChannel() as DmChannel
     override val name: String = author.username
 }

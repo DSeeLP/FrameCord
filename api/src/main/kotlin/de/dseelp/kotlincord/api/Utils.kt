@@ -234,7 +234,7 @@ val bot: Bot
     get() = CordKoinContext.app!!.koin.get()
 
 @OptIn(ExperimentalContracts::class)
-suspend inline fun <T> T.apply(block: suspend T.() -> Unit): T {
+suspend inline fun <T> T.applySuspending(block: suspend T.() -> Unit): T {
     contract {
         callsInPlace(block, InvocationKind.EXACTLY_ONCE)
     }
