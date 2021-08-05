@@ -72,6 +72,7 @@ class RoomCommand : Command<GuildSender> {
             sender.getMember().checkPermissions(Permission.ManageChannels)
         }
         noAccess {
+            sender.message.deleteIgnoringNotFound()
             sender.getChannel().createEmbed {
                 title = "Permission denied"
                 color = Color.red
@@ -121,6 +122,7 @@ class RoomCommand : Command<GuildSender> {
             }
         }
         noAccess {
+            sender.message.deleteIgnoringNotFound()
             sender.getChannel().createEmbed {
                 title = "Permission denied"
                 color = Color.red
@@ -173,6 +175,9 @@ class RoomCommand : Command<GuildSender> {
                 val gFooter = sender.footer()
                 if (checkRateLimit(channel)) return@execute
                 setup(PrivateChannelPlugin, sender.getChannel()) {
+                    checkAccess { m, channel ->
+                        member.id == m.id
+                    }
                     messageStep {
                         embed {
                             title = "Channel rename"
@@ -188,19 +193,31 @@ class RoomCommand : Command<GuildSender> {
                                 description = "The channel wasn't renamed"
                                 footer = gFooter
                             }
+                            return@onCompletion
                         }
                         val nameTemplate = it.results[0] as String
                         suspendingDatabase {
                             suspendedTransaction {
+                                val channel = getMemberChannel(member)
+                                if (channel == null) {
+                                    sender.createEmbed {
+                                        title = "Error!"
+                                        color = Color.red
+                                        description = "The channel doesn't exist anymore!"
+                                        footer = gFooter
+                                    }
+                                    return@suspendedTransaction
+                                }
                                 channel.customNameTemplate = nameTemplate
                                 updateChannel(channel)
+                                sender.createEmbed {
+                                    title = "Channel renamed"
+                                    description = "The channel has been renamed to `$name`"
+                                    footer = gFooter
+                                }
                             }
                         }
-                        sender.createEmbed {
-                            title = "Channel renamed"
-                            description = "The channel has been renamed to `$name`"
-                            footer = gFooter
-                        }
+
                     }
                 }.start(true)
             }
@@ -292,6 +309,9 @@ class RoomCommand : Command<GuildSender> {
                                         it
                                     )?.mention
                                 } ?: "NaN"
+                            }
+                            field("Status") {
+                                if (channel.locked) "Locked" else "Open"
                             }
                             footer = member.footer()
                         }.deleteAfter(seconds(30))
@@ -391,6 +411,7 @@ class RoomCommand : Command<GuildSender> {
                     val member = sender.getMember()
                     val activeChannel = getMemberChannel(member)!!
                     val channel = suspendedTransaction {
+                        activeChannel.locked = true
                         sender.getGuild().getChannel(activeChannel.channelId.asSnowflake) as TopGuildChannel
                     }
                     channel.editRolePermission(channel.guildId) {
@@ -432,6 +453,7 @@ class RoomCommand : Command<GuildSender> {
                     val member = sender.getMember()
                     val activeChannel = getMemberChannel(member)!!
                     val channel = suspendedTransaction {
+                        activeChannel.locked = false
                         sender.getGuild().getChannel(activeChannel.channelId.asSnowflake) as TopGuildChannel
                     }
                     channel.editRolePermission(channel.guildId) {
