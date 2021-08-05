@@ -35,15 +35,17 @@ import dev.kord.common.kColor
 import dev.kord.core.behavior.interaction.edit
 import dev.kord.core.behavior.interaction.followUpEphemeral
 import dev.kord.core.entity.channel.GuildMessageChannel
-import dev.kord.rest.builder.interaction.embed
+import dev.kord.rest.builder.message.create.actionRow
+import dev.kord.rest.builder.message.create.embed
+import dev.kord.rest.builder.message.modify.embed
 import io.github.dseelp.framecord.api.action
 import io.github.dseelp.framecord.api.asSnowflake
 import io.github.dseelp.framecord.api.checkPermissions
 import io.github.dseelp.framecord.api.command.Command
+import io.github.dseelp.framecord.api.command.CommandScope
 import io.github.dseelp.framecord.api.command.GuildSender
 import io.github.dseelp.framecord.api.command.arguments.MentionArgument
 import io.github.dseelp.framecord.api.command.createMessage
-import io.github.dseelp.framecord.api.utils.CommandScope
 import io.github.dseelp.framecord.plugins.moderation.ModerationPlugin
 import java.awt.Color
 
