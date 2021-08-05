@@ -41,7 +41,6 @@ application {
 val coroutinesVersion: String by project
 val kordVersion: String by project
 val koinVersion: String by project
-val configurateVersion: String by project
 val datetimeVersion: String by project
 val kommonVersion: String by project
 val serializationVersion: String by project
@@ -63,9 +62,6 @@ dependencies {
     }
     api("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializationVersion")
     api("com.github.uchuhimo.konf:konf:master-SNAPSHOT")
-    api("org.spongepowered:configurate-jackson:$configurateVersion")
-    api("org.spongepowered:configurate-yaml:$configurateVersion")
-    api("org.spongepowered:configurate-extra-kotlin:$configurateVersion")
     api("org.jetbrains.kotlinx:kotlinx-datetime:$datetimeVersion")
     api("org.jetbrains.exposed:exposed-core:$exposedVersion")
     api("org.jetbrains.exposed:exposed-dao:$exposedVersion")
