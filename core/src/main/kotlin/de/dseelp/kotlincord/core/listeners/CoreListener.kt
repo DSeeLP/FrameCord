@@ -92,7 +92,7 @@ object CoreListener : CordKoinComponent {
         if (message.author == self || message.author == null) return
         if (message.embeds.isNotEmpty()) return
         val guild = event.getGuild()
-        val channel = message.channel
+        val channel = message.channel.asChannel()
         val (sender, prefix) = if (guild != null) {
             (if (channel is TopGuildMessageChannel) GuildSender(message) else ThreadSender(message)) to guild.info.prefix
         } else PrivateSender(message) to "!"
