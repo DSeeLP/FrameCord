@@ -42,6 +42,7 @@ plugins {
 }
 
 val isDeployingToCentral = System.getenv().containsKey("DEPLOY_CENTRAL")
+val isDeployingToGithubPackages = System.getenv().containsKey("GITHUB_TOKEN")
 
 if (isDeployingToCentral) println("Deploying to central...")
 
@@ -167,12 +168,26 @@ allprojects {
         if (excludedModules.contains(this@allprojects.name)) return@publishing
         if (rootProject == this@allprojects) return@publishing
         repositories {
-            if (isDeployingToCentral) maven(url = "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/") {
-                credentials {
-                    username = System.getenv("MAVEN_USERNAME")
-                    password = System.getenv("MAVEN_PASSWORD")
+            var oneMet = false
+            if (isDeployingToCentral) {
+                maven(url = "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                    credentials {
+                        username = System.getenv("MAVEN_USERNAME")
+                        password = System.getenv("MAVEN_PASSWORD")
+                    }
                 }
-            } else mavenLocal()
+                oneMet = true
+            }
+            if (isDeployingToGithubPackages) {
+                maven(url = "https://maven.pkg.github.com/DSeeLP/FrameCord") {
+                    credentials {
+                        username = System.getenv("GITHUB_ACTOR")
+                        password = System.getenv("GITHUB_TOKEN")
+                    }
+                }
+                oneMet = true
+            }
+            if (!oneMet) mavenLocal()
         }
         publications {
             register(this@allprojects.name, MavenPublication::class) {
