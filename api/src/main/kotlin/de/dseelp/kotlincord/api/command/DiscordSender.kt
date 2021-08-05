@@ -76,25 +76,9 @@ suspend inline fun DiscordSender<out MessageChannel>.createMessage(message: Mess
 }
 
 @OptIn(ExperimentalContracts::class)
-suspend inline fun DiscordSender<out MessageChannel>.createMessageSafe(message: MessageCreateBuilder.() -> Unit): Message? {
-    contract {
-        callsInPlace(message, InvocationKind.EXACTLY_ONCE)
-    }
-    return getChannel().asChannelOrNull()?.createMessage(message)
-}
-
-@OptIn(ExperimentalContracts::class)
 suspend inline fun DiscordSender<out MessageChannel>.createEmbed(message: EmbedBuilder.() -> Unit): Message {
     contract {
         callsInPlace(message, InvocationKind.EXACTLY_ONCE)
     }
     return getChannel().createEmbed(message)
-}
-
-@OptIn(ExperimentalContracts::class)
-suspend inline fun DiscordSender<out MessageChannel>.createEmbedSafe(message: EmbedBuilder.() -> Unit): Message? {
-    contract {
-        callsInPlace(message, InvocationKind.EXACTLY_ONCE)
-    }
-    return getChannel().asChannelOrNull()?.createEmbed(message)
 }
