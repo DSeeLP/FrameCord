@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 DSeeLP & KotlinCord contributors
+ * Copyright (c) 2021 DSeeLP & FrameCord contributors
  *
  * MIT License
  *
@@ -24,7 +24,6 @@
 
 plugins {
     kotlin("jvm")
-    id("com.github.johnrengelman.shadow")
     kotlin("plugin.serialization")
 }
 
@@ -37,23 +36,12 @@ dependencies {
 val implementationVersion = version
 
 tasks {
-    named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar") {
-        archiveBaseName.set("shadow")
-        mergeServiceFiles()
-        manifest {
-            attributes(mapOf("Implementation-Version" to implementationVersion))
-        }
-    }
-}
-
-tasks {
     build {
-        dependsOn(shadowJar)
     }
 
-    register<Copy>("copyShadow") {
-        from(shadowJar.get().archiveFile.get().asFile)
+    register<Copy>("copyJar") {
+        from(jar.get().archiveFile.get().asFile)
         into(File("../../run/plugins/"))
-        dependsOn(build)
+        dependsOn(jar)
     }
 }

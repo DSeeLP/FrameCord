@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 DSeeLP & KotlinCord contributors
+ * Copyright (c) 2021 DSeeLP & FrameCord contributors
  *
  * MIT License
  *
@@ -24,20 +24,19 @@
 
 package org.slf4j.impl
 
-import de.dseelp.kotlincord.api.InternalKotlinCordApi
-import de.dseelp.kotlincord.api.console.Console
-import de.dseelp.kotlincord.api.console.ConsoleColor
-import de.dseelp.kotlincord.api.logging.KLogger
-import de.dseelp.kotlincord.api.utils.koin.CordKoinComponent
-import de.dseelp.kotlincord.core.ConsoleImpl
-import de.dseelp.kotlincord.core.CordImpl
+import io.github.dseelp.framecord.api.console.Console
+import io.github.dseelp.framecord.api.console.ConsoleColor
+import io.github.dseelp.framecord.api.logging.KLogger
+import io.github.dseelp.framecord.api.utils.koin.CordKoinComponent
+import io.github.dseelp.framecord.core.ConsoleImpl
+import io.github.dseelp.framecord.core.CordImpl
 import org.koin.core.component.inject
 import org.slf4j.helpers.MarkerIgnoringBase
 import org.slf4j.helpers.MessageFormatter
 import org.slf4j.spi.LocationAwareLogger
 import java.io.PrintStream
 
-@OptIn(InternalKotlinCordApi::class)
+@OptIn(io.github.dseelp.framecord.api.InternalFrameCordApi::class)
 class CordLogger(name: String) : MarkerIgnoringBase(), KLogger, CordKoinComponent {
     private val LOG_LEVEL_TRACE = LocationAwareLogger.TRACE_INT
     private val LOG_LEVEL_DEBUG = LocationAwareLogger.DEBUG_INT

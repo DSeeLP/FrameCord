@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 DSeeLP & KotlinCord contributors
+ * Copyright (c) 2021 DSeeLP & FrameCord contributors
  *
  * MIT License
  *
@@ -30,7 +30,7 @@ plugins {
 }
 
 application {
-    val main = "de.dseelp.kotlincord.core.CordBootstrap"
+    val main = "io.github.dseelp.framecord.core.CordBootstrap"
     mainClass.set(main)
     @Suppress("DEPRECATION")
     mainClassName = main

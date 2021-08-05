@@ -1,0 +1,49 @@
+/*
+ * Copyright (c) 2021 DSeeLP & FrameCord contributors
+ *
+ * MIT License
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+package io.github.dseelp.framecord.core.utils
+
+import io.ktor.client.statement.*
+import io.ktor.http.*
+import io.ktor.util.cio.*
+import io.ktor.utils.io.*
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import java.io.File
+
+@OptIn(ExperimentalCoroutinesApi::class)
+suspend fun HttpResponse.downloadFile(file: File): CompletableDeferred<Long> = coroutineScope {
+    val deferred = CompletableDeferred<Long>()
+    if (!status.isSuccess()) {
+        deferred.complete(status.value * -1L)
+    }
+    val async = async { content.copyAndClose(file.writeChannel()) }
+    async.invokeOnCompletion {
+        if (it == null) deferred.complete(async.getCompleted())
+        else deferred.completeExceptionally(it)
+    }
+    return@coroutineScope deferred
+}

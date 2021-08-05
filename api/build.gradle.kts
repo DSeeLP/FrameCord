@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 /*
- * Copyright (c) 2021 DSeeLP & KotlinCord contributors
+ * Copyright (c) 2021 DSeeLP & FrameCord contributors
  *
  * MIT License
  *
@@ -41,7 +41,6 @@ application {
 val coroutinesVersion: String by project
 val kordVersion: String by project
 val koinVersion: String by project
-val configurateVersion: String by project
 val datetimeVersion: String by project
 val kommonVersion: String by project
 val serializationVersion: String by project
@@ -49,6 +48,7 @@ val jansiVersion: String by project
 val exposedVersion: String by project
 val hikaricpVersion: String by project
 val ktorVersion: String by project
+val kordxEmojiVersion: String by project
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
@@ -63,9 +63,6 @@ dependencies {
     }
     api("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializationVersion")
     api("com.github.uchuhimo.konf:konf:master-SNAPSHOT")
-    api("org.spongepowered:configurate-jackson:$configurateVersion")
-    api("org.spongepowered:configurate-yaml:$configurateVersion")
-    api("org.spongepowered:configurate-extra-kotlin:$configurateVersion")
     api("org.jetbrains.kotlinx:kotlinx-datetime:$datetimeVersion")
     api("org.jetbrains.exposed:exposed-core:$exposedVersion")
     api("org.jetbrains.exposed:exposed-dao:$exposedVersion")
@@ -76,6 +73,7 @@ dependencies {
     api("io.github.dseelp:discord-oauth2-api:0.2") {
         isChanging = true
     }
+    api("dev.kord.x:emoji:$kordxEmojiVersion")
 }
 
 val implementationVersion = version

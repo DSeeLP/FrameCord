@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 DSeeLP & KotlinCord contributors
+ * Copyright (c) 2021 DSeeLP & FrameCord contributors
  *
  * MIT License
  *
@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-val defaultGroupName = "io.github.dseelp.kotlincord"
+val defaultGroupName = "io.github.dseelp.framecord"
 val projectVersion: String by project
 
 group = defaultGroupName
@@ -36,15 +36,19 @@ plugins {
     id("org.jetbrains.dokka") version "1.5.0" apply false
 
     kotlin("jvm") version "1.5.21" apply false
+    kotlin("multiplatform") version "1.5.21" apply false
     id("com.github.johnrengelman.shadow") version "6.1.0" apply false
     kotlin("plugin.serialization") version "1.5.21" apply false
 }
 
 val isDeployingToCentral = System.getenv().containsKey("DEPLOY_CENTRAL")
+val isDeployingToGithubPackages = System.getenv().containsKey("GITHUB_TOKEN")
 
 if (isDeployingToCentral) println("Deploying to central...")
 
 val rootProject = project
+
+val multiplatformProjects = arrayOf<String>()
 
 val excludedModules = arrayOf("moderation", "plugins", "privatechannels")
 allprojects {
@@ -64,7 +68,9 @@ allprojects {
     }
 
     apply(plugin = "maven-publish")
-    apply(plugin = "org.jetbrains.kotlin.jvm")
+    if (multiplatformProjects.contains(project.name))
+        apply(plugin = "org.jetbrains.kotlin.multiplatform")
+    else apply(plugin = "org.jetbrains.kotlin.jvm")
     apply(plugin = "signing")
     apply(plugin = "org.jetbrains.dokka")
     apply(plugin = "java")
@@ -149,7 +155,7 @@ allprojects {
             if (project != rootProject) return@register
             from(distributionDir)
             //from(File(distributionDir, "core.jar"))
-            archiveFileName.set("kotlincord.zip")
+            archiveFileName.set("framecord.zip")
         }
     }
 
@@ -162,12 +168,26 @@ allprojects {
         if (excludedModules.contains(this@allprojects.name)) return@publishing
         if (rootProject == this@allprojects) return@publishing
         repositories {
-            if (isDeployingToCentral) maven(url = "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/") {
-                credentials {
-                    username = System.getenv("MAVEN_USERNAME")
-                    password = System.getenv("MAVEN_PASSWORD")
+            var oneMet = false
+            if (isDeployingToCentral) {
+                maven(url = "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                    credentials {
+                        username = System.getenv("MAVEN_USERNAME")
+                        password = System.getenv("MAVEN_PASSWORD")
+                    }
                 }
-            } else mavenLocal()
+                oneMet = true
+            }
+            if (isDeployingToGithubPackages) {
+                maven(url = "https://maven.pkg.github.com/DSeeLP/FrameCord") {
+                    credentials {
+                        username = System.getenv("GITHUB_ACTOR")
+                        password = System.getenv("GITHUB_TOKEN")
+                    }
+                }
+                oneMet = true
+            }
+            if (!oneMet) mavenLocal()
         }
         publications {
             register(this@allprojects.name, MavenPublication::class) {
@@ -177,8 +197,8 @@ allprojects {
 
                 pom {
                     url.set("https://github.com/DSeeLP/Kommon")
-                    name.set("KotlinCord")
-                    description.set("KotlinCord, an simple DiscordBot Framework for Kotlin")
+                    name.set("FrameCord")
+                    description.set("FrameCord, an simple DiscordBot Framework for Kotlin")
                     developers {
                         developer {
                             name.set("DSeeLP")
@@ -193,9 +213,9 @@ allprojects {
                         }
                     }
                     scm {
-                        connection.set("scm:git:git://github.com/DSeeLP/KotlinCord.git")
-                        developerConnection.set("scm:git:git://github.com/DSeeLP/KotlinCord.git")
-                        url.set("https://github.com/DSeeLP/KotlinCord/")
+                        connection.set("scm:git:git://github.com/DSeeLP/FrameCord.git")
+                        developerConnection.set("scm:git:git://github.com/DSeeLP/FrameCord.git")
+                        url.set("https://github.com/DSeeLP/FrameCord/")
                     }
                 }
             }
