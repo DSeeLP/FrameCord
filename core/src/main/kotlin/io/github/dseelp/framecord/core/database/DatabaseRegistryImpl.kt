@@ -36,6 +36,7 @@ import io.github.dseelp.framecord.core.CordBootstrap
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.transactions.TransactionManager
 
 @Listener
 class DatabaseRegistryImpl : DatabaseRegistry {
@@ -60,7 +61,10 @@ class DatabaseRegistryImpl : DatabaseRegistry {
             databaseInfo.config.poolName = plugin.name
             databaseInfo.config.validate()
             val dataSource = HikariDataSource(databaseInfo.config)
+            val defaultDb = TransactionManager.defaultDatabase
             val cord = CordDatabase(dataSource, Database.connect(dataSource), databaseInfo)
+            if (defaultDb != null) TransactionManager.defaultDatabase = defaultDb
+            TransactionManager.defaultDatabase
             databases[plugin] = cord
             databaseScopes[plugin] = DatabaseScope(cord)
             return cord
