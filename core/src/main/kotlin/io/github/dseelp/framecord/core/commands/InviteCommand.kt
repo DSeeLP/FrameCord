@@ -29,25 +29,24 @@ import de.dseelp.oauth2.discord.api.DiscordClient
 import de.dseelp.oauth2.discord.api.entities.GuildPermission
 import dev.kord.common.Color
 import dev.kord.core.behavior.channel.createMessage
-import dev.kord.core.entity.channel.MessageChannel
 import dev.kord.rest.builder.message.create.embed
-import io.github.dseelp.framecord.api.command.Command
-import io.github.dseelp.framecord.api.command.CommandScope
-import io.github.dseelp.framecord.api.command.DiscordSender
-import io.github.dseelp.framecord.api.command.createEmbed
+import io.github.dseelp.framecord.api.command.*
 import io.github.dseelp.framecord.api.configs.BotConfig
+import io.github.dseelp.framecord.api.logging.LogManager
+import io.github.dseelp.framecord.api.logging.logger
 import io.github.dseelp.framecord.api.plugins.DisableAutoLoad
-import io.github.dseelp.framecord.api.utils.deleteIgnoringNotFound
+import io.github.dseelp.framecord.api.utils.deleteAfter
 import io.github.dseelp.framecord.api.utils.koin.CordKoinComponent
 import io.github.dseelp.framecord.api.utils.literal
 import io.github.dseelp.framecord.api.utils.red
 import io.ktor.client.*
-import kotlinx.coroutines.delay
 import org.koin.core.component.inject
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.ExperimentalTime
 
 @OptIn(io.github.dseelp.framecord.api.InternalFrameCordApi::class)
 @DisableAutoLoad
-class InviteCommand : Command<DiscordSender<MessageChannel>>, CordKoinComponent {
+class InviteCommand : Command<Sender>, CordKoinComponent {
 
     private lateinit var oauth2Client: DiscordClient
 
@@ -71,31 +70,40 @@ class InviteCommand : Command<DiscordSender<MessageChannel>>, CordKoinComponent 
         }
     }
 
-    override val scopes: Array<CommandScope> = arrayOf(CommandScope.GUILD, CommandScope.PRIVATE)
-    override val node: CommandNode<DiscordSender<MessageChannel>> = literal("invite") {
+    val logger by logger(LogManager.ROOT)
+
+    override val scopes: Array<CommandScope> = arrayOf(CommandScope.GUILD, CommandScope.PRIVATE, CommandScope.CONSOLE)
+
+    @OptIn(ExperimentalTime::class)
+    override val node: CommandNode<Sender> = literal("invite") {
         checkAccess {
             getConfig().enabled
         }
         execute {
             val inviteConfig = getConfig()
             if (!inviteConfig.enabled || inviteConfig.clientId <= 0) {
-                val message = sender.getChannel().createMessage {
-                    embed {
-                        color = Color.red
-                        title = "Error!"
-                        description = "The invite command is disabled!"
-                    }
+                if (sender is DiscordSender<*>) {
+                    (sender as DiscordSender<*>).getChannel().createMessage {
+                        embed {
+                            color = Color.red
+                            title = "Error!"
+                            description = "The invite command is disabled!"
+                        }
+                    }.deleteAfter(seconds(5000))
+                    return@execute
+                } else {
+                    logger.warn("The invite command is disabled in the config")
                 }
-                delay(5000)
-                message.deleteIgnoringNotFound()
-                return@execute
+
             }
             checkClient(inviteConfig)
             val link = oauth2Client.createBotInvite(GuildPermission.ADMINISTRATOR)
-            sender.createEmbed {
-                title = "FrameCord"
-                description = "You can invite the bot by clicking [this link]($link)"
-            }
+            if (sender is DiscordSender<*>) {
+                (sender as DiscordSender<*>).createEmbed {
+                    title = "FrameCord"
+                    description = "You can invite the bot by clicking [this link]($link)"
+                }
+            } else sender.sendMessage("You can invite the bot by using $link")
         }
     }
 }
