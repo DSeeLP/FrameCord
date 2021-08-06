@@ -62,6 +62,7 @@ open class MessageStep(
         buttonAction = setup.plugin.registerButtonAction(randomAlphanumeric(32), literal("") {
             execute {
                 sender.interaction.acknowledgePublicDeferredMessageUpdate()
+                if (!checkAccess(sender.interaction.user.asMember(channel.guildId), channel)) return@execute
                 setup.plugin.unregisterButtonAction(buttonAction)
                 setup.cancelSetup()
             }
