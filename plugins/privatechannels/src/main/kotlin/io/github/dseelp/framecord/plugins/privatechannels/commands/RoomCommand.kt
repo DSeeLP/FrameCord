@@ -110,13 +110,13 @@ class RoomCommand : Command<GuildSender> {
     }
 
     @OptIn(ExperimentalTime::class)
-    private fun CommandBuilder<GuildSender>.userCheck() {
+    private fun CommandBuilder<GuildSender>.userCheck(allowExecutive: Boolean = true) {
         checkAccess {
             val member = sender.getMember()
             val channel = getMemberChannel(member) ?: return@checkAccess false
             suspendingDatabase {
                 suspendedTransaction {
-                    channel.ownerId == member.id.value || channel.executiveId == member.id.value
+                    channel.ownerId == member.id.value || if (allowExecutive) channel.executiveId == member.id.value else false
                 }
             }
         }
@@ -160,8 +160,61 @@ class RoomCommand : Command<GuildSender> {
                     room lock - Locks the channel
                     room unlock - Unlocks the channel
                     room info - Shows an info about the room you are in
+                    room move - Moves the ownership of a room to another person
                 """.trimIndent()
                 footer = sender.getMember().footer()
+            }
+        }
+
+        literal("move") {
+            userCheck(false)
+            execute {
+                sender.message.deleteIgnoringNotFound()
+                val member = sender.getMember()
+                setup(PrivateChannelPlugin, sender.getChannel()) {
+                    checkAccess { m, _ ->
+                        member.id == m.id
+                    }
+
+                    memberStep {
+                        embed {
+                            title = "Ownership Transfer"
+                            description = "Please tag the member that would like to transfer ownership of your room to"
+                        }
+                    }
+                    buttonStep {
+                        message {
+                            embed {
+                                title = "Confirm Ownership transfer"
+                                description = "Do you really want to transfer ownership of your room"
+                            }
+                        }
+                        action(ButtonStyle.Danger, "Transfer") { true }
+                        cancelAction(ButtonStyle.Primary, "Cancel") { false }
+                    }
+
+                    onCompletion {
+                        if (it.wasCancelled) {
+                            sender.createEmbed {
+                                title = "Operation cancelled"
+                                description =
+                                    "The ownership of your room wasn't transferred" + if (it.lastActiveStepIndex == 1) " to ${(it.results[0] as Member).clientMention}" else ""
+                            }
+                            return@onCompletion
+                        }
+                        val target = it.results[0] as Member
+                        suspendingDatabase {
+                            suspendedTransaction {
+                                val channel = getMemberChannel(member) ?: return@suspendedTransaction
+                                channel.ownerId = target.id.value
+                                sender.createEmbed {
+                                    title = "Room Ownership transferred"
+                                    description = "The Room owner is now ${target.clientMention}"
+                                }
+                            }
+                        }
+                    }
+                }.start(true)
             }
         }
 
@@ -170,11 +223,10 @@ class RoomCommand : Command<GuildSender> {
             execute {
                 sender.message.deleteIgnoringNotFound()
                 val member = sender.getMember()
-                val channel = getMemberChannel(member)!!
                 val gFooter = sender.footer()
-                if (checkRateLimit(channel)) return@execute
+                if (checkRateLimit(getMemberChannel(member)!!)) return@execute
                 setup(PrivateChannelPlugin, sender.getChannel()) {
-                    checkAccess { m, channel ->
+                    checkAccess { m, _ ->
                         member.id == m.id
                     }
                     messageStep {
