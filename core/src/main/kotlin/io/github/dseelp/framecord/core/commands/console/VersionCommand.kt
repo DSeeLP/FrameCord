@@ -35,6 +35,8 @@ import org.koin.core.component.inject
 
 object VersionCommand : Command<ConsoleSender>, FakePluginComponent {
     override val scopes: Array<CommandScope> = arrayOf(CommandScope.CONSOLE)
+    override val description: String = "Shows the version FlameCord is on"
+
     override val node: CommandNode<ConsoleSender> = literal("version") {
         execute {
             val version: Version by inject()

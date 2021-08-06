@@ -47,6 +47,7 @@ import kotlin.system.measureTimeMillis
 @OptIn(io.github.dseelp.framecord.api.InternalFrameCordApi::class)
 object RepositoryCommand : Command<ConsoleSender>, CordKoinComponent {
     val repositoryManager: RepositoryManager by inject()
+    override val description: String = "Used to manage plugin repositories"
     override val scopes: Array<CommandScope> = arrayOf(CommandScope.CONSOLE)
     override val node: CommandNode<ConsoleSender> = literal("repository", arrayOf("repos", "repositories")) {
         literal("list") {

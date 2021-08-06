@@ -36,8 +36,9 @@ import org.koin.core.component.inject
 class ShutdownCommand : Command<Sender>, CordKoinComponent {
 
     val cord: io.github.dseelp.framecord.api.Cord by inject()
+    override val description: String = "Shuts down the bot"
 
-    override val scopes: Array<CommandScope> = CommandScope.ALL
+    override val scopes: Array<CommandScope> = arrayOf(CommandScope.CONSOLE)
     override val node: CommandNode<Sender> = literal("shutdown") {
         execute {
             cord.shutdown()

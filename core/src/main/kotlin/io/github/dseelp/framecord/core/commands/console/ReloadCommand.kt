@@ -37,6 +37,7 @@ import org.koin.core.component.inject
 @OptIn(io.github.dseelp.framecord.api.InternalFrameCordApi::class)
 object ReloadCommand : Command<Sender>, PluginComponent<FakePlugin> {
     override val scopes: Array<CommandScope> = arrayOf(CommandScope.CONSOLE)
+    override val description: String = "Reloads the given scope. Possible Scopes: plugins, settings, all"
 
     val cord: io.github.dseelp.framecord.api.Cord by inject()
 

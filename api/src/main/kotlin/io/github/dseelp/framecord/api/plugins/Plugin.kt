@@ -138,7 +138,7 @@ abstract class Plugin : PluginComponent<Plugin> {
     inline fun <reified T : Any> registerListener() = eventBus.addClassHandler<T>(this)
 
     fun register(command: Command<*>) {
-        register(command.node, *command.scopes)
+        register(command.node, command.description, command.scopes)
     }
 
     @Suppress("UNCHECKED_CAST")

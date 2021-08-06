@@ -49,7 +49,7 @@ import kotlin.time.ExperimentalTime
 class InviteCommand : Command<Sender>, CordKoinComponent {
 
     private lateinit var oauth2Client: DiscordClient
-
+    override val description: String = "Sends an invite to invite the bot to your server"
     init {
         oauth2Client()
     }

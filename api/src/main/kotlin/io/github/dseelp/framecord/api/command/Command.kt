@@ -29,4 +29,6 @@ import de.dseelp.kommon.command.CommandNode
 interface Command<S : Sender> {
     val scopes: Array<CommandScope>
     val node: CommandNode<S>
+    val description: String
+        get() = ""
 }

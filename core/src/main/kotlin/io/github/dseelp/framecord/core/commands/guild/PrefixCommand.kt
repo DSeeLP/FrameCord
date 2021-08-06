@@ -41,6 +41,7 @@ import kotlin.time.ExperimentalTime
 
 class PrefixCommand : Command<GuildSender> {
     override val scopes: Array<CommandScope> = arrayOf(CommandScope.GUILD)
+    override val description: String = "Shows or modify the Prefix of the Bot"
 
     @OptIn(ExperimentalTime::class)
     override val node: CommandNode<GuildSender> = literal("prefix") {

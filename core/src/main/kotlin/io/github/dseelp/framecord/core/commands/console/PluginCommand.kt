@@ -25,22 +25,18 @@
 package io.github.dseelp.framecord.core.commands.console
 
 import de.dseelp.kommon.command.CommandNode
-import de.dseelp.kommon.command.arguments.StringArgument
 import io.github.dseelp.framecord.api.command.Command
 import io.github.dseelp.framecord.api.command.CommandScope
 import io.github.dseelp.framecord.api.command.ConsoleSender
-import io.github.dseelp.framecord.api.plugins.PluginData
 import io.github.dseelp.framecord.api.plugins.PluginLoader
 import io.github.dseelp.framecord.api.plugins.PluginManager
 import io.github.dseelp.framecord.api.utils.koin.CordKoinComponent
 import io.github.dseelp.framecord.api.utils.literal
 import org.koin.core.component.inject
-import java.nio.file.Path
-import kotlin.io.path.div
-import kotlin.io.path.exists
 
 @OptIn(io.github.dseelp.framecord.api.InternalFrameCordApi::class)
 object PluginCommand : Command<ConsoleSender>, CordKoinComponent {
+    override val scopes: Array<CommandScope> = arrayOf(CommandScope.CONSOLE)
     val loader: PluginLoader by inject()
     val manager: PluginManager by inject()
     override val node: CommandNode<ConsoleSender> = literal("plugins", arrayOf("plugin")) {
@@ -60,7 +56,7 @@ object PluginCommand : Command<ConsoleSender>, CordKoinComponent {
             }
         }
 
-        literal("unload") {
+        /*literal("unload") {
             execute {
                 sender.sendMessage("You need to provide the name of the plugin you want to unload.")
             }
@@ -101,7 +97,6 @@ object PluginCommand : Command<ConsoleSender>, CordKoinComponent {
                     sender.sendMessage("The plugin was loaded")
                 }
             }
-        }
+        }*/
     }
-    override val scopes: Array<CommandScope> = arrayOf(CommandScope.CONSOLE)
 }

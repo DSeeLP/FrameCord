@@ -46,16 +46,25 @@ object Commands : CordKoinComponent {
     internal val console: CommandDispatcher<Sender> by inject(qualifier("console"))
     internal val thread: CommandDispatcher<Sender> by inject(qualifier("thread"))
 
-    val pluginCommands = hashMapOf<Plugin, MutableList<Pair<CommandScope, CommandNode<out Sender>>>>()
+    internal val pluginCommands =
+        hashMapOf<Plugin, MutableList<Triple<CommandScope, String, CommandNode<out Sender>>>>()
+
+    fun getDescription(scope: CommandScope, commandName: String): String? =
+        pluginCommands.values.mapNotNull { entry -> entry.firstOrNull { it.first == scope && it.third.name == commandName } }
+            .firstOrNull()?.second
+
+    fun getCommandsForScope(scope: CommandScope): Map<Plugin, List<Triple<CommandScope, String, CommandNode<out Sender>>>> =
+        pluginCommands.map { entry -> entry.key to entry.value.filter { it.first == scope } }
+            .filterNot { it.second.isEmpty() }.toMap()
 
     fun unregister(plugin: Plugin) {
         val cmds = pluginCommands[plugin] ?: return
         for (pair in cmds) {
             when (pair.first) {
-                GUILD -> guild.unregister(pair.second)
-                PRIVATE -> private.unregister(pair.second)
-                CONSOLE -> console.unregister(pair.second)
-                THREAD -> thread.unregister(pair.second)
+                GUILD -> guild.unregister(pair.third)
+                PRIVATE -> private.unregister(pair.third)
+                CONSOLE -> console.unregister(pair.third)
+                THREAD -> thread.unregister(pair.third)
             }
         }
     }
@@ -66,11 +75,8 @@ object Commands : CordKoinComponent {
     }
 }
 
-@JvmName("registerArray")
-fun Plugin.register(node: CommandNode<Sender>, scopes: Array<CommandScope>) = register(node, *scopes)
-
 @OptIn(io.github.dseelp.framecord.api.InternalFrameCordApi::class)
-fun Plugin.register(node: CommandNode<out Sender>, vararg scopes: CommandScope) {
+fun Plugin.register(node: CommandNode<out Sender>, description: String = "", scopes: Array<CommandScope>) {
     for (scope in scopes) {
         when (scope) {
             GUILD -> Commands.guild.register(node)
@@ -78,7 +84,7 @@ fun Plugin.register(node: CommandNode<out Sender>, vararg scopes: CommandScope) 
             CONSOLE -> Commands.console.register(node)
             THREAD -> Commands.thread.register(node)
         }
-        Commands.pluginCommands.getOrPut(this) { mutableListOf() }.add(scope to node)
+        Commands.pluginCommands.getOrPut(this) { mutableListOf() }.add(Triple(scope, description, node))
     }
 }
 
