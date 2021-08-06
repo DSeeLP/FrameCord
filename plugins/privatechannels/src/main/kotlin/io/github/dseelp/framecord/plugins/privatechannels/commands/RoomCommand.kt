@@ -395,16 +395,6 @@ class RoomCommand : Command<GuildSender> {
                         if (!suspendedTransaction {
                                 activeChannel.ownerId == targetId || activeChannel.executiveId == targetId
                             }) {
-                            /*channel.addOverwrite(
-                                PermissionOverwrite(
-                                    PermissionOverwriteData(
-                                        target.id,
-                                        OverwriteType.Member,
-                                        Permissions(),
-                                        Permissions()
-                                    )
-                                )
-                            )*/
                             channel.editMemberPermission(target.id) {
                                 denied -= Permission.Connect
                             }
@@ -525,6 +515,22 @@ class RoomCommand : Command<GuildSender> {
                 sender.message.deleteIgnoringNotFound()
                 val channel = sender.getChannel()
                 val member = sender.getMember()
+                var shouldReturn = false
+                suspendingDatabase {
+                    suspendedTransaction {
+                        val guildId = sender.getGuild().id.value
+                        val privateChannelCount = PrivateChannel.find { PrivateChannels.guildId eq guildId }.count()
+                        if (privateChannelCount >= 25) {
+                            sender.createEmbed {
+                                title = "Limit reached"
+                                color = Color.red
+                                description = "A Guild can only have 25 join channels."
+                            }
+                            shouldReturn = true
+                        }
+                    }
+                }
+                if (shouldReturn) return@execute
                 setup(PrivateChannelPlugin, channel) {
                     checkAccess { executor, channel ->
                         executor.id == member.id
