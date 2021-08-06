@@ -25,6 +25,7 @@
 package io.github.dseelp.framecord.plugins.privatechannels
 
 import io.github.dseelp.framecord.api.configs.BotConfig
+import io.github.dseelp.framecord.api.database.DatabaseType
 import io.github.dseelp.framecord.api.plugins.DatabaseConfig
 import io.github.dseelp.framecord.api.plugins.Plugin
 import io.github.dseelp.framecord.api.plugins.PluginAction
@@ -37,7 +38,7 @@ import org.koin.core.component.inject
 @PluginInfo(
     "io.github.dseelp.framecord.plugins",
     "PrivateChannels",
-    "0.3",
+    "0.4.1",
     "This is a Private Channel Module",
     ["DSeeLP"]
 )
@@ -54,7 +55,8 @@ object PrivateChannelPlugin : Plugin() {
         val packageName = "io.github.dseelp.framecord.plugins.privatechannels"
         searchCommands(packageName)
         searchEvents(packageName)
-        val defaultDbConfig: DatabaseConfig by inject()
+        val defaultDbConfig: DatabaseConfig = getKoin().get<DatabaseConfig>()
+            .let { if (it.type == DatabaseType.SQLITE) it.copy(databaseName = "privatechannels") else it }
         checkDataFolder()
         registerDatabase(DatabaseConfig.load(this, defaultDbConfig).toDatabaseInfo(this))
         database {

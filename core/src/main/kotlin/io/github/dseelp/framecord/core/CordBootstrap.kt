@@ -59,7 +59,7 @@ import java.util.logging.LogManager
 @OptIn(io.github.dseelp.framecord.api.InternalFrameCordApi::class)
 object CordBootstrap {
     val log by logger(ROOT)
-    val version = Version(0, 4, 0)
+    val version = Version(0, 4, 1)
 
     val defaultModule = module {
         single<Console> { ConsoleImpl } bind ConsoleImpl::class
