@@ -28,6 +28,7 @@ import dev.kord.common.annotation.KordPreview
 import dev.kord.common.entity.ButtonStyle
 import dev.kord.core.behavior.channel.createMessage
 import dev.kord.core.behavior.edit
+import dev.kord.core.behavior.interaction.edit
 import dev.kord.core.entity.Member
 import dev.kord.core.entity.Message
 import dev.kord.core.entity.channel.GuildMessageChannel
@@ -61,10 +62,17 @@ open class MessageStep(
         if (this::channel.isInitialized || this::setup.isInitialized) throw IllegalStateException()
         buttonAction = setup.plugin.registerButtonAction(randomAlphanumeric(32), literal("") {
             execute {
-                sender.interaction.acknowledgePublicDeferredMessageUpdate()
+                val acknowledge = sender.interaction.acknowledgePublicDeferredMessageUpdate()
                 if (!checkAccess(sender.interaction.user.asMember(channel.guildId), channel)) return@execute
                 setup.plugin.unregisterButtonAction(buttonAction)
                 setup.cancelSetup()
+                acknowledge.edit {
+                    components?.clear()
+                    actionRow {
+                        action(buttonAction, ButtonStyle.Danger, "", "Cancel", disabled = true)
+                    }
+
+                }
             }
         })
         this.channel = channel
