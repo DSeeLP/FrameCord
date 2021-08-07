@@ -188,9 +188,10 @@ object ChannelListener {
 }
 
 suspend fun calculateChannelName(channel: PrivateChannel, member: Member, template: String = channel.nameTemplate) =
-    template.replace("%user%", member.displayName).replace(
+    template.replace("%user%", member.displayName, true).replace(
         "%game%",
-        member.getPresenceOrNull()?.activities?.firstOrNull()?.name ?: channel.defaultGame
+        member.getPresenceOrNull()?.activities?.firstOrNull()?.name ?: channel.defaultGame,
+        true
     )
 
 suspend fun updateChannel(channel: ActivePrivateChannel) {
