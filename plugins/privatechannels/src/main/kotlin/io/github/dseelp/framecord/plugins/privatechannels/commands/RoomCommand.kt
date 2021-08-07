@@ -35,6 +35,7 @@ import dev.kord.core.behavior.channel.createEmbed
 import dev.kord.core.behavior.channel.editMemberPermission
 import dev.kord.core.behavior.channel.editRolePermission
 import dev.kord.core.behavior.edit
+import dev.kord.core.behavior.getChannelOf
 import dev.kord.core.entity.Member
 import dev.kord.core.entity.channel.TopGuildChannel
 import dev.kord.core.entity.channel.VoiceChannel
@@ -58,6 +59,7 @@ import io.github.dseelp.framecord.plugins.privatechannels.db.PrivateChannels
 import io.github.dseelp.framecord.plugins.privatechannels.isRateLimited
 import io.github.dseelp.framecord.plugins.privatechannels.remainingRateLimited
 import io.github.dseelp.framecord.plugins.privatechannels.updateChannel
+import kotlinx.coroutines.flow.firstOrNull
 import org.jetbrains.exposed.sql.and
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
@@ -203,9 +205,29 @@ class RoomCommand : Command<GuildSender> {
                             return@onCompletion
                         }
                         val target = it.results[0] as Member
+                        if (target.isBot) {
+                            sender.createEmbed {
+                                title = "Operation Error"
+                                description =
+                                    "The ownership of your room can't be transferred to a bot"
+                                color = Color.red
+                            }
+                            return@onCompletion
+                        }
                         suspendingDatabase {
                             suspendedTransaction {
                                 val channel = getMemberChannel(member) ?: return@suspendedTransaction
+                                val guildChannel =
+                                    sender.getGuild().getChannelOf<VoiceChannel>(channel.channelId.asSnowflake)
+                                if (guildChannel.voiceStates.firstOrNull { state -> state.userId == target.id } == null) {
+                                    sender.createEmbed {
+                                        title = "Operation Error"
+                                        description =
+                                            "The ownership of your room can't be transferred to a user that is not in the room"
+                                        color = Color.red
+                                    }
+                                    return@suspendedTransaction
+                                }
                                 channel.ownerId = target.id.value
                                 sender.createEmbed {
                                     title = "Room Ownership transferred"
@@ -290,6 +312,7 @@ class RoomCommand : Command<GuildSender> {
         }
 
         literal("ban") {
+            userCheck()
             execute {
                 sender.getChannel().createEmbed {
                     title = "Error!"
@@ -372,6 +395,7 @@ class RoomCommand : Command<GuildSender> {
         }
 
         literal("unban") {
+            userCheck()
             execute {
                 sender.message.deleteIgnoringNotFound()
                 sender.getChannel().createEmbed {
@@ -409,6 +433,7 @@ class RoomCommand : Command<GuildSender> {
         }
 
         literal("kick") {
+            userCheck()
             execute {
                 sender.message.deleteIgnoringNotFound()
                 sender.getChannel().createEmbed {
@@ -446,6 +471,7 @@ class RoomCommand : Command<GuildSender> {
         }
 
         literal("lock") {
+            userCheck()
             execute {
                 sender.message.deleteIgnoringNotFound()
                 suspendingDatabase {
@@ -469,6 +495,7 @@ class RoomCommand : Command<GuildSender> {
         }
 
         literal("delete") {
+            userCheck()
             execute {
                 sender.message.deleteIgnoringNotFound()
                 suspendingDatabase {
@@ -488,6 +515,7 @@ class RoomCommand : Command<GuildSender> {
         }
 
         literal("unlock") {
+            userCheck()
             execute {
                 sender.message.deleteIgnoringNotFound()
                 suspendingDatabase {
