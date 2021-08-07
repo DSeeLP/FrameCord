@@ -36,7 +36,6 @@ class PrivateChannel(id: EntityID<Long>) : LongEntity(id) {
     var joinChannelId by PrivateChannels.joinChannelId
     var nameTemplate by PrivateChannels.nameTemplate
     var defaultGame by PrivateChannels.defaultGame
-    var userLimit by PrivateChannels.userLimit
 }
 
 object PrivateChannels : LongIdTable() {
@@ -44,5 +43,4 @@ object PrivateChannels : LongIdTable() {
     val joinChannelId = long("joinChannelId")
     val nameTemplate = varchar("nameTemplate", 1000).default("%user%'s Room")
     val defaultGame = varchar("defaultGame", 100).default("a Game")
-    var userLimit = integer("userLimit").nullable()
 }

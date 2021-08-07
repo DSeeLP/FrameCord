@@ -39,6 +39,7 @@ class ActivePrivateChannel(id: EntityID<Long>) : LongEntity(id) {
     var customNameTemplate by ActivePrivateChannels.customNameTemplate
     var lastUpdated by ActivePrivateChannels.lastUpdated
     var locked by ActivePrivateChannels.locked
+    var userLimit by ActivePrivateChannels.userLimit
 }
 
 object ActivePrivateChannels : LongIdTable() {
@@ -49,4 +50,5 @@ object ActivePrivateChannels : LongIdTable() {
     val customNameTemplate = varchar("customNameTemplate", 1000).nullable()
     val lastUpdated = long("lastUpdatedMillis").nullable()
     val locked = bool("locked").default(false)
+    val userLimit = short("userLimit")
 }
