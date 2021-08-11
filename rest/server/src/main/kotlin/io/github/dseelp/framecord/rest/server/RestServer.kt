@@ -22,9 +22,23 @@
  * SOFTWARE.
  */
 
-rootProject.name = "framecord"
-include("core", "api")
-include("plugins")
-include("plugins:moderation")
-include("plugins:privatechannels")
-include("rest:data", "rest:server")
+package io.github.dseelp.framecord.rest.server
+
+import io.github.dseelp.framecord.api.InternalFrameCordApi
+import io.github.dseelp.framecord.api.configs.BotConfig
+import io.github.dseelp.framecord.api.plugins.Plugin
+import io.github.dseelp.framecord.api.utils.koin.CordKoinComponent
+import io.ktor.server.engine.*
+import org.koin.core.component.inject
+
+@OptIn(InternalFrameCordApi::class)
+object RestServer: CordKoinComponent {
+    fun startRestServer(plugin: Plugin) {
+        if (this::restPlugin.isInitialized) return
+        val config: BotConfig by inject()
+        restPlugin = plugin
+    }
+
+    internal lateinit var restPlugin: Plugin
+        private set
+}

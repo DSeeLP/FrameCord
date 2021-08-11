@@ -22,9 +22,14 @@
  * SOFTWARE.
  */
 
-rootProject.name = "framecord"
-include("core", "api")
-include("plugins")
-include("plugins:moderation")
-include("plugins:privatechannels")
-include("rest:data", "rest:server")
+package io.github.dseelp.framecord.rest.data.requests
+
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+@Serializable
+sealed class AuthorizeRequest {
+    @Serializable
+    @SerialName("token")
+    data class DeviceToken(val token: String): AuthorizeRequest()
+}

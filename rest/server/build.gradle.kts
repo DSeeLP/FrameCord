@@ -22,9 +22,16 @@
  * SOFTWARE.
  */
 
-rootProject.name = "framecord"
-include("core", "api")
-include("plugins")
-include("plugins:moderation")
-include("plugins:privatechannels")
-include("rest:data", "rest:server")
+plugins {
+    kotlin("jvm")
+}
+
+val ktorVersion: String by project
+
+dependencies {
+    compileOnly(project(":api"))
+    api("io.ktor:ktor-server-core:$ktorVersion")
+    implementation("io.ktor:ktor-server-netty:$ktorVersion")
+    api("io.github.dseelp:discord-oauth2-api:0.2")
+    api("io.ktor:ktor-serialization:$ktorVersion")
+}

@@ -22,9 +22,10 @@
  * SOFTWARE.
  */
 
-rootProject.name = "framecord"
-include("core", "api")
-include("plugins")
-include("plugins:moderation")
-include("plugins:privatechannels")
-include("rest:data", "rest:server")
+package io.github.dseelp.framecord.rest.data.responses.dialect
+
+import kotlinx.serialization.Serializable
+
+
+@Serializable
+data class RestResponse<T>(val error: RestError, val response: T?)

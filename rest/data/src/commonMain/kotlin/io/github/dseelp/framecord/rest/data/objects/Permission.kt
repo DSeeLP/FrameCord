@@ -22,9 +22,8 @@
  * SOFTWARE.
  */
 
-rootProject.name = "framecord"
-include("core", "api")
-include("plugins")
-include("plugins:moderation")
-include("plugins:privatechannels")
-include("rest:data", "rest:server")
+package io.github.dseelp.framecord.rest.data.objects
+
+open class SimplePermission(open val id: Int)
+
+data class Permission(override val id: Int, val name: String, val description: String? = null): SimplePermission(id)

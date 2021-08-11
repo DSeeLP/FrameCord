@@ -22,9 +22,12 @@
  * SOFTWARE.
  */
 
-rootProject.name = "framecord"
-include("core", "api")
-include("plugins")
-include("plugins:moderation")
-include("plugins:privatechannels")
-include("rest:data", "rest:server")
+package io.github.dseelp.framecord.rest.data.responses.dialect
+
+import io.ktor.http.*
+
+object RestErrors {
+    val Unauthorized = FullRestError(HttpStatusCode.Unauthorized, 401, "Not authorized")
+    val Forbidden = FullRestError(HttpStatusCode.Forbidden, 403, "You are not logged in")
+    val NotFound = FullRestError(HttpStatusCode.NotFound, 404, "Not found")
+}

@@ -22,9 +22,21 @@
  * SOFTWARE.
  */
 
-rootProject.name = "framecord"
-include("core", "api")
-include("plugins")
-include("plugins:moderation")
-include("plugins:privatechannels")
-include("rest:data", "rest:server")
+plugins {
+    kotlin("multiplatform")
+    kotlin("plugin.serialization")
+}
+
+val ktorVersion: String by project
+
+kotlin {
+    jvm()
+    sourceSets {
+        val commonMain by getting {
+            dependencies {
+                implementation("io.ktor:ktor-http:$ktorVersion")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.2")
+            }
+        }
+    }
+}

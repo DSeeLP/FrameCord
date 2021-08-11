@@ -22,9 +22,8 @@
  * SOFTWARE.
  */
 
-rootProject.name = "framecord"
-include("core", "api")
-include("plugins")
-include("plugins:moderation")
-include("plugins:privatechannels")
-include("rest:data", "rest:server")
+package io.github.dseelp.framecord.rest.data.responses
+
+import io.github.dseelp.framecord.rest.data.objects.User
+
+data class AuthorizeResponse(val sessionId: String, val deviceToken: String, val user: User)

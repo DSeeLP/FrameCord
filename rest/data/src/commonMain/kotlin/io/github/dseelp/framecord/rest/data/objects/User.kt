@@ -22,9 +22,6 @@
  * SOFTWARE.
  */
 
-rootProject.name = "framecord"
-include("core", "api")
-include("plugins")
-include("plugins:moderation")
-include("plugins:privatechannels")
-include("rest:data", "rest:server")
+package io.github.dseelp.framecord.rest.data.objects
+
+sealed class User(val name: String, val discriminator: String, val avatarUrl: String, val permissions: Array<SimplePermission>)

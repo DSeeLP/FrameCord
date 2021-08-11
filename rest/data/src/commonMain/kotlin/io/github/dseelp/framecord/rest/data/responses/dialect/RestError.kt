@@ -22,9 +22,29 @@
  * SOFTWARE.
  */
 
-rootProject.name = "framecord"
-include("core", "api")
-include("plugins")
-include("plugins:moderation")
-include("plugins:privatechannels")
-include("rest:data", "rest:server")
+package io.github.dseelp.framecord.rest.data.responses.dialect
+
+import io.ktor.http.*
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+
+@Serializable
+@SerialName("simple")
+sealed class RestError {
+    abstract val id: Int
+    abstract val message: String
+}
+
+//@Serializable
+//class SimpleRestError(override val id: Int, override val message: String): RestError()
+
+@Serializable
+@SerialName("detailed")
+open class DetailedRestError(override val id: Int, override val message: String, open val details: String): RestError()
+
+class FullRestError(val httpStatus: HttpStatusCode, override val id: Int, override val message: String): RestError()
+class FullDetailedRestError(val httpStatus: HttpStatusCode, id: Int, message: String, details: String): DetailedRestError(id, message, details)
+
+
+fun FullRestError.detailed(details: String) = FullDetailedRestError(httpStatus, id, message, details)
