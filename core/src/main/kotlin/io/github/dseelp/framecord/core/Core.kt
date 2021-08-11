@@ -86,12 +86,17 @@ object Core : CordKoinComponent {
         })
     }
 
-    fun loadConfig(log: KLogger = logger(CORE).value) {
+    suspend fun loadConfig(log: KLogger = logger(CORE).value) {
         log.info("Loading Config")
         val path = pathQualifiers.root / "config.json"
         val cfg = Config { addSpec(BotConfig) }.from.json.file(path)
         cfg.toJson.toFile(path)
         val config = BotConfig.fromConfig(cfg)
+        if (config.instanceId.length > 4) {
+            log.error("The length of an instanceId should not exceed 4 characters")
+            CordImpl.shutdown()
+            return
+        }
         System.setProperty("debugMode", config.debug.toString())
         loadKoinModules(module {
             single { config }

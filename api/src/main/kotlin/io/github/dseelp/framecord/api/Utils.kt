@@ -47,7 +47,6 @@ import java.net.MalformedURLException
 import java.net.URISyntaxException
 import java.net.URL
 import java.nio.charset.StandardCharsets.UTF_8
-import java.util.*
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 import java.util.zip.GZIPInputStream
@@ -203,9 +202,7 @@ fun ActionRowBuilder.action(
     disabled: Boolean = false
 ) {
     if (style == ButtonStyle.Link) throw UnsupportedOperationException("Link Buttons are not support as actions!")
-    val id = action.id + ButtonAction.DELIMITER + command
-    val compressed = Base64.getEncoder().encodeToString(id.encodeToByteArray())
-    interactionButton(style, ButtonAction.QUALIFIER + compressed) {
+    interactionButton(style, action.encodedId(command)) {
         this.label = label
         this.emoji = emoji
         this.disabled = disabled
@@ -229,8 +226,8 @@ fun ActionRowBuilder.selectionMenu(
     selectionMenu(menu)
 }
 
-@OptIn(io.github.dseelp.framecord.api.InternalFrameCordApi::class)
-val bot: io.github.dseelp.framecord.api.Bot
+@OptIn(InternalFrameCordApi::class)
+val bot: Bot
     get() = CordKoinContext.app!!.koin.get()
 
 @OptIn(ExperimentalContracts::class)

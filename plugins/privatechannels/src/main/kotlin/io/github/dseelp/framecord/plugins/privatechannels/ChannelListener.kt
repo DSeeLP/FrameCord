@@ -157,7 +157,7 @@ object ChannelListener {
         val member = state.getMember()
         val channel = state.getChannelOrNull()!!.asChannel() as VoiceChannel
         val createBuilder: VoiceChannelCreateBuilder.() -> Unit = {
-            userLimit = joinChannel.userLimit
+            userLimit = channel.userLimit
             permissionOverwrites.addAll(channel.permissionOverwrites.map { it.asOverwrite })
             permissionOverwrites.add(
                 Overwrite(

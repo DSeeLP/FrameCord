@@ -50,6 +50,13 @@ class ButtonAction(plugin: Plugin, val name: String, val node: CommandNode<Butto
         dispatcher.register(node.copy(name = id, argumentIdentifier = null, aliases = arrayOf()))
     }
 
+    fun encodedId(command: String): String {
+        val id = id + DELIMITER + command
+        val encoded = QUALIFIER + Base64.getEncoder().encodeToString(id.encodeToByteArray())
+        if (encoded.length > 100) throw IllegalArgumentException("Button id too long")
+        return encoded
+    }
+
     @OptIn(KordPreview::class)
     suspend fun execute(event: InteractionCreateEvent) {
         val interaction = event.interaction

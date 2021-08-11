@@ -59,7 +59,9 @@ data class SelectionMenu(
     fun discordComponentBuilder(): SelectMenuBuilder {
         val discordOptions = options.map { it.discordOptionBuilder }
         val compressed = Base64.getEncoder().encodeToString(id.encodeToByteArray())
-        return SelectMenuBuilder(QUALIFIER + compressed).apply {
+        val encoded = QUALIFIER + compressed
+        if (encoded.length > 100) throw IllegalArgumentException("SelectionMenu id too long")
+        return SelectMenuBuilder(encoded).apply {
             options.addAll(discordOptions)
             allowedValues = this@SelectionMenu.allowedValues
             placeholder = this@SelectionMenu.placeholder
@@ -110,6 +112,12 @@ data class SelectionOption(
     val default: Boolean? = null,
     val onClick: suspend SelectionOptionClickContext.() -> Unit
 ) {
+    init {
+        if (value.length > 100) throw IllegalArgumentException("A SelectionOption description can only be 100 characters long")
+        if (label.length > 100) throw IllegalArgumentException("A SelectionOption label can only be 100 characters long")
+        if (description?.length != null && description.length > 100) throw IllegalArgumentException("A SelectionOption description can only be 100 characters long")
+    }
+
     val discordOptionBuilder by lazy {
         SelectOptionBuilder(label, value).apply {
             description = this@SelectionOption.description
