@@ -30,6 +30,7 @@ import io.github.dseelp.framecord.api.logging.KLogger
 import io.github.dseelp.framecord.api.utils.koin.CordKoinComponent
 import io.github.dseelp.framecord.core.ConsoleImpl
 import io.github.dseelp.framecord.core.CordImpl
+import io.github.dseelp.framecord.core.logging.ErrorManagerImpl
 import org.koin.core.component.inject
 import org.slf4j.helpers.MarkerIgnoringBase
 import org.slf4j.helpers.MessageFormatter
@@ -54,6 +55,9 @@ class CordLogger(name: String) : MarkerIgnoringBase(), KLogger, CordKoinComponen
         currentLogLevel = if (System.getProperty("debugMode").toBoolean()) LOG_LEVEL_DEBUG else LOG_LEVEL_INFO
         return logLevel >= currentLogLevel
     }
+
+    val showErrors: Boolean
+        get() = currentLogLevel == LOG_LEVEL_DEBUG || System.getProperty("showErrors").toBoolean()
 
     private val shortLogName = name.substring(name.lastIndexOf(".") + 1)
 
@@ -115,8 +119,18 @@ class CordLogger(name: String) : MarkerIgnoringBase(), KLogger, CordKoinComponen
             append(message)
             appendColor(ConsoleColor.DEFAULT)
         } else null
-        if (builtMessage != null) console.forceWriteLine(builtMessage)
-        throwable?.printStackTrace(stream(level))
+        if (builtMessage != null && !(message?.isEmpty() == true && throwable != null)) console.forceWriteLine(
+            builtMessage
+        )
+        throwable?.let { t ->
+            val stream = stream(level)
+            if (showErrors) {
+                t.printStackTrace(stream)
+            } else {
+                val uuid = ErrorManagerImpl.dispatch(t)
+                stream.println("${t::class.qualifiedName}${if (t.message == null) "" else ": ${t.message}"} ($uuid)")
+            }
+        }
     }
 
     fun StringBuilder.appendColor(color: ConsoleColor) {

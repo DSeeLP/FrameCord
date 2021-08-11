@@ -28,10 +28,17 @@ import com.uchuhimo.konf.Config
 import com.uchuhimo.konf.ConfigSpec
 import io.github.dseelp.framecord.api.randomAlphanumeric
 
-data class BotConfig(val instanceId: String, val debug: Boolean, val invite: InviteConfig, val intents: IntentsConfig) {
+data class BotConfig(
+    val instanceId: String,
+    val debug: Boolean,
+    val showErrors: Boolean,
+    val invite: InviteConfig,
+    val intents: IntentsConfig
+) {
     companion object : ConfigSpec("") {
         val instanceId by optional(randomAlphanumeric(4))
         val debugMode by optional(false)
+        val showErrors by optional(false)
 
         object InviteSpec : ConfigSpec() {
             val enabled by optional(false)
@@ -46,6 +53,7 @@ data class BotConfig(val instanceId: String, val debug: Boolean, val invite: Inv
         fun fromConfig(config: Config): BotConfig = BotConfig(
             config[instanceId],
             config[debugMode],
+            config[showErrors],
             InviteConfig(config[InviteSpec.enabled], config[InviteSpec.clientId]),
             IntentsConfig(config[IntentsSpec.presence], config[IntentsSpec.guildMembers])
         )

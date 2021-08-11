@@ -37,6 +37,7 @@ import io.github.dseelp.framecord.api.logging.logger
 import io.github.dseelp.framecord.api.plugins.PluginManager
 import io.github.dseelp.framecord.api.utils.koin.CordKoinComponent
 import io.github.dseelp.framecord.core.listeners.CoreListener
+import io.github.dseelp.framecord.core.logging.ErrorManagerImpl
 import io.github.dseelp.framecord.core.plugin.repository.RepositoryLoaderImpl
 import org.koin.core.component.inject
 import org.koin.core.qualifier.qualifier
@@ -68,6 +69,7 @@ object Core : CordKoinComponent {
             ex.printStackTrace()
         }
         FakePlugin.enable()
+        ErrorManagerImpl
         BotImpl.start()
         log.info("Startup complete")
         bot.job.join()
@@ -98,6 +100,7 @@ object Core : CordKoinComponent {
             return
         }
         System.setProperty("debugMode", config.debug.toString())
+        System.setProperty("showErrors", config.showErrors.toString())
         loadKoinModules(module {
             single { config }
             single(qualifier("instanceId")) { config.instanceId }
