@@ -48,7 +48,7 @@ if (isDeployingToCentral) println("Deploying to central...")
 
 val rootProject = project
 
-val multiplatformProjects = arrayOf<String>()
+val multiplatformProjects = arrayOf<String>("data")
 
 val excludedModules = arrayOf("moderation", "plugins", "privatechannels")
 allprojects {
@@ -70,15 +70,18 @@ allprojects {
     apply(plugin = "maven-publish")
     if (multiplatformProjects.contains(project.name))
         apply(plugin = "org.jetbrains.kotlin.multiplatform")
-    else apply(plugin = "org.jetbrains.kotlin.jvm")
+    else {
+        apply(plugin = "java")
+        apply(plugin = "org.jetbrains.kotlin.jvm")
+
+        java {
+            sourceCompatibility = JavaVersion.VERSION_11
+            targetCompatibility = JavaVersion.VERSION_11
+        }
+    }
     apply(plugin = "signing")
     apply(plugin = "org.jetbrains.dokka")
-    apply(plugin = "java")
 
-    java {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
 
     val docsDir = File(
         rootProject.rootDir, "docs/${
@@ -159,7 +162,8 @@ allprojects {
         }
     }
 
-    val sourcesJar by tasks.registering(Jar::class) {
+
+    val sourcesJar = if (multiplatformProjects.contains(this.name)) null else tasks.register("sourcesJar", Jar::class) {
         archiveClassifier.set("sources")
         from(sourceSets.main.get().allSource)
     }
@@ -193,7 +197,7 @@ allprojects {
             register(this@allprojects.name, MavenPublication::class) {
                 from(components["kotlin"])
                 artifact(javadocJar.get())
-                artifact(sourcesJar.get())
+                sourcesJar?.let { artifact(it) }
 
                 pom {
                     url.set("https://github.com/DSeeLP/Kommon")
