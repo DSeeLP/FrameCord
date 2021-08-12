@@ -34,6 +34,7 @@ import io.github.dseelp.framecord.api.plugins.repository.RepositoryManager
 import io.github.dseelp.framecord.api.utils.koin.KoinModules
 import io.github.dseelp.framecord.core.commands.InviteCommand
 import io.github.dseelp.framecord.core.guild.DbGuildInfos
+import io.github.dseelp.framecord.core.modules.ModuleManagerImpl
 import io.github.dseelp.framecord.core.plugin.repository.data.InstalledPackages
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.sql.SchemaUtils
@@ -102,6 +103,7 @@ object FakePlugin : Plugin() {
         } catch (ex: Throwable) {
             ex.printStackTrace()
         }
+        ModuleManagerImpl
         searchCommands("io.github.dseelp.framecord.core")
     }
 

@@ -55,7 +55,6 @@ object Core : CordKoinComponent {
 
     suspend fun startup() {
         loadConfig()
-        CordImpl.reloadPlugins()
         ConsoleImpl.startReading()
         loadKoinModules(module {
             single { pathQualifiers.root }
@@ -68,8 +67,9 @@ object Core : CordKoinComponent {
         } catch (ex: Exception) {
             ex.printStackTrace()
         }
-        FakePlugin.enable()
         ErrorManagerImpl
+        FakePlugin.enable()
+        CordImpl.reloadPlugins()
         BotImpl.start()
         log.info("Startup complete")
         bot.job.join()
