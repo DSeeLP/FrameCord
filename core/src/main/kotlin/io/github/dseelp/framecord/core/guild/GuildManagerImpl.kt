@@ -27,13 +27,15 @@ package io.github.dseelp.framecord.core.guild
 import dev.kord.common.entity.Snowflake
 import io.github.dseelp.framecord.api.guild.GuildInfo
 import io.github.dseelp.framecord.api.guild.GuildManager
+import io.github.dseelp.framecord.core.modules.DbGuild
 import org.jetbrains.exposed.sql.transactions.transaction
 
 open class GuildManagerImpl : GuildManager {
     override fun getGuildInfo(guildId: Snowflake): GuildInfo = transaction { findInfo(guildId).info }
 
-    fun findInfo(guildId: Snowflake) = DbGuildInfo.findById(guildId) ?: DbGuildInfo.new(guildId) {
+    fun findInfo(guildId: Snowflake) = DbGuild.findById(guildId) ?: DbGuild.new(guildId) {
         prefix = "!"
+        botJoined = System.currentTimeMillis()
     }
 
     override fun setGuildInfo(info: GuildInfo): Unit = transaction {
