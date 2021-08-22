@@ -35,6 +35,7 @@ import io.github.dseelp.framecord.api.command.GuildSender
 import io.github.dseelp.framecord.api.command.createEmbed
 import io.github.dseelp.framecord.api.guild.info
 import io.github.dseelp.framecord.api.utils.*
+import io.github.dseelp.framecord.api.utils.CharUtils.validate
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
@@ -50,7 +51,7 @@ class PrefixCommand : Command<GuildSender> {
             sender.message.asMessageOrNull()?.delete()
             sender.createEmbed {
                 title = "Prefix"
-                description = "The guild prefix is ${guildInfo.prefix}"
+                description = "The guild prefix is `${guildInfo.prefix}`"
                 footer = sender.footer()
             }.deleteAfter(seconds(10))
         }
@@ -67,11 +68,15 @@ class PrefixCommand : Command<GuildSender> {
                     sendError(sender, "Error!", "The prefix can contain only one space!")
                     return@execute
                 }
+                if (prefix.validate(CharUtils.allCharactersAndSpace)) {
+                    sendError(sender, "Error!", "The prefix contained unsupported characters!")
+                    return@execute
+                }
                 val guild = sender.getGuild()
                 guild.info = guild.info.copy(prefix = prefix)
                 sender.createEmbed {
                     color = Color.green
-                    title = "Prefix set to $prefix"
+                    title = "Prefix set to `$prefix`"
                 }
             }
         }

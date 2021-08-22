@@ -22,25 +22,18 @@
  * SOFTWARE.
  */
 
-package io.github.dseelp.framecord.core.guild
+package io.github.dseelp.framecord.core.logging
 
-import dev.kord.common.entity.Snowflake
-import io.github.dseelp.framecord.api.guild.GuildInfo
-import io.github.dseelp.framecord.api.guild.GuildManager
-import io.github.dseelp.framecord.core.modules.DbGuild
-import org.jetbrains.exposed.sql.transactions.transaction
+import io.github.dseelp.framecord.api.logging.LogManager.ROOT
+import io.github.dseelp.framecord.api.logging.logger
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlin.coroutines.AbstractCoroutineContextElement
+import kotlin.coroutines.CoroutineContext
 
-open class GuildManagerImpl : GuildManager {
-    override fun getGuildInfo(guildId: Snowflake): GuildInfo = transaction { findInfo(guildId).info }
-
-    fun findInfo(guildId: Snowflake) = DbGuild.findById(guildId) ?: DbGuild.new(guildId) {
-        prefix = "!"
-        botJoined = System.currentTimeMillis()
-    }
-
-    override fun setGuildInfo(info: GuildInfo): Unit = transaction {
-        findInfo(info.guildId).apply {
-            prefix = info.prefix
-        }
+class CustomCoroutineExceptionHandler : AbstractCoroutineContextElement(CoroutineExceptionHandler),
+    CoroutineExceptionHandler {
+    val log by logger(ROOT)
+    override fun handleException(context: CoroutineContext, exception: Throwable) {
+        //log.error("", exception)
     }
 }

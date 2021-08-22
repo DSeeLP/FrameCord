@@ -22,25 +22,38 @@
  * SOFTWARE.
  */
 
-package io.github.dseelp.framecord.core.guild
+package io.github.dseelp.framecord.core.modules
 
 import dev.kord.common.entity.Snowflake
+import io.github.dseelp.framecord.api.asSnowflake
 import io.github.dseelp.framecord.api.guild.GuildInfo
-import io.github.dseelp.framecord.api.guild.GuildManager
-import io.github.dseelp.framecord.core.modules.DbGuild
-import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.dao.LongEntity
+import org.jetbrains.exposed.dao.LongEntityClass
+import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.dao.id.LongIdTable
 
-open class GuildManagerImpl : GuildManager {
-    override fun getGuildInfo(guildId: Snowflake): GuildInfo = transaction { findInfo(guildId).info }
-
-    fun findInfo(guildId: Snowflake) = DbGuild.findById(guildId) ?: DbGuild.new(guildId) {
-        prefix = "!"
-        botJoined = System.currentTimeMillis()
+class DbGuild(id: EntityID<Long>) : LongEntity(id) {
+    companion object : LongEntityClass<DbGuild>(DbGuilds) {
+        fun findById(guildId: Snowflake) = DbGuild.findById(guildId.value)
+        fun new(guildId: Snowflake, init: DbGuild.() -> Unit) = DbGuild.new(guildId.value, init)
     }
 
-    override fun setGuildInfo(info: GuildInfo): Unit = transaction {
-        findInfo(info.guildId).apply {
-            prefix = info.prefix
-        }
-    }
+    var name by DbGuilds.name
+    var botJoined by DbGuilds.botJoined
+    var prefix by DbGuilds.prefix
+
+    var enabledModules by DbModule via DbModulesLink
+    var enabledFeatures by DbFeature via DbFeaturesLink
+
+    val guildId
+        get() = id.value.asSnowflake
+
+    val info
+        get() = GuildInfo(guildId, prefix)
+}
+
+object DbGuilds : LongIdTable("guilds") {
+    val name = varchar("name", 255).nullable()
+    val botJoined = long("botJoined")
+    val prefix = varchar("prefix", 32).default("!")
 }

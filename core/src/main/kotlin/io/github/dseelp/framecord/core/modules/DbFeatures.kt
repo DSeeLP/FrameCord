@@ -22,25 +22,29 @@
  * SOFTWARE.
  */
 
-package io.github.dseelp.framecord.core.guild
+package io.github.dseelp.framecord.core.modules
 
-import dev.kord.common.entity.Snowflake
-import io.github.dseelp.framecord.api.guild.GuildInfo
-import io.github.dseelp.framecord.api.guild.GuildManager
-import io.github.dseelp.framecord.core.modules.DbGuild
-import org.jetbrains.exposed.sql.transactions.transaction
+import io.github.dseelp.framecord.api.utils.StringEntity
+import io.github.dseelp.framecord.api.utils.StringEntityClass
+import io.github.dseelp.framecord.api.utils.VarCharIdTable
+import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.sql.Table
 
-open class GuildManagerImpl : GuildManager {
-    override fun getGuildInfo(guildId: Snowflake): GuildInfo = transaction { findInfo(guildId).info }
+class DbFeature(id: EntityID<String>) : StringEntity(id) {
+    companion object: StringEntityClass<DbFeature>(DbFeatures)
 
-    fun findInfo(guildId: Snowflake) = DbGuild.findById(guildId) ?: DbGuild.new(guildId) {
-        prefix = "!"
-        botJoined = System.currentTimeMillis()
-    }
+    var module by DbModule referencedOn DbFeatures.module
+    var name by DbFeatures.name
 
-    override fun setGuildInfo(info: GuildInfo): Unit = transaction {
-        findInfo(info.guildId).apply {
-            prefix = info.prefix
-        }
-    }
+    var guilds by DbGuild via DbFeaturesLink
+}
+
+object DbFeatures : VarCharIdTable(255, "features") {
+    val module = reference("module", DbModules)
+    val name = varchar("name", 255)
+}
+
+object DbFeaturesLink : Table("featuresLink") {
+    val guild = reference("guild", DbGuilds)
+    val feature = reference("feature", DbFeatures)
 }

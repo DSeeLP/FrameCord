@@ -22,25 +22,27 @@
  * SOFTWARE.
  */
 
-package io.github.dseelp.framecord.core.guild
+package io.github.dseelp.framecord.api.modules
 
 import dev.kord.common.entity.Snowflake
-import io.github.dseelp.framecord.api.guild.GuildInfo
-import io.github.dseelp.framecord.api.guild.GuildManager
-import io.github.dseelp.framecord.core.modules.DbGuild
-import org.jetbrains.exposed.sql.transactions.transaction
+import dev.kord.core.entity.Guild
+import io.github.dseelp.framecord.api.plugins.Plugin
+import kotlinx.coroutines.flow.Flow
 
-open class GuildManagerImpl : GuildManager {
-    override fun getGuildInfo(guildId: Snowflake): GuildInfo = transaction { findInfo(guildId).info }
+interface Feature {
+    val module: Module
+    val id: String
+    val name: String
+    val enabledGuilds: Flow<Snowflake>
 
-    fun findInfo(guildId: Snowflake) = DbGuild.findById(guildId) ?: DbGuild.new(guildId) {
-        prefix = "!"
-        botJoined = System.currentTimeMillis()
+    fun isEnabled(guild: Guild): Boolean = isEnabled(guild.id)
+    fun isEnabled(guildId: Snowflake): Boolean
+
+    suspend fun enable(guild: Guild) {
+        if (isEnabled(guild)) return
     }
 
-    override fun setGuildInfo(info: GuildInfo): Unit = transaction {
-        findInfo(info.guildId).apply {
-            prefix = info.prefix
-        }
+    suspend fun disable(guild: Guild) {
+        if (!isEnabled(guild)) return
     }
 }

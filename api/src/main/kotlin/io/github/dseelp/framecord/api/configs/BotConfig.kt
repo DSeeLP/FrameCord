@@ -31,6 +31,7 @@ import io.github.dseelp.framecord.api.randomAlphanumeric
 data class BotConfig(
     val instanceId: String,
     val debug: Boolean,
+    val showErrors: Boolean,
     val invite: InviteConfig,
     val intents: IntentsConfig,
     val rest: RestConfig,
@@ -42,6 +43,7 @@ data class BotConfig(
         val debugMode by optional(false)
         val clientId by optional(-1L)
         val clientSecret by optional("Hi")
+        val showErrors by optional(false)
 
         object InviteSpec : ConfigSpec() {
             val enabled by optional(false)
@@ -63,6 +65,7 @@ data class BotConfig(
         fun fromConfig(config: Config): BotConfig = BotConfig(
             config[instanceId],
             config[debugMode],
+            config[showErrors],
             InviteConfig(config[InviteSpec.enabled]),
             IntentsConfig(config[IntentsSpec.presence], config[IntentsSpec.guildMembers]),
             RestConfig(

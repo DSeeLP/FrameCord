@@ -22,31 +22,24 @@
  * SOFTWARE.
  */
 
-package io.github.dseelp.framecord.core.guild
+package io.github.dseelp.framecord.api.utils
 
-import dev.kord.common.entity.Snowflake
-import io.github.dseelp.framecord.api.asSnowflake
-import io.github.dseelp.framecord.api.guild.GuildInfo
-import org.jetbrains.exposed.dao.LongEntity
-import org.jetbrains.exposed.dao.LongEntityClass
+import org.jetbrains.exposed.dao.Entity
+import org.jetbrains.exposed.dao.EntityClass
 import org.jetbrains.exposed.dao.id.EntityID
-import org.jetbrains.exposed.dao.id.LongIdTable
+import org.jetbrains.exposed.dao.id.IdTable
+import org.jetbrains.exposed.sql.Column
 
-class DbGuildInfo(id: EntityID<Long>) : LongEntity(id) {
-    companion object : LongEntityClass<DbGuildInfo>(DbGuildInfos) {
-        fun findById(guildId: Snowflake) = findById(guildId.value)
-        fun new(guildId: Snowflake, init: DbGuildInfo.() -> Unit) = new(guildId.value, init)
-    }
-
-    val guildId
-        get() = id.value.asSnowflake
-
-    var prefix by DbGuildInfos.prefix
-
-    val info
-        get() = GuildInfo(guildId, prefix)
+open class TextIdTable(name: String = "", columnName: String = "id") : IdTable<String>(name) {
+    override val id: Column<EntityID<String>> = text(columnName).entityId()
+    override val primaryKey by lazy { super.primaryKey ?: PrimaryKey(id) }
 }
 
-object DbGuildInfos : LongIdTable() {
-    val prefix = varchar("prefix", 32)
+open class VarCharIdTable(maxIdLength: Int, name: String = "", columnName: String = "id") : IdTable<String>(name) {
+    override val id: Column<EntityID<String>> = varchar(columnName, maxIdLength).entityId()
+    override val primaryKey by lazy { super.primaryKey ?: PrimaryKey(id) }
 }
+
+abstract class StringEntity(id: EntityID<String>) : Entity<String>(id)
+
+abstract class StringEntityClass<out E : StringEntity>(table: IdTable<String>, entityType: Class<E>? = null) : EntityClass<String, E>(table, entityType)

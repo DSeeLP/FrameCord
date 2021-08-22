@@ -46,6 +46,9 @@ import io.github.dseelp.framecord.core.plugin.PluginLoaderImpl
 import io.github.dseelp.framecord.core.plugin.PluginManagerImpl
 import io.github.dseelp.framecord.core.plugin.repository.RepositoryManagerImpl
 import io.github.dseelp.framecord.core.utils.ReflectionUtilsImpl
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.koin.core.qualifier.qualifier
 import org.koin.dsl.bind
@@ -96,10 +99,19 @@ object CordBootstrap {
         System.setOut(PrintStream(ConsoleImpl.ActionOutputStream { ConsoleImpl.forceWriteLine(it) }, true))
         System.setErr(PrintStream(ConsoleImpl.ActionOutputStream { ConsoleImpl.forceWriteLine(it) }, true))
         ConsoleImpl.replaceSysOut()
+        CoroutineExceptionHandler { coroutineContext, throwable ->
+
+        }
         LogManager.getLogManager().getLogger("").apply {
             removeHandler(handlers[0])
             addHandler(SLF4JBridgeHandler())
         }
-        Core.startup()
+        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            //log.debug("Uncaught exception handled in thread handler")
+            log.error("", throwable)
+        }
+        GlobalScope.launch {
+            Core.startup()
+        }.join()
     }
 }

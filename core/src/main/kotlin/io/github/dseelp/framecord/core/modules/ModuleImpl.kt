@@ -22,25 +22,30 @@
  * SOFTWARE.
  */
 
-package io.github.dseelp.framecord.core.guild
+package io.github.dseelp.framecord.core.modules
 
-import dev.kord.common.entity.Snowflake
-import io.github.dseelp.framecord.api.guild.GuildInfo
-import io.github.dseelp.framecord.api.guild.GuildManager
-import io.github.dseelp.framecord.core.modules.DbGuild
+import io.github.dseelp.framecord.api.modules.Feature
+import io.github.dseelp.framecord.api.modules.Module
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.map
 import org.jetbrains.exposed.sql.transactions.transaction
 
-open class GuildManagerImpl : GuildManager {
-    override fun getGuildInfo(guildId: Snowflake): GuildInfo = transaction { findInfo(guildId).info }
+class ModuleImpl(override val id: String, override val name: String) : Module {
+    private val dbModule = (DbModule.findById(id) ?: throw IllegalStateException("This module does not exist in the database"))
+    override val features: Flow<Feature>
+        get() = transaction {
+            dbModule.features.asFlow().map { FeatureImpl(this@ModuleImpl, id, name) }
+        }
 
-    fun findInfo(guildId: Snowflake) = DbGuild.findById(guildId) ?: DbGuild.new(guildId) {
-        prefix = "!"
-        botJoined = System.currentTimeMillis()
-    }
-
-    override fun setGuildInfo(info: GuildInfo): Unit = transaction {
-        findInfo(info.guildId).apply {
-            prefix = info.prefix
+    override fun registerFeature(feature: Feature) {
+        transaction {
+            if (DbFeature.findById(feature.id) != null) throw IllegalStateException("A feature with this id is already registered")
+            DbFeature.new(feature.id) {
+                module = dbModule
+                name = feature.name
+                guilds = dbModule.guilds
+            }
         }
     }
 }

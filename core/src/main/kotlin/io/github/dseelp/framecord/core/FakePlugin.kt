@@ -34,7 +34,7 @@ import io.github.dseelp.framecord.api.plugins.PluginMeta
 import io.github.dseelp.framecord.api.plugins.repository.RepositoryManager
 import io.github.dseelp.framecord.api.utils.koin.KoinModules
 import io.github.dseelp.framecord.core.commands.InviteCommand
-import io.github.dseelp.framecord.core.guild.DbGuildInfos
+import io.github.dseelp.framecord.core.modules.ModuleManagerImpl
 import io.github.dseelp.framecord.core.plugin.repository.data.InstalledPackages
 import io.github.dseelp.framecord.rest.server.RestServer
 import kotlinx.coroutines.runBlocking
@@ -96,7 +96,7 @@ object FakePlugin : Plugin() {
                 })
                 database {
                     transaction {
-                        SchemaUtils.createMissingTablesAndColumns(InstalledPackages, DbGuildInfos)
+                        SchemaUtils.createMissingTablesAndColumns(InstalledPackages)
                         commit()
                     }
                 }
@@ -104,6 +104,7 @@ object FakePlugin : Plugin() {
         } catch (ex: Throwable) {
             ex.printStackTrace()
         }
+        ModuleManagerImpl
         searchCommands("io.github.dseelp.framecord.core")
     }
 
