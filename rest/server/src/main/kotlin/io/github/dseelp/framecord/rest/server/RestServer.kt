@@ -31,6 +31,7 @@ import io.github.dseelp.framecord.api.logging.logger
 import io.github.dseelp.framecord.api.plugins.Plugin
 import io.github.dseelp.framecord.api.utils.koin.CordKoinComponent
 import io.github.dseelp.framecord.rest.data.responses.dialect.RestErrors
+import io.github.dseelp.framecord.rest.server.modules.GuildsModule.guildModule
 import io.github.dseelp.framecord.rest.server.modules.NotAuthenticatedException
 import io.github.dseelp.framecord.rest.server.modules.securityModule
 import io.github.dseelp.framecord.rest.server.sessions.DeviceSession
@@ -43,22 +44,29 @@ import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.sessions.*
 import kotlinx.serialization.json.Json
+import org.koin.core.component.inject
 import org.slf4j.event.Level
 
 @OptIn(InternalFrameCordApi::class)
 object RestServer : CordKoinComponent {
+    val logger by logger<RestServer>()
     fun installApplicationModule(module: Application.() -> Unit) {
         server.application.apply(module)
     }
 
     fun startRestServer(plugin: Plugin) {
-        val config: BotConfig.RestConfig = getKoin().get<BotConfig>().rest
+        val botConfig: BotConfig by inject()
+        if (!botConfig.intents.guildMembers) {
+            logger.warn("The GuildMembers intent is not activated! This is dangerous since the RestServer is activated. \nThe intent is required to receive permission updates!")
+        }
+        val config = botConfig.rest
         if (!config.enabled) return
         if (this::restPlugin.isInitialized) return
         restPlugin = plugin
         baseUrl = Url(getKoin().get<BotConfig>().rest.redirectUrl)
 
-        val server = embeddedServer(Netty, host = config.host, port = config.port) {
+        val server = embeddedServer(Netty, host = config.host, port = config.port, configure = {
+        }) {
             install(IgnoreTrailingSlash)
             install(ContentNegotiation) {
                 json(json = Json { prettyPrint = true })
@@ -88,6 +96,7 @@ object RestServer : CordKoinComponent {
             }
 
             securityModule()
+            guildModule()
         }
         server.start()
         _server = server

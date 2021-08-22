@@ -22,36 +22,26 @@
  * SOFTWARE.
  */
 
-package io.github.dseelp.framecord.rest.server.db
+package io.github.dseelp.framecord.rest.data.responses
 
-import io.github.dseelp.framecord.api.randomAlphanumeric
-import org.jetbrains.exposed.dao.UUIDEntity
-import org.jetbrains.exposed.dao.UUIDEntityClass
-import org.jetbrains.exposed.dao.id.EntityID
-import org.jetbrains.exposed.dao.id.UUIDTable
-import java.security.SecureRandom
-import java.util.*
-import kotlin.random.asKotlinRandom
+import io.github.dseelp.framecord.rest.data.objects.Guild
+import kotlinx.serialization.Serializable
 
-class DbUserSession(id: EntityID<UUID>) : UUIDEntity(id) {
-    companion object : UUIDEntityClass<DbUserSession>(DbUserSessions)
+@Serializable
+data class GuildResponse(val guild: Guild)
 
-    var user by DbUser referencedOn DbUserSessions.user
-    var lastUse by DbUserSessions.lastUse
-    var creationTime by DbUserSessions.creationTime
-    var token by DbUserSessions.token
-}
+@Serializable
+data class MultipleGuildResponse(val guilds: Array<Guild>) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is MultipleGuildResponse) return false
 
-val secureJRandom = SecureRandom()
-val secureRandom = secureJRandom.asKotlinRandom()
+        if (!guilds.contentEquals(other.guilds)) return false
 
-object DbUserSessions : UUIDTable("userSessions") {
-    val user = reference("user", DbUsers)
-    val lastUse = long("lastUse")
-    val creationTime = long("creationTime")
-    val token = text("token").uniqueIndex().apply {
-        defaultValueFun = {
-            randomAlphanumeric(128, random = secureRandom)
-        }
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return guilds.contentHashCode()
     }
 }

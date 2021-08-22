@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package io.github.dseelp.framecord.core.modules
+package io.github.dseelp.framecord.rest.server.db
 
 import dev.kord.common.entity.Snowflake
 import io.github.dseelp.framecord.api.asSnowflake

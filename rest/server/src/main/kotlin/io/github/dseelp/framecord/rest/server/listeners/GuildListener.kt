@@ -22,28 +22,15 @@
  * SOFTWARE.
  */
 
-package io.github.dseelp.framecord.core.modules
+package io.github.dseelp.framecord.rest.server.listeners
 
-import io.github.dseelp.framecord.api.utils.StringEntity
-import io.github.dseelp.framecord.api.utils.StringEntityClass
-import io.github.dseelp.framecord.api.utils.VarCharIdTable
-import org.jetbrains.exposed.dao.id.EntityID
-import org.jetbrains.exposed.sql.Table
+import dev.kord.core.event.guild.MemberUpdateEvent
+import io.github.dseelp.framecord.api.InternalFrameCordApi
+import io.github.dseelp.framecord.api.utils.koin.CordKoinComponent
 
-class DbModule(id: EntityID<String>) : StringEntity(id) {
-    companion object: StringEntityClass<DbModule>(DbModules)
-    var name by DbModules.name
+@OptIn(InternalFrameCordApi::class)
+object GuildListener : CordKoinComponent {
+    fun onEvent(event: MemberUpdateEvent) {
 
-    val guilds by DbGuild via DbModulesLink
-    val features by DbFeature referrersOn DbFeatures.module
+    }
 }
-
-object DbModules: VarCharIdTable(255, "modules") {
-    val name = varchar("name", 255)
-}
-
-object DbModulesLink : Table("modulesLink") {
-    val module = reference("module", DbModules)
-    val guild = reference("guild", DbGuilds)
-}
-

@@ -22,36 +22,9 @@
  * SOFTWARE.
  */
 
-package io.github.dseelp.framecord.rest.server.db
+package io.github.dseelp.framecord.rest.data.objects
 
-import io.github.dseelp.framecord.api.randomAlphanumeric
-import org.jetbrains.exposed.dao.UUIDEntity
-import org.jetbrains.exposed.dao.UUIDEntityClass
-import org.jetbrains.exposed.dao.id.EntityID
-import org.jetbrains.exposed.dao.id.UUIDTable
-import java.security.SecureRandom
-import java.util.*
-import kotlin.random.asKotlinRandom
+import kotlinx.serialization.Serializable
 
-class DbUserSession(id: EntityID<UUID>) : UUIDEntity(id) {
-    companion object : UUIDEntityClass<DbUserSession>(DbUserSessions)
-
-    var user by DbUser referencedOn DbUserSessions.user
-    var lastUse by DbUserSessions.lastUse
-    var creationTime by DbUserSessions.creationTime
-    var token by DbUserSessions.token
-}
-
-val secureJRandom = SecureRandom()
-val secureRandom = secureJRandom.asKotlinRandom()
-
-object DbUserSessions : UUIDTable("userSessions") {
-    val user = reference("user", DbUsers)
-    val lastUse = long("lastUse")
-    val creationTime = long("creationTime")
-    val token = text("token").uniqueIndex().apply {
-        defaultValueFun = {
-            randomAlphanumeric(128, random = secureRandom)
-        }
-    }
-}
+@Serializable
+data class Guild(val id: Long, val owner: Long, val name: String, val iconHash: String?, val iconUrl: String?)

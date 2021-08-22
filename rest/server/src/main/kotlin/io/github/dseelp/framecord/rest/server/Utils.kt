@@ -24,6 +24,8 @@
 
 package io.github.dseelp.framecord.rest.server
 
+import dev.kord.core.entity.Guild
+import dev.kord.rest.Image
 import io.github.dseelp.framecord.rest.data.responses.dialect.FullRestError
 import io.github.dseelp.framecord.rest.data.responses.dialect.RestError
 import io.github.dseelp.framecord.rest.data.responses.dialect.RestResponse
@@ -54,4 +56,11 @@ suspend inline fun <reified T> ApplicationCall.respondApi(
 }
 
 suspend fun ApplicationCall.ok() = respondValue(Unit, HttpStatusCode.OK)
-suspend inline fun <reified T : Any> ApplicationCall.ok(value: T) = respondValue(Unit, HttpStatusCode.OK)
+suspend inline fun <reified T : Any> ApplicationCall.ok(value: T) = respondValue(value, HttpStatusCode.OK)
+
+val Guild.client
+    get() = io.github.dseelp.framecord.rest.data.objects.Guild(
+        id.value, ownerId.value, name, iconHash, getIconUrl(
+            Image.Format.PNG
+        )
+    )

@@ -26,6 +26,8 @@ package io.github.dseelp.framecord.core.modules
 
 import io.github.dseelp.framecord.api.modules.Feature
 import io.github.dseelp.framecord.api.modules.Module
+import io.github.dseelp.framecord.rest.server.db.DbFeature
+import io.github.dseelp.framecord.rest.server.db.DbModule
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map

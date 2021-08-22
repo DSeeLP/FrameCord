@@ -22,29 +22,11 @@
  * SOFTWARE.
  */
 
-package io.github.dseelp.framecord.core.modules
+package io.github.dseelp.framecord.rest.server.db
 
-import io.github.dseelp.framecord.api.utils.StringEntity
-import io.github.dseelp.framecord.api.utils.StringEntityClass
-import io.github.dseelp.framecord.api.utils.VarCharIdTable
-import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.Table
 
-class DbFeature(id: EntityID<String>) : StringEntity(id) {
-    companion object: StringEntityClass<DbFeature>(DbFeatures)
-
-    var module by DbModule referencedOn DbFeatures.module
-    var name by DbFeatures.name
-
-    var guilds by DbGuild via DbFeaturesLink
-}
-
-object DbFeatures : VarCharIdTable(255, "features") {
-    val module = reference("module", DbModules)
-    val name = varchar("name", 255)
-}
-
-object DbFeaturesLink : Table("featuresLink") {
-    val guild = reference("guild", DbGuilds)
-    val feature = reference("feature", DbFeatures)
+object DbGuildLink : Table() {
+    val user = reference("user", DbUsers)
+    val guildId = long("guildId")
 }

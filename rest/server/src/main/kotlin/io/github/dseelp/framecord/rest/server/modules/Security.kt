@@ -34,6 +34,7 @@ import io.github.dseelp.framecord.rest.data.responses.dialect.RestErrors
 import io.github.dseelp.framecord.rest.data.responses.dialect.detailed
 import io.github.dseelp.framecord.rest.server.RestServer
 import io.github.dseelp.framecord.rest.server.db.*
+import io.github.dseelp.framecord.rest.server.refreshUser
 import io.github.dseelp.framecord.rest.server.respondError
 import io.github.dseelp.framecord.rest.server.respondValue
 import io.github.dseelp.framecord.rest.server.sessions.DeviceSession
@@ -50,13 +51,15 @@ import io.ktor.routing.*
 import io.ktor.sessions.*
 import org.jetbrains.exposed.dao.load
 import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.koin.core.component.inject
 import org.koin.dsl.module
+import java.util.concurrent.TimeUnit
 
 fun Application.securityModule() {
     transaction {
-        SchemaUtils.createMissingTablesAndColumns(DbUsers, DbUserSessions, DbPermissions, DbPermissionLink)
+        SchemaUtils.createMissingTablesAndColumns(DbUsers, DbUserSessions, DbPermissions, DbPermissionLink, DbGuildLink)
         DbPermission.findById(0) ?: DbPermission.new(0) {
             this.name = "Admin"
             this.description = "Gives admin access over the entire system"
@@ -78,18 +81,19 @@ fun Application.securityModule() {
     RestServer.loadKoinModules(module {
         single { client }
     })
-    val oauth2Link = client.generateAuthorizationUrl(Scope.IDENTIFY, Scope.GUILDS)
+    val oauth2Link = generateOAuth2Link()
     install(Authentication) {
         session<DeviceSession>("user") {
             validate { credentials ->
                 getDbUser()?.clientUser?.principal
             }
             challenge {
-                val mode = call.parameters["mode"]?.toIntOrNull() ?: 1
+                val mode = call.parameters["mode"]?.toIntOrNull()
                 when (mode) {
-                    2 -> call.respondRedirect(oauth2Link)
+                    2 -> call.respondRedirect(generateOAuth2Link())
+                    1 -> call.respondError(RestErrors.Unauthorized)
+                    else -> call.respondError(RestErrors.Unauthorized)
                 }
-                call.respondError(RestErrors.Unauthorized)
             }
         }
     }
@@ -119,7 +123,8 @@ fun Application.securityModule() {
                 val session = it.generateSession(client)
                 val user = session.getUser()
                 val idLong = user.id.toLong()
-                val userSession = transaction {
+                println(session.getGuilds())
+                val db = newSuspendedTransaction {
                     var created = false
                     val db = DbUser.findById(idLong) ?: run {
                         created = true
@@ -137,6 +142,11 @@ fun Application.securityModule() {
                         db.accessToken = session.accessToken
                         db.refreshToken = session.refreshToken
                     }
+                    db
+                }
+                val userSession = newSuspendedTransaction {
+                    println("Request")
+                    db.refreshUser()
                     DbUserSession.new {
                         this.user = db
                         this.lastUse = System.currentTimeMillis()
@@ -150,6 +160,10 @@ fun Application.securityModule() {
     }
 }
 
+fun generateOAuth2Link(): String {
+    return RestServer.oauthHttp2Client.generateAuthorizationUrl(Scope.IDENTIFY, Scope.GUILDS)
+}
+
 private suspend fun ApplicationCall.respondCodeError() {
     respondError(RestErrors.Forbidden.detailed("Code invalid"))
 }
@@ -160,7 +174,12 @@ val ApplicationCall.isAuthenticated: Boolean
 fun ApplicationCall.getUserSession(): DbUserSession? {
     val session = sessions.get<DeviceSession>() ?: return null
     return transaction {
-        DbUserSession.find { DbUserSessions.token eq session.token }.firstOrNull()?.load(DbUserSession::user)
+        val s = DbUserSession.find { DbUserSessions.token eq session.token }.firstOrNull() ?: return@transaction null
+        if (System.currentTimeMillis() > s.lastUse + TimeUnit.DAYS.toMillis(2)) {
+            s.delete()
+            return@transaction null
+        }
+        s.load(DbUserSession::user)
     }
 }
 
@@ -175,6 +194,6 @@ fun ApplicationCall.getDbUser(): DbUser? {
     }
 }
 
-fun ApplicationCall.userPrincipal(): UserPrincipal = principal<UserPrincipal>() ?: throw NotAuthenticatedException()
+fun ApplicationCall.userPrincipal(): UserPrincipal = principal() ?: throw NotAuthenticatedException()
 
 class NotAuthenticatedException : Exception()

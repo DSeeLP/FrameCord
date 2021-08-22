@@ -24,34 +24,27 @@
 
 package io.github.dseelp.framecord.rest.server.db
 
-import io.github.dseelp.framecord.api.randomAlphanumeric
-import org.jetbrains.exposed.dao.UUIDEntity
-import org.jetbrains.exposed.dao.UUIDEntityClass
+import io.github.dseelp.framecord.api.utils.StringEntity
+import io.github.dseelp.framecord.api.utils.StringEntityClass
+import io.github.dseelp.framecord.api.utils.VarCharIdTable
 import org.jetbrains.exposed.dao.id.EntityID
-import org.jetbrains.exposed.dao.id.UUIDTable
-import java.security.SecureRandom
-import java.util.*
-import kotlin.random.asKotlinRandom
+import org.jetbrains.exposed.sql.Table
 
-class DbUserSession(id: EntityID<UUID>) : UUIDEntity(id) {
-    companion object : UUIDEntityClass<DbUserSession>(DbUserSessions)
+class DbFeature(id: EntityID<String>) : StringEntity(id) {
+    companion object: StringEntityClass<DbFeature>(DbFeatures)
 
-    var user by DbUser referencedOn DbUserSessions.user
-    var lastUse by DbUserSessions.lastUse
-    var creationTime by DbUserSessions.creationTime
-    var token by DbUserSessions.token
+    var module by DbModule referencedOn DbFeatures.module
+    var name by DbFeatures.name
+
+    var guilds by DbGuild via DbFeaturesLink
 }
 
-val secureJRandom = SecureRandom()
-val secureRandom = secureJRandom.asKotlinRandom()
+object DbFeatures : VarCharIdTable(255, "features") {
+    val module = reference("module", DbModules)
+    val name = varchar("name", 255)
+}
 
-object DbUserSessions : UUIDTable("userSessions") {
-    val user = reference("user", DbUsers)
-    val lastUse = long("lastUse")
-    val creationTime = long("creationTime")
-    val token = text("token").uniqueIndex().apply {
-        defaultValueFun = {
-            randomAlphanumeric(128, random = secureRandom)
-        }
-    }
+object DbFeaturesLink : Table("featuresLink") {
+    val guild = reference("guild", DbGuilds)
+    val feature = reference("feature", DbFeatures)
 }

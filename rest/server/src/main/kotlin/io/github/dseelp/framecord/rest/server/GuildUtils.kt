@@ -34,6 +34,7 @@ import io.github.dseelp.framecord.api.checkPermissions
 import io.github.dseelp.framecord.rest.data.objects.User
 import io.github.dseelp.framecord.rest.server.db.DbUser
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toCollection
 import kotlinx.datetime.Instant
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -41,12 +42,7 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 suspend fun User.getAdminGuilds(): List<Guild> {
     return newSuspendedTransaction {
         val db = DbUser.findById(this@getAdminGuilds.id) ?: throw IllegalStateException("User is not in database")
-        val idLong = db.id.value
-        val id = idLong.asSnowflake
-        val mutualGuilds = mutableListOf<Guild>()
-        bot.kord.guilds.filter { it.getMemberOrNull(id) != null }.toCollection(mutualGuilds)
-        val adminGuilds = mutualGuilds.filter { it.getMember(id).checkPermissions(Permission.Administrator) }
-        return@newSuspendedTransaction adminGuilds
+        db.guildIds.mapNotNull { bot.kord.getGuild(it.asSnowflake) }
     }
 }
 
@@ -59,9 +55,17 @@ suspend fun DbUser.refreshUser() = newSuspendedTransaction {
         "token",
         Instant.fromEpochMilliseconds(expirationTime)
     ).refresh()
-    session.getGuilds().filter { guild -> guild.permissions.any { perm -> perm.offset == 3 } }.map { id.toLong() }
     val dcUser = session.getUser()
     val user = this@refreshUser
+    val kord = bot.kord
+    val mappedGuilds = session.getGuilds().map { it.id.toLong() }
+    val userId = user.id.value.asSnowflake
+    val guildList = mutableListOf<Long>()
+    kord.guilds.filter {
+        it.id.value in mappedGuilds && it.getMember(userId).checkPermissions(Permission.Administrator)
+    }.map { it.id.value }.toCollection(guildList)
+    user.guildIds = guildList
+    println(user.guildIds.toTypedArray().contentToString())
     user.accessToken = session.accessToken
     user.refreshToken = session.refreshToken
     user.name = dcUser.username

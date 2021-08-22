@@ -30,6 +30,9 @@ import org.jetbrains.exposed.dao.LongEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.SizedCollection
+import org.jetbrains.exposed.sql.batchInsert
+import org.jetbrains.exposed.sql.deleteWhere
+import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 
 class DbUser(id: EntityID<Long>) : LongEntity(id) {
@@ -43,6 +46,24 @@ class DbUser(id: EntityID<Long>) : LongEntity(id) {
     var expirationTime by DbUsers.expirationTime
     var lastLogin by DbUsers.lastLogin
     var permissions by DbPermission via DbPermissionLink
+    /*val guildIds
+        get() = ungzip(Base64.getDecoder().decode(guilds)).split(";").map { it.toLong() }*/
+
+    var guildIds: List<Long>
+        get() {
+            return DbGuildLink.select { DbGuildLink.user eq id }.map { it[DbGuildLink.guildId] }
+        }
+        set(value) {
+            DbGuildLink.deleteWhere { DbGuildLink.user eq id }
+            DbGuildLink.batchInsert(value) {
+                this[DbGuildLink.user] = id
+                this[DbGuildLink.guildId] = it
+            }
+        }
+
+    /*fun setGuildIds(ids: List<Long>) {
+        guilds = Base64.getEncoder().encodeToString(gzip(ids.joinToString(";")))
+    }*/
 
     fun addPermissions(vararg permissions: DbPermission) {
         this.permissions = SizedCollection(this.permissions + permissions)
@@ -64,7 +85,7 @@ class DbUser(id: EntityID<Long>) : LongEntity(id) {
         }
 }
 
-object DbUsers : LongIdTable() {
+object DbUsers : LongIdTable("users") {
     val name = varchar("name", 32)
     val discriminator = integer("discriminator")
     val avatarHash = text("avatarUrl", eagerLoading = true)
@@ -72,5 +93,5 @@ object DbUsers : LongIdTable() {
     val accessToken = text("accessToken", eagerLoading = true)
     val expirationTime = long("expirationTime")
     val lastLogin = long("lastLogin")
+    //val guilds = text("guilds")
 }
-
