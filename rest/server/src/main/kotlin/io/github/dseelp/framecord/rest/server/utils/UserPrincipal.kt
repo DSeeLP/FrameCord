@@ -22,9 +22,12 @@
  * SOFTWARE.
  */
 
-rootProject.name = "framecord"
-include("core", "api")
-include("plugins")
-include("plugins:moderation")
-include("plugins:privatechannels")
-include("rest:data", "rest:server", "rest:client")
+package io.github.dseelp.framecord.rest.server.utils
+
+import io.github.dseelp.framecord.rest.data.objects.User
+import io.ktor.auth.*
+
+data class UserPrincipal(val user: User) : Principal
+
+val User.principal: UserPrincipal
+    get() = UserPrincipal(this)

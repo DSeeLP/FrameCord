@@ -25,6 +25,7 @@
 package io.github.dseelp.framecord.core
 
 import io.github.dseelp.framecord.api.Version
+import io.github.dseelp.framecord.api.configs.BotConfig
 import io.github.dseelp.framecord.api.event.Listener
 import io.github.dseelp.framecord.api.plugins.DatabaseConfig
 import io.github.dseelp.framecord.api.plugins.Plugin
@@ -35,6 +36,7 @@ import io.github.dseelp.framecord.api.utils.koin.KoinModules
 import io.github.dseelp.framecord.core.commands.InviteCommand
 import io.github.dseelp.framecord.core.guild.DbGuildInfos
 import io.github.dseelp.framecord.core.plugin.repository.data.InstalledPackages
+import io.github.dseelp.framecord.rest.server.RestServer
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.koin.core.component.inject
@@ -107,8 +109,9 @@ object FakePlugin : Plugin() {
 
     fun enable() {
         val inviteConfig = InviteCommand.getConfig()
-        if (inviteConfig.enabled && inviteConfig.clientId > 0) {
+        if (inviteConfig.invite.enabled && getKoin().get<BotConfig>().clientId > 0) {
             register<InviteCommand>()
         }
+        RestServer.startRestServer(this)
     }
 }

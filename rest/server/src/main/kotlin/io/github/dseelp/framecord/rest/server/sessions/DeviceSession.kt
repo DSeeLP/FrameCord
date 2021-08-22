@@ -22,9 +22,6 @@
  * SOFTWARE.
  */
 
-rootProject.name = "framecord"
-include("core", "api")
-include("plugins")
-include("plugins:moderation")
-include("plugins:privatechannels")
-include("rest:data", "rest:server", "rest:client")
+package io.github.dseelp.framecord.rest.server.sessions
+
+data class DeviceSession(val token: String)

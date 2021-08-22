@@ -51,6 +51,7 @@ import java.awt.Color
 
 object DeleteCommand : Command<GuildSender> {
     override val scopes: Array<CommandScope> = arrayOf(CommandScope.GUILD)
+
     @OptIn(KordPreview::class)
     val channelAction = ModerationPlugin.registerButtonAction("ChannelDelete", literal("") {
         checkAccess {
@@ -67,7 +68,8 @@ object DeleteCommand : Command<GuildSender> {
         }
         argument(LongArgument("channel")) {
             map<Long, GuildMessageChannel?>("channel") {
-                val channel = sender.interaction.message?.getGuild()?.getChannelOrNull(it.asSnowflake) ?: return@map null
+                val channel =
+                    sender.interaction.message?.getGuild()?.getChannelOrNull(it.asSnowflake) ?: return@map null
                 if (channel.type == ChannelType.GuildText || channel.type == ChannelType.GuildNews) return@map channel as GuildMessageChannel
                 null
             }
@@ -98,6 +100,7 @@ object DeleteCommand : Command<GuildSender> {
             }
         }
     })
+
     @OptIn(KordPreview::class)
     override val node: CommandNode<GuildSender> = literal("delete") {
         argument(MentionArgument.messageChannel("channel")) {

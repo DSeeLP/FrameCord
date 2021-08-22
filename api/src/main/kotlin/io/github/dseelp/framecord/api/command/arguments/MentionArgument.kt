@@ -94,9 +94,10 @@ class MentionArgument<S : DiscordSender<out MessageChannel>, M : Any>(
                 else null
             }
 
-        fun <S : DiscordSender<out GuildMessageChannel>> role(name: String) = MentionArgument<S, Role>(name) { message ->
-            if (sender !is GuildSender) throw UnsupportedOperationException("This mention argument is only supported by Guilds")
-            MentionUtils.role((sender as GuildSender).getGuild(), message)
-        }
+        fun <S : DiscordSender<out GuildMessageChannel>> role(name: String) =
+            MentionArgument<S, Role>(name) { message ->
+                if (sender !is GuildSender) throw UnsupportedOperationException("This mention argument is only supported by Guilds")
+                MentionUtils.role((sender as GuildSender).getGuild(), message)
+            }
     }
 }

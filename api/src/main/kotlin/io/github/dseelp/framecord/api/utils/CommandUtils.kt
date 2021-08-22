@@ -99,7 +99,7 @@ object CommandUtils {
         }
 
         @OptIn(io.github.dseelp.framecord.api.InternalFrameCordApi::class)
-        companion object: CordKoinComponent {
+        companion object : CordKoinComponent {
             val logger by logger("CommandUtils")
             private val bot: io.github.dseelp.framecord.api.Bot by inject()
             fun <T : Any> noOperation() = object : Actions<T> {

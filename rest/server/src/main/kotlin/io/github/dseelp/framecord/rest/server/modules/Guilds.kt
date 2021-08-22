@@ -22,9 +22,31 @@
  * SOFTWARE.
  */
 
-rootProject.name = "framecord"
-include("core", "api")
-include("plugins")
-include("plugins:moderation")
-include("plugins:privatechannels")
-include("rest:data", "rest:server", "rest:client")
+package io.github.dseelp.framecord.rest.server.modules
+
+import io.github.dseelp.framecord.rest.data.responses.dialect.RestErrors
+import io.github.dseelp.framecord.rest.data.responses.dialect.detailed
+import io.github.dseelp.framecord.rest.server.ok
+import io.github.dseelp.framecord.rest.server.respondError
+import io.ktor.application.*
+import io.ktor.routing.*
+
+fun Application.guildModule() {
+    fun ApplicationCall.guildId(): Long? = parameters["gid"]?.toLongOrNull()
+    suspend fun ApplicationCall.noGuildIdError() =
+        respondError(RestErrors.NotFound.detailed("No guild Id specified or it is invalid"))
+    routing {
+        route("guilds") {
+            route("{gid}") {
+                get {
+                    val guildId = call.guildId()
+                    if (guildId == null) {
+                        call.noGuildIdError()
+                        return@get
+                    }
+                    call.ok()
+                }
+            }
+        }
+    }
+}

@@ -24,14 +24,19 @@
 
 plugins {
     kotlin("jvm")
+    kotlin("plugin.serialization")
 }
 
 val ktorVersion: String by project
 
 dependencies {
     compileOnly(project(":api"))
+    api(project(":rest:data"))
     api("io.ktor:ktor-server-core:$ktorVersion")
     implementation("io.ktor:ktor-server-netty:$ktorVersion")
+    implementation("io.ktor:ktor-server-sessions:$ktorVersion")
     api("io.github.dseelp:discord-oauth2-api:0.2")
     api("io.ktor:ktor-serialization:$ktorVersion")
+    implementation("io.ktor:ktor-auth:$ktorVersion")
+    implementation(kotlin("script-runtime"))
 }

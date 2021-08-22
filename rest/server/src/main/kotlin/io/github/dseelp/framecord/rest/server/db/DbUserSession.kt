@@ -22,9 +22,36 @@
  * SOFTWARE.
  */
 
-rootProject.name = "framecord"
-include("core", "api")
-include("plugins")
-include("plugins:moderation")
-include("plugins:privatechannels")
-include("rest:data", "rest:server", "rest:client")
+package io.github.dseelp.framecord.rest.server.db
+
+import io.github.dseelp.framecord.api.randomAlphanumeric
+import org.jetbrains.exposed.dao.UUIDEntity
+import org.jetbrains.exposed.dao.UUIDEntityClass
+import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.dao.id.UUIDTable
+import java.security.SecureRandom
+import java.util.*
+import kotlin.random.asKotlinRandom
+
+class DbUserSession(id: EntityID<UUID>) : UUIDEntity(id) {
+    companion object : UUIDEntityClass<DbUserSession>(DbUserSessions)
+
+    var user by DbUser referencedOn DbUserSessions.user
+    var lastUse by DbUserSessions.lastUse
+    var creationTime by DbUserSessions.creationTime
+    var token by DbUserSessions.token
+}
+
+val secureJRandom = SecureRandom()
+val secureRandom = secureJRandom.asKotlinRandom()
+
+object DbUserSessions : UUIDTable() {
+    val user = reference("user", DbUsers)
+    val lastUse = long("lastUse")
+    val creationTime = long("creationTime")
+    val token = text("token").uniqueIndex().apply {
+        defaultValueFun = {
+            randomAlphanumeric(128, random = secureRandom)
+        }
+    }
+}

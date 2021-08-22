@@ -180,7 +180,8 @@ suspend fun Member.checkPermissions(vararg permissions: Permission) = checkPermi
     permissions.onEach { +it }
 })
 
-suspend fun Member.checkPermissions(permissions: Permissions) = getPermissions().contains(Permission.Administrator) || getPermissions().contains(permissions)
+suspend fun Member.checkPermissions(permissions: Permissions) =
+    getPermissions().contains(Permission.Administrator) || getPermissions().contains(permissions)
 
 suspend fun Member.checkPermissions(channel: TopGuildChannel, vararg permissions: Permission) =
     checkPermissions(channel, Permissions {

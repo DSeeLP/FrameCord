@@ -24,4 +24,25 @@
 
 package io.github.dseelp.framecord.rest.data.objects
 
-sealed class User(val name: String, val discriminator: String, val avatarUrl: String, val permissions: Array<SimplePermission>)
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class User(
+    val id: Long,
+    val name: String,
+    val discriminator: Int,
+    val avatarUrl: String,
+    val permissions: Array<SimplePermission>
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is User) return false
+
+        if (id != other.id) return false
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return id.hashCode()
+    }
+}

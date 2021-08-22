@@ -28,4 +28,6 @@ import kotlinx.serialization.Serializable
 
 
 @Serializable
-data class RestResponse<T>(val error: RestError, val response: T?)
+data class RestResponse<T>(val error: RestError?, val response: T?) {
+    fun serializable() = copy(error = error.serializable())
+}

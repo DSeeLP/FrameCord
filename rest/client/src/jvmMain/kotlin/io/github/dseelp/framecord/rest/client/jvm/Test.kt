@@ -22,9 +22,17 @@
  * SOFTWARE.
  */
 
-rootProject.name = "framecord"
-include("core", "api")
-include("plugins")
-include("plugins:moderation")
-include("plugins:privatechannels")
-include("rest:data", "rest:server", "rest:client")
+package io.github.dseelp.framecord.rest.client.jvm
+
+import io.github.dseelp.framecord.rest.client.RestClient
+import io.ktor.http.*
+
+suspend fun main() {
+    val client = RestClient(
+        Url("http://127.0.0.1:2340/"),
+        "token=%23sbEqFPV5IH8RvtnxQkIZnF5WrEOiRNqyChhux8GJnkZvNC2CoEvVzMPfVxBTN9BvnxpI4zIeyG0IM4cwIaJreAp5BzsRn18yIAGiHSXkhhjeHmlOpbSq0Bi1Ncp2xF24D"
+    )
+    val user = client.getUser()
+    println(user)
+    client.invalidateSession()
+}

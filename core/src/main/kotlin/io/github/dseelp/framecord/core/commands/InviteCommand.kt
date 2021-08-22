@@ -50,6 +50,7 @@ class InviteCommand : Command<Sender>, CordKoinComponent {
 
     private lateinit var oauth2Client: DiscordClient
     override val description: String = "Sends an invite to invite the bot to your server"
+
     init {
         oauth2Client()
     }
@@ -59,14 +60,14 @@ class InviteCommand : Command<Sender>, CordKoinComponent {
         oauth2Client = DiscordClient(HttpClient(), inviteConfig.clientId.toString(), "", "")
     }
 
-    private fun checkClient(config: BotConfig.InviteConfig = getConfig()) {
+    private fun checkClient(config: BotConfig = getConfig()) {
         if (oauth2Client.clientId != config.clientId.toString()) oauth2Client()
     }
 
     companion object : CordKoinComponent {
-        internal fun getConfig(): BotConfig.InviteConfig {
+        internal fun getConfig(): BotConfig {
             val config: BotConfig by inject()
-            return config.invite
+            return config
         }
     }
 
@@ -77,11 +78,12 @@ class InviteCommand : Command<Sender>, CordKoinComponent {
     @OptIn(ExperimentalTime::class)
     override val node: CommandNode<Sender> = literal("invite") {
         checkAccess {
-            getConfig().enabled
+            getConfig().invite.enabled
         }
         execute {
             val inviteConfig = getConfig()
-            if (!inviteConfig.enabled || inviteConfig.clientId <= 0) {
+            val config by inject<BotConfig>()
+            if (!inviteConfig.invite.enabled || config.clientId <= 0) {
                 if (sender is DiscordSender<*>) {
                     (sender as DiscordSender<*>).getChannel().createMessage {
                         embed {

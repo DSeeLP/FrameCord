@@ -31,5 +31,5 @@ import kotlinx.serialization.Serializable
 sealed class AuthorizeRequest {
     @Serializable
     @SerialName("token")
-    data class DeviceToken(val token: String): AuthorizeRequest()
+    data class DeviceToken(val token: String) : AuthorizeRequest()
 }

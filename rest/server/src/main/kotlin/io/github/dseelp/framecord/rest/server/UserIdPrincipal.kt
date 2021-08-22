@@ -22,9 +22,8 @@
  * SOFTWARE.
  */
 
-rootProject.name = "framecord"
-include("core", "api")
-include("plugins")
-include("plugins:moderation")
-include("plugins:privatechannels")
-include("rest:data", "rest:server", "rest:client")
+package io.github.dseelp.framecord.rest.server
+
+import io.ktor.auth.*
+
+data class UserIdPrincipal(val id: Long) : Principal

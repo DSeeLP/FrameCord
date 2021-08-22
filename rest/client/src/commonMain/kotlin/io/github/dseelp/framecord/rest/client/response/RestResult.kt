@@ -22,9 +22,12 @@
  * SOFTWARE.
  */
 
-rootProject.name = "framecord"
-include("core", "api")
-include("plugins")
-include("plugins:moderation")
-include("plugins:privatechannels")
-include("rest:data", "rest:server", "rest:client")
+package io.github.dseelp.framecord.rest.client.response
+
+import io.github.dseelp.framecord.rest.data.responses.dialect.RestError
+
+sealed class RestResult<T>
+
+data class FailedRestResult<T>(val error: RestError) : RestResult<T>()
+
+data class FineRestResult<T>(val response: T) : RestResult<T>()

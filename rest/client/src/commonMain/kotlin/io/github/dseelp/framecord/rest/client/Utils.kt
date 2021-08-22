@@ -22,9 +22,22 @@
  * SOFTWARE.
  */
 
-rootProject.name = "framecord"
-include("core", "api")
-include("plugins")
-include("plugins:moderation")
-include("plugins:privatechannels")
-include("rest:data", "rest:server", "rest:client")
+package io.github.dseelp.framecord.rest.client
+
+import io.github.dseelp.framecord.rest.client.response.FailedRestResult
+import io.github.dseelp.framecord.rest.client.response.FineRestResult
+import io.github.dseelp.framecord.rest.client.response.RestResult
+import io.github.dseelp.framecord.rest.data.responses.dialect.RestResponse
+import io.github.dseelp.framecord.rest.data.responses.dialect.SimpleRestError
+import io.github.dseelp.framecord.rest.data.responses.dialect.full
+import io.ktor.client.call.*
+import io.ktor.client.statement.*
+
+val unknownError = SimpleRestError(800, "An unknown error occurred")
+
+suspend inline fun <reified T> HttpResponse.toResult(): RestResult<T> {
+    val response = receive<RestResponse<T>>()
+    if (response.error == null) return FineRestResult(response.response!!)
+    if (response.response == null) return FailedRestResult(response.error!!.full(status))
+    return FailedRestResult(unknownError.full(status))
+}

@@ -28,6 +28,7 @@ import io.ktor.http.*
 
 object RestErrors {
     val Unauthorized = FullRestError(HttpStatusCode.Unauthorized, 401, "Not authorized")
-    val Forbidden = FullRestError(HttpStatusCode.Forbidden, 403, "You are not logged in")
+    val Forbidden = FullRestError(HttpStatusCode.Forbidden, 403, "Forbidden")
     val NotFound = FullRestError(HttpStatusCode.NotFound, 404, "Not found")
+    val InternalServerError = FullRestError(HttpStatusCode.InternalServerError, 500, "An internal error occurred")
 }

@@ -55,6 +55,7 @@ import kotlin.time.Duration
 
 object KickCommand : Command<GuildSender> {
     override val scopes: Array<CommandScope> = arrayOf(CommandScope.GUILD)
+
     @OptIn(KordPreview::class, kotlin.time.ExperimentalTime::class)
     val channelAction = ModerationPlugin.registerButtonAction("UserKick", literal("") {
         checkAccess {
@@ -112,6 +113,7 @@ object KickCommand : Command<GuildSender> {
             }
         }
     })
+
     @OptIn(KordPreview::class)
     override val node: CommandNode<GuildSender> = literal("kick") {
         argument(MentionArgument.member("member")) {

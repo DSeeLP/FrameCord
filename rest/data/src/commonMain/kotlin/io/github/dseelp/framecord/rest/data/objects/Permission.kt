@@ -24,6 +24,22 @@
 
 package io.github.dseelp.framecord.rest.data.objects
 
-open class SimplePermission(open val id: Int)
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
-data class Permission(override val id: Int, val name: String, val description: String? = null): SimplePermission(id)
+
+sealed class Permission {
+    abstract val id: Int
+
+    companion object {
+        operator fun invoke(id: Int) = SimplePermission(id)
+    }
+}
+
+@Serializable
+@SerialName("simple")
+data class SimplePermission(override val id: Int) : Permission()
+
+@Serializable
+@SerialName("full")
+data class FullPermission(override val id: Int, val name: String, val description: String? = null) : Permission()
