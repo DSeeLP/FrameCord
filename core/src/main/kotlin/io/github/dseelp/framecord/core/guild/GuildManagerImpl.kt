@@ -27,7 +27,7 @@ package io.github.dseelp.framecord.core.guild
 import dev.kord.common.entity.Snowflake
 import io.github.dseelp.framecord.api.guild.GuildInfo
 import io.github.dseelp.framecord.api.guild.GuildManager
-import io.github.dseelp.framecord.rest.server.db.DbGuild
+import io.github.dseelp.framecord.core.modules.DbGuild
 import org.jetbrains.exposed.sql.transactions.transaction
 
 open class GuildManagerImpl : GuildManager {

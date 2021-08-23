@@ -27,7 +27,6 @@ package io.github.dseelp.framecord.core.modules
 import dev.kord.common.entity.Snowflake
 import io.github.dseelp.framecord.api.modules.Module
 import io.github.dseelp.framecord.api.modules.ModuleManager
-import io.github.dseelp.framecord.rest.server.db.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
@@ -75,6 +74,16 @@ object ModuleManagerImpl : ModuleManager {
         return transaction {
             DbModule.findById(id) != null
         }
+    }
+
+    override fun isFeatureEnabled(id: String, guildId: Long): Boolean = transaction {
+        val feature = DbFeature.findById(id) ?: return@transaction false
+        feature.guilds.firstOrNull { it.id.value == guildId } != null
+    }
+
+    override fun isModuleEnabled(id: String, guildId: Long): Boolean = transaction {
+        val module = DbModule.findById(id) ?: return@transaction false
+        module.guilds.firstOrNull { it.id.value == guildId } != null
     }
 
 }

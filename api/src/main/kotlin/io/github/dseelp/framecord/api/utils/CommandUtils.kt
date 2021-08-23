@@ -25,6 +25,7 @@
 package io.github.dseelp.framecord.api.utils
 
 import de.dseelp.kommon.command.CommandDispatcher
+import de.dseelp.kommon.command.CommandNode
 import de.dseelp.kommon.command.ParsedResult
 import dev.kord.common.entity.Permission
 import dev.kord.common.kColor
@@ -32,10 +33,13 @@ import dev.kord.core.behavior.channel.createEmbed
 import dev.kord.rest.json.JsonErrorCode
 import dev.kord.rest.request.RestRequestException
 import io.github.dseelp.framecord.api.checkPermissions
+import io.github.dseelp.framecord.api.command.CommandScope
 import io.github.dseelp.framecord.api.command.GuildSender
+import io.github.dseelp.framecord.api.command.Sender
 import io.github.dseelp.framecord.api.command.createEmbed
 import io.github.dseelp.framecord.api.interactions.ButtonContext
 import io.github.dseelp.framecord.api.logging.logger
+import io.github.dseelp.framecord.api.modules.FeatureRestricted
 import io.github.dseelp.framecord.api.utils.koin.CordKoinComponent
 import org.koin.core.component.inject
 import java.awt.Color
@@ -127,3 +131,11 @@ object CommandUtils {
         }
     }
 }
+
+data class CommandHolder(
+    val scopes: Array<CommandScope>,
+    val description: String,
+    val name: String,
+    val node: CommandNode<out Sender>,
+    val lFunctionData: FeatureRestricted? = null
+)

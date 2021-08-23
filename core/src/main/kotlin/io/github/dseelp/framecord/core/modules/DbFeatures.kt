@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package io.github.dseelp.framecord.rest.server.db
+package io.github.dseelp.framecord.core.modules
 
 import io.github.dseelp.framecord.api.utils.StringEntity
 import io.github.dseelp.framecord.api.utils.StringEntityClass
