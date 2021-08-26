@@ -26,7 +26,6 @@ package io.github.dseelp.framecord.api.modules
 
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.entity.Guild
-import io.github.dseelp.framecord.api.plugins.Plugin
 import kotlinx.coroutines.flow.Flow
 
 interface Feature {
@@ -34,6 +33,7 @@ interface Feature {
     val id: String
     val name: String
     val enabledGuilds: Flow<Snowflake>
+    val numericId: Long
 
     fun isEnabled(guild: Guild): Boolean = isEnabled(guild.id)
     fun isEnabled(guildId: Snowflake): Boolean

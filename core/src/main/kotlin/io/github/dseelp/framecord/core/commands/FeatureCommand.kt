@@ -22,37 +22,19 @@
  * SOFTWARE.
  */
 
-package io.github.dseelp.framecord.core.modules
+package io.github.dseelp.framecord.core.commands
 
-import io.github.dseelp.framecord.api.utils.StringEntity
-import io.github.dseelp.framecord.api.utils.StringEntityClass
-import io.github.dseelp.framecord.api.utils.VarCharIdTable
-import org.jetbrains.exposed.dao.id.EntityID
-import org.jetbrains.exposed.sql.Table
-import kotlin.random.Random
+import de.dseelp.kommon.command.CommandNode
+import dev.kord.core.entity.channel.GuildMessageChannel
+import io.github.dseelp.framecord.api.command.Command
+import io.github.dseelp.framecord.api.command.CommandScope
+import io.github.dseelp.framecord.api.command.GuildChannelSender
+import io.github.dseelp.framecord.api.utils.literal
 
-class DbModule(id: EntityID<String>) : StringEntity(id) {
-    companion object : StringEntityClass<DbModule>(DbModules) {
-        fun findByNumericId(id: Long) = find { DbModules.numericId eq id }
+class FeatureCommand : Command<GuildChannelSender<GuildMessageChannel>> {
+    override val scopes: Array<CommandScope> = arrayOf(CommandScope.GUILD)
+    override val node: CommandNode<GuildChannelSender<GuildMessageChannel>> = literal("features") {
+
     }
 
-    var name by DbModules.name
-    var numericId by DbModules.numericId
-
-    val guilds by DbGuild via DbModulesLink
-    val features by DbFeature referrersOn DbFeatures.module
 }
-
-object DbModules : VarCharIdTable(255, "modules") {
-    val name = varchar("name", 255)
-    val numericId = long("numericId").clientDefault {
-        val value = Random(Random.nextLong()).nextLong()
-        if (value < 0) value * -1 else value
-    }
-}
-
-object DbModulesLink : Table("modulesLink") {
-    val module = reference("module", DbModules)
-    val guild = reference("guild", DbGuilds)
-}
-

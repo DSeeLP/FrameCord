@@ -30,7 +30,8 @@ import io.github.dseelp.framecord.api.guild.GuildInfo
 import org.jetbrains.exposed.dao.LongEntity
 import org.jetbrains.exposed.dao.LongEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
-import org.jetbrains.exposed.dao.id.LongIdTable
+import org.jetbrains.exposed.dao.id.IdTable
+import org.jetbrains.exposed.sql.Column
 
 class DbGuild(id: EntityID<Long>) : LongEntity(id) {
     companion object : LongEntityClass<DbGuild>(DbGuilds) {
@@ -52,8 +53,10 @@ class DbGuild(id: EntityID<Long>) : LongEntity(id) {
         get() = GuildInfo(guildId, prefix)
 }
 
-object DbGuilds : LongIdTable("guilds") {
+object DbGuilds : IdTable<Long>("guilds") {
     val name = varchar("name", 255).nullable()
     val botJoined = long("botJoined")
     val prefix = varchar("prefix", 32).default("!")
+    override val id: Column<EntityID<Long>> = long("id").entityId()
+    override val primaryKey by lazy { super.primaryKey ?: PrimaryKey(id) }
 }

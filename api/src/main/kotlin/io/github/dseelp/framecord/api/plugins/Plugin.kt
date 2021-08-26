@@ -36,6 +36,8 @@ import io.github.dseelp.framecord.api.interactions.ButtonContext
 import io.github.dseelp.framecord.api.interactions.SelectionMenu
 import io.github.dseelp.framecord.api.interactions.SelectionMenuBuilder
 import io.github.dseelp.framecord.api.logging.logger
+import io.github.dseelp.framecord.api.modules.Module
+import io.github.dseelp.framecord.api.modules.ModuleManager
 import io.github.dseelp.framecord.api.utils.Criterion
 import io.github.dseelp.framecord.api.utils.ReflectionUtils
 import io.github.dseelp.framecord.api.utils.koin.KoinModules
@@ -51,7 +53,6 @@ import kotlin.reflect.full.createInstance
 @OptIn(io.github.dseelp.framecord.api.InternalFrameCordApi::class)
 abstract class Plugin : PluginComponent<Plugin> {
 
-    @io.github.dseelp.framecord.api.InternalFrameCordApi
     override val plugin: Plugin
         get() = this
 
@@ -64,6 +65,8 @@ abstract class Plugin : PluginComponent<Plugin> {
     init {
         KoinModules.load(this)
     }
+
+    val moduleManager: ModuleManager by inject()
 
     val databaseRegistry: DatabaseRegistry by inject()
 
@@ -88,6 +91,9 @@ abstract class Plugin : PluginComponent<Plugin> {
         get() = _selectionMenus.toTypedArray()
 
     private val _selectionMenus = mutableListOf<SelectionMenu>()
+
+    fun checkModule(id: String, name: String): Module =
+        moduleManager.getRegisteredModule(id) ?: moduleManager.registerModule(id, name)
 
     fun registerButtonAction(name: String, node: CommandNode<ButtonContext>): ButtonAction {
 

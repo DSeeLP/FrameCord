@@ -34,13 +34,20 @@ import kotlinx.coroutines.flow.map
 import org.jetbrains.exposed.sql.transactions.transaction
 
 class FeatureImpl(override val module: Module, override val id: String, override val name: String) : Feature {
+    private val dbFeature by lazy {
+        transaction {
+            DbFeature.findById(id) ?: throw IllegalStateException("This feature does not exist in the database")
+        }
+    }
+
     override val enabledGuilds: Flow<Snowflake>
         get() = transaction {
             DbFeature.findById(id)!!.guilds.asFlow().map { it.id.value.asSnowflake }
         }
+    override val numericId: Long by lazy { transaction { dbFeature.numericId } }
 
     override fun isEnabled(guildId: Snowflake): Boolean {
         val guild = DbGuild.findById(guildId.value)
-        return (DbFeature.findById(id) ?: throw IllegalStateException("This feature does not exist in the database")).guilds.contains(guild)
+        return dbFeature.guilds.contains(guild)
     }
 }

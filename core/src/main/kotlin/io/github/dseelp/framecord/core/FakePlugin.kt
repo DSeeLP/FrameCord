@@ -113,6 +113,7 @@ object FakePlugin : Plugin() {
         if (inviteConfig.invite.enabled && getKoin().get<BotConfig>().clientId > 0) {
             register<InviteCommand>()
         }
+        checkModule("testid", "Test")
         RestServer.startRestServer(this)
     }
 }

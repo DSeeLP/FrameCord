@@ -37,4 +37,5 @@ interface ModuleManager {
     fun isModuleRegistered(id: String): Boolean
     fun isFeatureEnabled(id: String, guildId: Long): Boolean
     fun isModuleEnabled(id: String, guildId: Long): Boolean
+    fun getRegisteredModule(id: String): Module?
 }

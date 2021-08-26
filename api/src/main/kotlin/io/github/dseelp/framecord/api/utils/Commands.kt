@@ -27,44 +27,66 @@ package io.github.dseelp.framecord.api.utils
 import de.dseelp.kommon.command.CommandBuilder
 import de.dseelp.kommon.command.CommandDispatcher
 import de.dseelp.kommon.command.CommandNode
+import io.github.dseelp.framecord.api.InternalFrameCordApi
 import io.github.dseelp.framecord.api.command.CommandScope
 import io.github.dseelp.framecord.api.command.CommandScope.*
 import io.github.dseelp.framecord.api.command.Sender
 import io.github.dseelp.framecord.api.event.EventHandle
 import io.github.dseelp.framecord.api.event.Listener
 import io.github.dseelp.framecord.api.events.PluginDisableEvent
+import io.github.dseelp.framecord.api.modules.FeatureRestricted
+import io.github.dseelp.framecord.api.modules.checkBoolean
 import io.github.dseelp.framecord.api.plugins.Plugin
 import io.github.dseelp.framecord.api.utils.koin.CordKoinComponent
 import org.koin.core.component.inject
 import org.koin.core.qualifier.qualifier
 
 @Listener
-@io.github.dseelp.framecord.api.InternalFrameCordApi
+@InternalFrameCordApi
 object Commands : CordKoinComponent {
     internal val guild: CommandDispatcher<Sender> by inject(qualifier("guild"))
     internal val private: CommandDispatcher<Sender> by inject(qualifier("private"))
     internal val console: CommandDispatcher<Sender> by inject(qualifier("console"))
     internal val thread: CommandDispatcher<Sender> by inject(qualifier("thread"))
 
-    internal val pluginCommands =
-        hashMapOf<Plugin, MutableList<Triple<CommandScope, String, CommandNode<out Sender>>>>()
+    internal val pluginCommands = hashMapOf<Plugin, MutableList<CommandHolder>>()
 
-    fun getDescription(scope: CommandScope, commandName: String): String? =
-        pluginCommands.values.mapNotNull { entry -> entry.firstOrNull { it.first == scope && it.third.name == commandName } }
-            .firstOrNull()?.second
+    fun getDescription(scope: CommandScope, commandName: String, guildId: Long? = null): String? =
+        getCommandHolder(scope, commandName, guildId)?.description
 
-    fun getCommandsForScope(scope: CommandScope): Map<Plugin, List<Triple<CommandScope, String, CommandNode<out Sender>>>> =
-        pluginCommands.map { entry -> entry.key to entry.value.filter { it.first == scope } }
-            .filterNot { it.second.isEmpty() }.toMap()
+    @InternalFrameCordApi
+    fun getCommandHolder(scope: CommandScope, commandName: String, guildId: Long? = null): CommandHolder? {
+        return pluginCommands.values.mapNotNull { entry ->
+            entry.firstOrNull {
+                it.scopes.contains(scope) && it.name.lowercase() == commandName.lowercase() && if (guildId == null) true else it.featureRestricted?.checkBoolean(
+                    guildId
+                ) ?: true
+            }
+        }
+            .firstOrNull()
+    }
+
+    fun getCommandsForScope(scope: CommandScope, guildId: Long? = null): Map<Plugin, List<CommandHolder>> {
+        return pluginCommands.map { entry -> entry.key to entry.value.filter { it.scopes.contains(scope) } }
+            .filterNot { it.second.isEmpty() }.associate {
+                it.first to if (guildId == null) it.second else it.second.filter { holder ->
+                    holder.featureRestricted?.checkBoolean(guildId) ?: true
+                }
+            }
+    }
 
     fun unregister(plugin: Plugin) {
         val cmds = pluginCommands[plugin] ?: return
-        for (pair in cmds) {
-            when (pair.first) {
-                GUILD -> guild.unregister(pair.third)
-                PRIVATE -> private.unregister(pair.third)
-                CONSOLE -> console.unregister(pair.third)
-                THREAD -> thread.unregister(pair.third)
+        pluginCommands.remove(plugin)
+        for (holder in cmds) {
+            val node = holder.node
+            for (scope in holder.scopes) {
+                when (scope) {
+                    GUILD -> guild.unregister(node)
+                    PRIVATE -> private.unregister(node)
+                    CONSOLE -> console.unregister(node)
+                    THREAD -> thread.unregister(node)
+                }
             }
         }
     }
@@ -75,8 +97,14 @@ object Commands : CordKoinComponent {
     }
 }
 
-@OptIn(io.github.dseelp.framecord.api.InternalFrameCordApi::class)
-fun Plugin.register(node: CommandNode<out Sender>, description: String = "", scopes: Array<CommandScope>) {
+@OptIn(InternalFrameCordApi::class)
+fun Plugin.register(
+    node: CommandNode<out Sender>,
+    description: String = "",
+    scopes: Array<CommandScope>,
+    featureRestricted: FeatureRestricted? = null
+) {
+    if (node.name == null) throw IllegalArgumentException("A command node registered as a command must have a name!")
     for (scope in scopes) {
         when (scope) {
             GUILD -> Commands.guild.register(node)
@@ -84,8 +112,9 @@ fun Plugin.register(node: CommandNode<out Sender>, description: String = "", sco
             CONSOLE -> Commands.console.register(node)
             THREAD -> Commands.thread.register(node)
         }
-        Commands.pluginCommands.getOrPut(this) { mutableListOf() }.add(Triple(scope, description, node))
     }
+    Commands.pluginCommands.getOrPut(this) { mutableListOf() }
+        .add(CommandHolder(this, scopes, description, node.name!!, node, featureRestricted))
 }
 
 

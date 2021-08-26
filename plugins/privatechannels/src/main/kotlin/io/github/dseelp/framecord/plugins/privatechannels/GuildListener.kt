@@ -31,8 +31,10 @@ import dev.kord.core.event.guild.GuildDeleteEvent
 import io.github.dseelp.framecord.api.asSnowflake
 import io.github.dseelp.framecord.api.event.EventHandle
 import io.github.dseelp.framecord.api.event.Listener
+import io.github.dseelp.framecord.api.modules.checkModule
 import io.github.dseelp.framecord.plugins.privatechannels.ChannelListener.handleJoin
 import io.github.dseelp.framecord.plugins.privatechannels.PrivateChannelPlugin.database
+import io.github.dseelp.framecord.plugins.privatechannels.PrivateChannelPlugin.mId
 import io.github.dseelp.framecord.plugins.privatechannels.PrivateChannelPlugin.suspendingDatabase
 import io.github.dseelp.framecord.plugins.privatechannels.db.ActivePrivateChannel
 import io.github.dseelp.framecord.plugins.privatechannels.db.ActivePrivateChannels
@@ -46,6 +48,8 @@ import org.jetbrains.exposed.sql.deleteWhere
 object GuildListener {
     @EventHandle
     fun onGuildLeave(event: GuildDeleteEvent) {
+        checkModule(event.guildId.value, mId) ?: return
+        if (event.unavailable) return
         val guildId = event.guildId.value
         database {
             transaction {
@@ -56,6 +60,7 @@ object GuildListener {
 
     @EventHandle
     suspend fun onGuildCreate(event: GuildCreateEvent) {
+        checkModule(event.guild.id.value, mId) ?: return
         val guildId = event.guild.id.value
         val guild = event.guild.asGuild()
         suspendingDatabase {

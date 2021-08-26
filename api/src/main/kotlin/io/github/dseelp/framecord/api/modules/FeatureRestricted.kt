@@ -37,12 +37,12 @@ data class FeatureRestricted(val type: Type, val id: String) {
 }
 
 
-fun FeatureRestricted.checkBoolean(guildId: Long, moduleManager: ModuleManager) = when (type) {
+fun FeatureRestricted.checkBoolean(guildId: Long, moduleManager: ModuleManager = bot.moduleManager) = when (type) {
     FEATURE -> moduleManager.isFeatureEnabled(id, guildId)
     MODULE -> moduleManager.isModuleEnabled(id, guildId)
 }
 
-fun FeatureRestricted.check(guildId: Long, moduleManager: ModuleManager) =
+fun FeatureRestricted.check(guildId: Long, moduleManager: ModuleManager = bot.moduleManager) =
     if (checkBoolean(guildId, moduleManager)) Unit else null
 
 fun checkFeature(guildId: Long, id: String, moduleManager: ModuleManager = bot.moduleManager) =

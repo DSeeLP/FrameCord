@@ -28,10 +28,6 @@ import dev.kord.core.entity.Guild
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
-import kotlinx.serialization.Contextual
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
-import java.util.*
 
 /**
  * A module provides functionality and can be disabled/enabled per guild
@@ -39,6 +35,7 @@ import java.util.*
 interface Module {
     val id: String
     val name: String
+    val numericId: Long
 
     val features: Flow<Feature>
 

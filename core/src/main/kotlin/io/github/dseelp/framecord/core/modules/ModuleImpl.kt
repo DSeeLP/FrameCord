@@ -31,11 +31,18 @@ import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
 import org.jetbrains.exposed.sql.transactions.transaction
 
-class ModuleImpl(override val id: String, override val name: String) : Module {
-    private val dbModule = (DbModule.findById(id) ?: throw IllegalStateException("This module does not exist in the database"))
+class ModuleImpl(id: String, override val name: String) : Module {
+    override val id: String = id.lowercase()
+    private val dbModule by lazy {
+        transaction {
+            DbModule.findById(id.lowercase())
+                ?: throw IllegalStateException("This module does not exist in the database")
+        }
+    }
+    override val numericId: Long by lazy { transaction { dbModule.numericId } }
     override val features: Flow<Feature>
         get() = transaction {
-            dbModule.features.asFlow().map { FeatureImpl(this@ModuleImpl, id, name) }
+            dbModule.features.asFlow().map { FeatureImpl(this@ModuleImpl, it.id.value.lowercase(), name) }
         }
 
     override fun registerFeature(feature: Feature) {

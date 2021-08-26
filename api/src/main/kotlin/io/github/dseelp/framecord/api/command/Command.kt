@@ -25,10 +25,13 @@
 package io.github.dseelp.framecord.api.command
 
 import de.dseelp.kommon.command.CommandNode
+import io.github.dseelp.framecord.api.modules.FeatureRestricted
 
 interface Command<S : Sender> {
     val scopes: Array<CommandScope>
     val node: CommandNode<S>
     val description: String
         get() = ""
+    val featureRestricted: FeatureRestricted?
+        get() = null
 }

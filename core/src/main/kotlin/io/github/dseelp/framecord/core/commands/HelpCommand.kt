@@ -50,9 +50,8 @@ class HelpCommand : Command<Sender> {
                     commands.forEach {
                         append("${it.key.name}\n")
                         for (triple in it.value) {
-                            if (triple.third.name == null) continue
-                            val description = triple.second
-                            append("    ${triple.third.name}${if (description.isBlank() || description.isEmpty()) "" else " : $description"}\n")
+                            val description = triple.description
+                            append("    ${triple.name}${if (description.isBlank() || description.isEmpty()) "" else " : $description"}\n")
                         }
                     }
                 }.dropLast(1))
@@ -74,7 +73,7 @@ class HelpCommand : Command<Sender> {
                     val combined = unionList.getOrDefault(plugin, mutableListOf()).let {
                         it.addAll(list)
                         it.distinctBy { value ->
-                            value.third
+                            value.node
                         }
                     }
                     unionList[plugin] = combined.toMutableList()
@@ -92,9 +91,8 @@ class HelpCommand : Command<Sender> {
                     name = it.key.name
                     value = buildString {
                         for (triple in it.value) {
-                            if (triple.third.name == null) continue
-                            val description = triple.second
-                            append("$prefix${triple.third.name}${if (description.isBlank() || description.isEmpty()) "" else " : $description"}\n")
+                            val description = triple.name
+                            append("$prefix${triple.name}${if (description.isBlank() || description.isEmpty()) "" else " : $description"}\n")
                         }
                     }.dropLast(1)
                 }
