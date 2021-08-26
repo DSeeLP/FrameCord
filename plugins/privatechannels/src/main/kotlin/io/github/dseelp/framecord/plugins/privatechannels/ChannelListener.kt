@@ -40,8 +40,10 @@ import io.github.dseelp.framecord.api.asSnowflake
 import io.github.dseelp.framecord.api.bot
 import io.github.dseelp.framecord.api.event.EventHandle
 import io.github.dseelp.framecord.api.event.Listener
+import io.github.dseelp.framecord.api.modules.checkModule
 import io.github.dseelp.framecord.api.utils.asOverwrite
 import io.github.dseelp.framecord.plugins.privatechannels.PrivateChannelPlugin.database
+import io.github.dseelp.framecord.plugins.privatechannels.PrivateChannelPlugin.mId
 import io.github.dseelp.framecord.plugins.privatechannels.PrivateChannelPlugin.suspendingDatabase
 import io.github.dseelp.framecord.plugins.privatechannels.db.ActivePrivateChannel
 import io.github.dseelp.framecord.plugins.privatechannels.db.ActivePrivateChannels
@@ -59,26 +61,30 @@ import kotlin.time.ExperimentalTime
 object ChannelListener {
 
     @EventHandle
-    suspend fun onChannelDelete(event: VoiceChannelDeleteEvent) = suspendingDatabase {
-        suspendedTransaction {
-            val channelId = event.channel.id.value
-            val pnChannels = PrivateChannel.find { PrivateChannels.joinChannelId eq channelId }
-            val guild = event.channel.getGuild()
-            ActivePrivateChannel.find { ActivePrivateChannels.channelId eq channelId or (ActivePrivateChannels.privateChannel inList pnChannels.map { it.id }) }
-                .forEach {
+    suspend fun onChannelDelete(event: VoiceChannelDeleteEvent) {
+        checkModule(event.channel.guildId.value, mId) ?: return
+        suspendingDatabase {
+            suspendedTransaction {
+                val channelId = event.channel.id.value
+                val pnChannels = PrivateChannel.find { PrivateChannels.joinChannelId eq channelId }
+                val guild = event.channel.getGuild()
+                ActivePrivateChannel.find { ActivePrivateChannels.channelId eq channelId or (ActivePrivateChannels.privateChannel inList pnChannels.map { it.id }) }
+                    .forEach {
+                        it.delete()
+                        if (it.channelId == channelId) return@forEach
+                        val channel = guild.getChannelOrNull(it.channelId.asSnowflake) ?: return@forEach
+                        channel.delete()
+                    }
+                pnChannels.forEach {
                     it.delete()
-                    if (it.channelId == channelId) return@forEach
-                    val channel = guild.getChannelOrNull(it.channelId.asSnowflake) ?: return@forEach
-                    channel.delete()
                 }
-            pnChannels.forEach {
-                it.delete()
             }
         }
     }
 
     @EventHandle
     suspend fun onVoiceUpdate(event: VoiceStateUpdateEvent) {
+        checkModule(event.state.guildId.value, mId) ?: return
         suspendingDatabase {
             val oldId = event.old?.channelId
             val newId = event.state.channelId
