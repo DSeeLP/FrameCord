@@ -187,12 +187,18 @@ object ChannelListener {
     }
 }
 
-suspend fun calculateChannelName(channel: PrivateChannel, member: Member, template: String = channel.nameTemplate) =
-    template.replace("%user%", member.displayName, true).replace(
+suspend fun calculateChannelName(
+    channel: PrivateChannel,
+    member: Member,
+    template: String = channel.nameTemplate
+): String {
+    val result = template.replace("%user%", member.displayName, true).replace(
         "%game%",
         member.getPresenceOrNull()?.activities?.firstOrNull()?.name ?: channel.defaultGame,
         true
     )
+    return customEmojiRegex.replace(result, "")
+}
 
 suspend fun updateChannel(channel: ActivePrivateChannel) {
     val guild = bot.kord.getGuild(channel.privateChannel.guildId.asSnowflake) ?: return
