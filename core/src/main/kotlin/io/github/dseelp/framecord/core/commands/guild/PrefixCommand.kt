@@ -27,8 +27,10 @@ package io.github.dseelp.framecord.core.commands.guild
 import de.dseelp.kommon.command.CommandNode
 import de.dseelp.kommon.command.arguments.StringArgument
 import dev.kord.common.Color
+import dev.kord.common.entity.Permission
 import dev.kord.core.behavior.channel.createMessage
 import dev.kord.rest.builder.message.create.embed
+import io.github.dseelp.framecord.api.checkPermissions
 import io.github.dseelp.framecord.api.command.Command
 import io.github.dseelp.framecord.api.command.CommandScope
 import io.github.dseelp.framecord.api.command.GuildSender
@@ -57,6 +59,18 @@ class PrefixCommand : Command<GuildSender> {
         }
 
         argument(StringArgument("prefix")) {
+            checkAccess {
+                sender.getMember().checkPermissions(Permission.ManageGuild)
+            }
+            noAccess {
+                sender.message.deleteIgnoringNotFound()
+                sender.createEmbed {
+                    title = "Permission denied"
+                    color = Color.red
+                    description = "You need the ManageGuild Permission to use this command"
+                    footer = sender.getMember().footer()
+                }.deleteAfter(seconds(10))
+            }
             execute {
                 val prefix: String = get("prefix")
                 if (prefix.length > 8) {
