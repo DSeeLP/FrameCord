@@ -36,6 +36,8 @@ import io.github.dseelp.framecord.api.interactions.ButtonContext
 import io.github.dseelp.framecord.api.interactions.SelectionMenu
 import io.github.dseelp.framecord.api.interactions.SelectionMenuBuilder
 import io.github.dseelp.framecord.api.logging.logger
+import io.github.dseelp.framecord.api.modules.Module
+import io.github.dseelp.framecord.api.modules.ModuleManager
 import io.github.dseelp.framecord.api.utils.Criterion
 import io.github.dseelp.framecord.api.utils.ReflectionUtils
 import io.github.dseelp.framecord.api.utils.koin.KoinModules
@@ -51,7 +53,6 @@ import kotlin.reflect.full.createInstance
 @OptIn(io.github.dseelp.framecord.api.InternalFrameCordApi::class)
 abstract class Plugin : PluginComponent<Plugin> {
 
-    @io.github.dseelp.framecord.api.InternalFrameCordApi
     override val plugin: Plugin
         get() = this
 
@@ -64,6 +65,8 @@ abstract class Plugin : PluginComponent<Plugin> {
     init {
         KoinModules.load(this)
     }
+
+    val moduleManager: ModuleManager by inject()
 
     val databaseRegistry: DatabaseRegistry by inject()
 
@@ -89,6 +92,9 @@ abstract class Plugin : PluginComponent<Plugin> {
 
     private val _selectionMenus = mutableListOf<SelectionMenu>()
 
+    fun checkModule(id: String, name: String): Module =
+        moduleManager.getRegisteredModule(id) ?: moduleManager.registerModule(id, name)
+
     fun registerButtonAction(name: String, node: CommandNode<ButtonContext>): ButtonAction {
 
         val action = ButtonAction(this, name, node)
@@ -113,7 +119,7 @@ abstract class Plugin : PluginComponent<Plugin> {
         _selectionMenus.add(menu)
     }
 
-    fun registerSelectionMenu(block: SelectionMenuBuilder.() -> Unit): SelectionMenu {
+    inline fun registerSelectionMenu(block: SelectionMenuBuilder.() -> Unit): SelectionMenu {
         val menu = SelectionMenuBuilder().apply(block).build(this)
         registerSelectionMenu(menu)
         return menu
@@ -138,7 +144,7 @@ abstract class Plugin : PluginComponent<Plugin> {
     inline fun <reified T : Any> registerListener() = eventBus.addClassHandler<T>(this)
 
     fun register(command: Command<*>) {
-        register(command.node, command.description, command.scopes)
+        register(command.node, command.description, command.scopes, command.featureRestricted)
     }
 
     @Suppress("UNCHECKED_CAST")

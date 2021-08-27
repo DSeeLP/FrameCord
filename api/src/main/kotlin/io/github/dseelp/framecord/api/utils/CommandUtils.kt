@@ -25,22 +25,27 @@
 package io.github.dseelp.framecord.api.utils
 
 import de.dseelp.kommon.command.CommandDispatcher
+import de.dseelp.kommon.command.CommandNode
 import de.dseelp.kommon.command.ParsedResult
 import dev.kord.common.entity.Permission
 import dev.kord.common.kColor
 import dev.kord.core.behavior.channel.createEmbed
 import dev.kord.rest.json.JsonErrorCode
 import dev.kord.rest.request.RestRequestException
+import io.github.dseelp.framecord.api.InternalFrameCordApi
 import io.github.dseelp.framecord.api.checkPermissions
-import io.github.dseelp.framecord.api.command.GuildSender
-import io.github.dseelp.framecord.api.command.createEmbed
+import io.github.dseelp.framecord.api.command.*
 import io.github.dseelp.framecord.api.interactions.ButtonContext
 import io.github.dseelp.framecord.api.logging.logger
+import io.github.dseelp.framecord.api.modules.FeatureRestricted
+import io.github.dseelp.framecord.api.modules.checkBoolean
+import io.github.dseelp.framecord.api.plugins.Plugin
 import io.github.dseelp.framecord.api.utils.koin.CordKoinComponent
 import org.koin.core.component.inject
 import java.awt.Color
 
 object CommandUtils {
+    @OptIn(InternalFrameCordApi::class)
     suspend fun <T : Any> CommandDispatcher<T>.execute(
         sender: T,
         message: String,
@@ -51,11 +56,20 @@ object CommandUtils {
         val hashCode = sender.hashCode()
         val cached = cache[hashCode, message]
         val parsed = cached ?: parse(sender, message)
-        if (parsed == null || parsed.failed) {
+        if (parsed == null || parsed.failed || parsed.node == null) {
             actions.error(message, parsed, null)
             return
         }
         if (cached == null) cache[hashCode, message] = parsed
+        if (sender is GuildSenderBehavior) {
+            val guildId = sender.getGuild().id.value
+            val holder = Commands.getCommandHolder(
+                if (sender is ThreadSender) CommandScope.THREAD else CommandScope.GUILD,
+                parsed.node!!.name!!
+            )
+            val checked = holder?.featureRestricted?.checkBoolean(guildId)
+            if (checked == false) return
+        }
 
         val throwable = parsed.execute(bypassAccess)
         if (throwable == null)
@@ -98,8 +112,8 @@ object CommandUtils {
             }
         }
 
-        @OptIn(io.github.dseelp.framecord.api.InternalFrameCordApi::class)
-        companion object: CordKoinComponent {
+        @OptIn(InternalFrameCordApi::class)
+        companion object : CordKoinComponent {
             val logger by logger("CommandUtils")
             private val bot: io.github.dseelp.framecord.api.Bot by inject()
             fun <T : Any> noOperation() = object : Actions<T> {
@@ -125,5 +139,37 @@ object CommandUtils {
 
             }
         }
+    }
+}
+
+@InternalFrameCordApi
+data class CommandHolder(
+    val plugin: Plugin,
+    val scopes: Array<CommandScope>,
+    val description: String,
+    val name: String,
+    val node: CommandNode<out Sender>,
+    val featureRestricted: FeatureRestricted? = null
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is CommandHolder) return false
+
+        if (!scopes.contentEquals(other.scopes)) return false
+        if (description != other.description) return false
+        if (name != other.name) return false
+        if (node != other.node) return false
+        if (featureRestricted != other.featureRestricted) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = scopes.contentHashCode()
+        result = 31 * result + description.hashCode()
+        result = 31 * result + name.hashCode()
+        result = 31 * result + node.hashCode()
+        result = 31 * result + (featureRestricted?.hashCode() ?: 0)
+        return result
     }
 }

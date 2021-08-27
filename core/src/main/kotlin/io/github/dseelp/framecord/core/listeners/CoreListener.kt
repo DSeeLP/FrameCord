@@ -31,8 +31,8 @@ import dev.kord.common.entity.InteractionType
 import dev.kord.core.entity.channel.TopGuildMessageChannel
 import dev.kord.core.entity.component.ButtonComponent
 import dev.kord.core.entity.component.SelectMenuComponent
-import dev.kord.core.entity.interaction.ComponentInteraction
 import dev.kord.core.entity.interaction.SelectMenuInteraction
+import dev.kord.core.event.interaction.ComponentInteractionCreateEvent
 import dev.kord.core.event.interaction.InteractionCreateEvent
 import dev.kord.core.event.message.MessageCreateEvent
 import io.github.dseelp.framecord.api.command.*
@@ -129,10 +129,9 @@ object CoreListener : CordKoinComponent {
 
     @OptIn(KordPreview::class)
     @EventHandle
-    suspend fun onInteractionComponentReceive(event: InteractionCreateEvent) {
+    suspend fun onInteractionComponentReceive(event: ComponentInteractionCreateEvent) {
         val interaction = event.interaction
         if (interaction.type != InteractionType.Component) return
-        interaction as ComponentInteraction
         if (interaction.component == null) return
         val authorId = interaction.message?.author?.id
         if (authorId != null && authorId != bot.kord.selfId) return
@@ -172,7 +171,7 @@ object CoreListener : CordKoinComponent {
     }
 
     @OptIn(KordPreview::class)
-    suspend fun executeButtonClick(id: String, event: InteractionCreateEvent) {
+    suspend fun executeButtonClick(id: String, event: ComponentInteractionCreateEvent) {
         val splittedId =
             kotlin.runCatching { Base64.getDecoder().decode(id).decodeToString().split(ButtonAction.DELIMITER) }
                 .getOrNull() ?: return

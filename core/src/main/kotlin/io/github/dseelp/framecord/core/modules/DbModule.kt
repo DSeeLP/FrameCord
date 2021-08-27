@@ -29,17 +29,26 @@ import io.github.dseelp.framecord.api.utils.StringEntityClass
 import io.github.dseelp.framecord.api.utils.VarCharIdTable
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.Table
+import kotlin.random.Random
 
 class DbModule(id: EntityID<String>) : StringEntity(id) {
-    companion object: StringEntityClass<DbModule>(DbModules)
+    companion object : StringEntityClass<DbModule>(DbModules) {
+        fun findByNumericId(id: Long) = find { DbModules.numericId eq id }
+    }
+
     var name by DbModules.name
+    var numericId by DbModules.numericId
 
     val guilds by DbGuild via DbModulesLink
     val features by DbFeature referrersOn DbFeatures.module
 }
 
-object DbModules: VarCharIdTable(255, "modules") {
+object DbModules : VarCharIdTable(255, "modules") {
     val name = varchar("name", 255)
+    val numericId = long("numericId").clientDefault {
+        val value = Random(Random.nextLong()).nextLong()
+        if (value < 0) value * -1 else value
+    }
 }
 
 object DbModulesLink : Table("modulesLink") {

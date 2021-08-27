@@ -50,5 +50,5 @@ object ActivePrivateChannels : LongIdTable() {
     val customNameTemplate = varchar("customNameTemplate", 1000).nullable()
     val lastUpdated = long("lastUpdatedMillis").nullable()
     val locked = bool("locked").default(false)
-    val userLimit = short("userLimit")
+    val userLimit = short("userLimit").default(0)
 }

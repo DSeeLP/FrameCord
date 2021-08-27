@@ -48,7 +48,7 @@ if (isDeployingToCentral) println("Deploying to central...")
 
 val rootProject = project
 
-val multiplatformProjects = arrayOf<String>("data")
+val multiplatformProjects = arrayOf<String>("data", "client")
 
 val excludedModules = arrayOf("moderation", "plugins", "privatechannels")
 allprojects {

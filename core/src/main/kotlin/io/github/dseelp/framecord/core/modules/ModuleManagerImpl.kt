@@ -41,38 +41,56 @@ object ModuleManagerImpl : ModuleManager {
     }
 
     override fun registerModule(id: String, name: String): Module {
-        val module = ModuleImpl(id, name)
-        transaction {
-            if (DbModule.findById(id) != null) throw IllegalStateException("A module with the id $id already exists")
-            DbModule.new(id) {
+        return transaction {
+            if (DbModule.findById(id.lowercase()) != null) throw IllegalStateException("A module with the id $id already exists")
+            DbModule.new(id.lowercase()) {
                 this.name = name
             }
+            return@transaction ModuleImpl(id.lowercase(), name)
         }
-        return module
     }
 
     override fun unregisterModule(id: String) {
         transaction {
-            val module = DbModule.findById(id) ?: throw IllegalStateException("A module with the id $id doesn't exist")
+            val module = DbModule.findById(id.lowercase())
+                ?: throw IllegalStateException("A module with the id $id doesn't exist")
             module.delete()
         }
     }
 
     override fun getRegisteredModules(): Flow<Module> {
         return transaction {
-            DbModule.all().asFlow().map { ModuleImpl(it.id.value, it.name) }
+            DbModule.all().map { ModuleImpl(it.id.value.lowercase(), it.name) }.asFlow()
         }
     }
 
     override fun getEnabledModules(guildId: Snowflake): Flow<Module> {
         return (DbGuild.findById(guildId.value)
             ?: throw IllegalStateException("A guild with the id ${guildId.value} doesn't exist")).enabledModules.asFlow()
-            .map { ModuleImpl(it.id.value, it.name) }
+            .map { ModuleImpl(it.id.value.lowercase(), it.name) }
     }
 
     override fun isModuleRegistered(id: String): Boolean {
         return transaction {
-            DbModule.findById(id) != null
+            DbModule.findById(id.lowercase()) != null
+        }
+    }
+
+    override fun isFeatureEnabled(id: String, guildId: Long): Boolean = transaction {
+        val feature = DbFeature.findById(id.lowercase()) ?: return@transaction false
+        feature.guilds.firstOrNull { it.id.value == guildId } != null
+    }
+
+    override fun isModuleEnabled(id: String, guildId: Long): Boolean = transaction {
+        val module = DbModule.findById(id.lowercase()) ?: return@transaction false
+        module.guilds.firstOrNull { it.id.value == guildId } != null
+    }
+
+    override fun getRegisteredModule(id: String): Module? {
+        return transaction {
+            val db = DbModule.findById(id.lowercase())
+            if (db == null) return@transaction null
+            else ModuleImpl(db.id.value, db.name)
         }
     }
 

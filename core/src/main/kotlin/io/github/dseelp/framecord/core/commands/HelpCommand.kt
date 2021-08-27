@@ -27,6 +27,8 @@ package io.github.dseelp.framecord.core.commands
 import de.dseelp.kommon.command.CommandContext
 import de.dseelp.kommon.command.CommandNode
 import de.dseelp.kommon.command.literal
+import dev.kord.core.behavior.channel.threads.ThreadChannelBehavior
+import dev.kord.core.entity.channel.MessageChannel
 import io.github.dseelp.framecord.api.InternalFrameCordApi
 import io.github.dseelp.framecord.api.command.*
 import io.github.dseelp.framecord.api.guild.info
@@ -50,9 +52,8 @@ class HelpCommand : Command<Sender> {
                     commands.forEach {
                         append("${it.key.name}\n")
                         for (triple in it.value) {
-                            if (triple.third.name == null) continue
-                            val description = triple.second
-                            append("    ${triple.third.name}${if (description.isBlank() || description.isEmpty()) "" else " : $description"}\n")
+                            val description = triple.description
+                            append("    ${triple.name}${if (description.isBlank() || description.isEmpty()) "" else " : $description"}\n")
                         }
                     }
                 }.dropLast(1))
@@ -65,22 +66,32 @@ class HelpCommand : Command<Sender> {
 
     @OptIn(InternalFrameCordApi::class)
     suspend fun CommandContext<DiscordSender<*>>.sendDcHelp(private: Boolean) {
+        val nSender = if (private) PrivateSender(sender.message) else {
+            if (sender.message.channel is ThreadChannelBehavior) ThreadSender(sender.message) else GuildSender(sender.message)
+        }
+        val context = CommandContext(mapOf(), mapOf(), mapOf(), nSender)
         val commands =
-            if (private) Commands.getCommandsForScope(CommandScope.PRIVATE) else {
+            (if (private) Commands.getCommandsForScope(CommandScope.PRIVATE) else {
+                val guildId = (sender as GuildSenderBehavior).getGuild().id.value
                 val unionList =
-                    Commands.getCommandsForScope(CommandScope.GUILD).mapValues { it.value.toMutableList() }
+                    Commands.getCommandsForScope(CommandScope.GUILD, guildId).mapValues { it.value.toMutableList() }
                         .toMutableMap()
-                Commands.getCommandsForScope(CommandScope.THREAD).forEach { (plugin, list) ->
+                Commands.getCommandsForScope(CommandScope.THREAD, guildId).forEach { (plugin, list) ->
                     val combined = unionList.getOrDefault(plugin, mutableListOf()).let {
                         it.addAll(list)
                         it.distinctBy { value ->
-                            value.third
+                            value.node
                         }
                     }
                     unionList[plugin] = combined.toMutableList()
                 }
                 unionList
-            }
+            }).map {
+                it.key to it.value.filter { h ->
+                    @Suppress("UNCHECKED_CAST")
+                    (h.node as CommandNode<DiscordSender<out MessageChannel>>).checkAccess.invoke(context)
+                }
+            }.filterNot { it.second.isEmpty() }
         val prefix =
             if (sender is GuildChannelSender<*>) (sender as GuildChannelSender<*>).getGuild().info.prefix else "!"
         sender.createEmbed {
@@ -89,12 +100,11 @@ class HelpCommand : Command<Sender> {
 
             commands.forEach {
                 field {
-                    name = it.key.name
+                    name = it.first.name
                     value = buildString {
-                        for (triple in it.value) {
-                            if (triple.third.name == null) continue
-                            val description = triple.second
-                            append("$prefix${triple.third.name}${if (description.isBlank() || description.isEmpty()) "" else " : $description"}\n")
+                        for (triple in it.second) {
+                            val description = triple.description
+                            append("$prefix${triple.name}${if (description.isBlank() || description.isEmpty()) "" else " : $description"}\n")
                         }
                     }.dropLast(1)
                 }

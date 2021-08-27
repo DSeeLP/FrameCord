@@ -25,14 +25,16 @@
 package io.github.dseelp.framecord.api
 
 import dev.kord.core.Kord
+import io.github.dseelp.framecord.api.modules.ModuleManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 
 /**
  * The Bot interface holds the kord instance and an coroutine context
  */
-interface Bot: CoroutineScope {
+interface Bot : CoroutineScope {
     val kord: Kord
     val isStarted: Boolean
     val job: Job
+    val moduleManager: ModuleManager
 }

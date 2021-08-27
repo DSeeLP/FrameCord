@@ -31,6 +31,7 @@ import dev.kord.gateway.PrivilegedIntent
 import io.github.dseelp.framecord.api.bot
 import io.github.dseelp.framecord.api.configs.BotConfig
 import io.github.dseelp.framecord.api.logging.logger
+import io.github.dseelp.framecord.api.modules.ModuleManager
 import io.github.dseelp.framecord.api.utils.koin.CordKoinComponent
 import io.github.dseelp.framecord.core.listeners.EventBusListener
 import kotlinx.coroutines.Dispatchers
@@ -48,6 +49,7 @@ object BotImpl : io.github.dseelp.framecord.api.Bot, CordKoinComponent {
     override val isStarted: Boolean
         get() = TODO("Not yet implemented")
     override val job: Job = SupervisorJob()
+    override val moduleManager: ModuleManager by inject()
     override val coroutineContext: CoroutineContext = job + Dispatchers.Default
 
     var _kord: Kord? = null

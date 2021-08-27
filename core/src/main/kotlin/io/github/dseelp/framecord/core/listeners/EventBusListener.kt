@@ -31,7 +31,7 @@ import kotlinx.coroutines.flow.onEach
 import org.koin.core.component.inject
 
 @OptIn(io.github.dseelp.framecord.api.InternalFrameCordApi::class)
-object EventBusListener: CordKoinComponent {
+object EventBusListener : CordKoinComponent {
     val eventBus: EventBus by inject()
     val bot: io.github.dseelp.framecord.api.Bot by inject()
 

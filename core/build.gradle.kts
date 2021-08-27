@@ -65,6 +65,7 @@ dependencies {
     api("org.mariadb.jdbc:mariadb-java-client:$mariadbVersion")
     api("org.xerial:sqlite-jdbc:$sqliteVersion")
     api("com.h2database:h2:$h2Version")
+    api(project(":rest:server"))
 }
 
 val implementationVersion = version

@@ -24,14 +24,9 @@
 
 package io.github.dseelp.framecord.api.modules
 
+import dev.kord.common.entity.Snowflake
 import dev.kord.core.entity.Guild
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.onEach
-import kotlinx.serialization.Contextual
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
-import java.util.*
 
 /**
  * A module provides functionality and can be disabled/enabled per guild
@@ -39,20 +34,22 @@ import java.util.*
 interface Module {
     val id: String
     val name: String
+    val numericId: Long
 
     val features: Flow<Feature>
 
-    suspend fun disable(guild: Guild) {
-        features.onEach {
-            it.disable(guild)
-        }.collect()
-    }
+    suspend fun disable(guild: Guild) = disable(guild.id.value)
+    suspend fun disable(guildId: Snowflake) = disable(guildId.value)
+    suspend fun disable(guildId: Long)
 
-    suspend fun enable(guild: Guild) {
-        features.onEach {
-            it.enable(guild)
-        }.collect()
-    }
+    suspend fun enable(guildId: Snowflake) = enable(guildId.value)
+    suspend fun enable(guildId: Long)
+
+    suspend fun enable(guild: Guild) = enable(guild.id.value)
+
+    fun isEnabled(guild: Guild): Boolean = isEnabled(guild.id.value)
+    fun isEnabled(guildId: Snowflake): Boolean = isEnabled(guildId.value)
+    fun isEnabled(guildId: Long): Boolean
 
     fun registerFeature(feature: Feature)
 }

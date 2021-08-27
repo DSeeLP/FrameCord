@@ -43,10 +43,12 @@ import org.koin.core.component.inject
     ["DSeeLP"]
 )
 object PrivateChannelPlugin : Plugin() {
+    val mId = "framecord/privatechannels"
 
     @PluginAction(PluginAction.Action.ENABLE)
     suspend fun enable() {
         println("Enabling Private Channel")
+        checkModule(mId, "PrivateChannels").features
         val config by inject<BotConfig>()
         if (!config.intents.presence) {
             logger.warn("The Presence Intent isn't enabled! Without that intent enabled it can't show the games people play in the channel names")

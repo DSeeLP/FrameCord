@@ -35,6 +35,7 @@ import io.github.dseelp.framecord.api.event.EventBus
 import io.github.dseelp.framecord.api.guild.GuildManager
 import io.github.dseelp.framecord.api.logging.LogManager.ROOT
 import io.github.dseelp.framecord.api.logging.logger
+import io.github.dseelp.framecord.api.modules.ModuleManager
 import io.github.dseelp.framecord.api.plugins.PluginLoader
 import io.github.dseelp.framecord.api.plugins.PluginManager
 import io.github.dseelp.framecord.api.plugins.repository.RepositoryManager
@@ -42,14 +43,12 @@ import io.github.dseelp.framecord.api.setup.SetupManager
 import io.github.dseelp.framecord.api.utils.IReflectionUtils
 import io.github.dseelp.framecord.api.utils.koin.CordKoinContext
 import io.github.dseelp.framecord.core.database.DatabaseRegistryImpl
+import io.github.dseelp.framecord.core.modules.ModuleManagerImpl
 import io.github.dseelp.framecord.core.plugin.PluginLoaderImpl
 import io.github.dseelp.framecord.core.plugin.PluginManagerImpl
 import io.github.dseelp.framecord.core.plugin.repository.RepositoryManagerImpl
 import io.github.dseelp.framecord.core.utils.ReflectionUtilsImpl
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import org.koin.core.qualifier.qualifier
 import org.koin.dsl.bind
 import org.koin.dsl.koinApplication
@@ -82,10 +81,12 @@ object CordBootstrap {
         single { version }
         single<GuildManager> { StaticGuildManger }
         single<SetupManager> { StaticSetupManager }
+        single<ModuleManager> { ModuleManagerImpl } bind ModuleManagerImpl::class
     }
 
     val defaultModules = listOf(defaultModule, PathQualifiersImpl.module)
 
+    @OptIn(DelicateCoroutinesApi::class)
     @JvmStatic
     fun main(args: Array<String>) = runBlocking {
         ConsoleImpl.terminal

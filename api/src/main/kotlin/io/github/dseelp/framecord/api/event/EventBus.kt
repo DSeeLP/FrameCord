@@ -43,6 +43,7 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
 import kotlin.reflect.full.*
+import kotlin.reflect.jvm.jvmErasure
 
 @OptIn(io.github.dseelp.framecord.api.InternalFrameCordApi::class)
 @Listener
@@ -181,7 +182,7 @@ open class EventBus : CordKoinComponent {
             override suspend fun invoke(event: Any) {
                 val eventClass = event::class
                 methodCache.getOrPut(eventClass) {
-                    methods.filter { it.second.type.classifier == eventClass }
+                    methods.filter { it.second.type.classifier == eventClass || eventClass.isSubclassOf(it.second.type.jvmErasure) }
                 }.onEach {
                     val method = it.first
                     try {

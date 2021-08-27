@@ -35,4 +35,7 @@ interface ModuleManager {
     fun getEnabledModules(guild: Guild): Flow<Module> = getEnabledModules(guild.id)
     fun getEnabledModules(guildId: Snowflake): Flow<Module>
     fun isModuleRegistered(id: String): Boolean
+    fun isFeatureEnabled(id: String, guildId: Long): Boolean
+    fun isModuleEnabled(id: String, guildId: Long): Boolean
+    fun getRegisteredModule(id: String): Module?
 }
