@@ -26,9 +26,13 @@ package io.github.dseelp.framecord.core.modules
 
 import io.github.dseelp.framecord.api.modules.Feature
 import io.github.dseelp.framecord.api.modules.Module
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.*
+import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.deleteWhere
+import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 
 class ModuleImpl(id: String, override val name: String) : Module {
@@ -44,6 +48,39 @@ class ModuleImpl(id: String, override val name: String) : Module {
         get() = transaction {
             dbModule.features.asFlow().map { FeatureImpl(this@ModuleImpl, it.id.value.lowercase(), name) }
         }
+
+    override suspend fun disable(guildId: Long) = newSuspendedTransaction {
+        features.onEach {
+            it.disable(guildId)
+        }.collect()
+        val guild = DbGuild.findById(guildId) ?: return@newSuspendedTransaction
+        if (!dbModule.guilds.contains(guild)) return@newSuspendedTransaction
+        DbModulesLink.deleteWhere {
+            (DbModulesLink.module eq dbModule.id) and (DbModulesLink.guild eq guild.id)
+        }
+    }
+
+    override suspend fun enable(guildId: Long) = newSuspendedTransaction {
+        features.onEach {
+            it.enable(guildId)
+        }.collect()
+        val guild = DbGuild.findById(guildId) ?: return@newSuspendedTransaction
+        if (dbModule.guilds.contains(guild)) return@newSuspendedTransaction
+        DbModulesLink.insert {
+            it[module] = dbModule.id
+            it[this.guild] = guild.id
+        }
+    }
+
+    override fun isEnabled(guildId: Long): Boolean {
+        val id = EntityID(guildId, DbGuilds)
+        val count = transaction {
+            DbModulesLink.select {
+                DbModulesLink.module eq dbModule.id and (DbModulesLink.guild eq id)
+            }.count()
+        }
+        return count != 0L
+    }
 
     override fun registerFeature(feature: Feature) {
         transaction {

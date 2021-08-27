@@ -34,19 +34,18 @@ import dev.kord.rest.json.JsonErrorCode
 import dev.kord.rest.request.RestRequestException
 import io.github.dseelp.framecord.api.InternalFrameCordApi
 import io.github.dseelp.framecord.api.checkPermissions
-import io.github.dseelp.framecord.api.command.CommandScope
-import io.github.dseelp.framecord.api.command.GuildSender
-import io.github.dseelp.framecord.api.command.Sender
-import io.github.dseelp.framecord.api.command.createEmbed
+import io.github.dseelp.framecord.api.command.*
 import io.github.dseelp.framecord.api.interactions.ButtonContext
 import io.github.dseelp.framecord.api.logging.logger
 import io.github.dseelp.framecord.api.modules.FeatureRestricted
+import io.github.dseelp.framecord.api.modules.checkBoolean
 import io.github.dseelp.framecord.api.plugins.Plugin
 import io.github.dseelp.framecord.api.utils.koin.CordKoinComponent
 import org.koin.core.component.inject
 import java.awt.Color
 
 object CommandUtils {
+    @OptIn(InternalFrameCordApi::class)
     suspend fun <T : Any> CommandDispatcher<T>.execute(
         sender: T,
         message: String,
@@ -57,11 +56,20 @@ object CommandUtils {
         val hashCode = sender.hashCode()
         val cached = cache[hashCode, message]
         val parsed = cached ?: parse(sender, message)
-        if (parsed == null || parsed.failed) {
+        if (parsed == null || parsed.failed || parsed.node == null) {
             actions.error(message, parsed, null)
             return
         }
         if (cached == null) cache[hashCode, message] = parsed
+        if (sender is GuildSenderBehavior) {
+            val guildId = sender.getGuild().id.value
+            val holder = Commands.getCommandHolder(
+                if (sender is ThreadSender) CommandScope.THREAD else CommandScope.GUILD,
+                parsed.node!!.name!!
+            )
+            val checked = holder?.featureRestricted?.checkBoolean(guildId)
+            if (checked == false) return
+        }
 
         val throwable = parsed.execute(bypassAccess)
         if (throwable == null)

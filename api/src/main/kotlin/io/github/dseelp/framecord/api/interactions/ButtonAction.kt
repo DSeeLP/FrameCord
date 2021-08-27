@@ -28,7 +28,7 @@ import de.dseelp.kommon.command.CommandDispatcher
 import de.dseelp.kommon.command.CommandNode
 import dev.kord.common.annotation.KordPreview
 import dev.kord.core.entity.interaction.ComponentInteraction
-import dev.kord.core.event.interaction.InteractionCreateEvent
+import dev.kord.core.event.interaction.ComponentInteractionCreateEvent
 import io.github.dseelp.framecord.api.logging.logger
 import io.github.dseelp.framecord.api.plugins.Plugin
 import io.github.dseelp.framecord.api.utils.CommandUtils
@@ -58,9 +58,8 @@ class ButtonAction(plugin: Plugin, val name: String, val node: CommandNode<Butto
     }
 
     @OptIn(KordPreview::class)
-    suspend fun execute(event: InteractionCreateEvent) {
+    suspend fun execute(event: ComponentInteractionCreateEvent) {
         val interaction = event.interaction
-        if (interaction !is ComponentInteraction) return
         var id = interaction.componentId
         if (!id.startsWith(QUALIFIER)) {
             if (id.startsWith("cord:"))

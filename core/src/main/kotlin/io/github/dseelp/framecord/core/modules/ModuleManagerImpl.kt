@@ -60,7 +60,7 @@ object ModuleManagerImpl : ModuleManager {
 
     override fun getRegisteredModules(): Flow<Module> {
         return transaction {
-            DbModule.all().asFlow().map { ModuleImpl(it.id.value.lowercase(), it.name) }
+            DbModule.all().map { ModuleImpl(it.id.value.lowercase(), it.name) }.asFlow()
         }
     }
 

@@ -119,7 +119,7 @@ abstract class Plugin : PluginComponent<Plugin> {
         _selectionMenus.add(menu)
     }
 
-    fun registerSelectionMenu(block: SelectionMenuBuilder.() -> Unit): SelectionMenu {
+    inline fun registerSelectionMenu(block: SelectionMenuBuilder.() -> Unit): SelectionMenu {
         val menu = SelectionMenuBuilder().apply(block).build(this)
         registerSelectionMenu(menu)
         return menu
@@ -144,7 +144,7 @@ abstract class Plugin : PluginComponent<Plugin> {
     inline fun <reified T : Any> registerListener() = eventBus.addClassHandler<T>(this)
 
     fun register(command: Command<*>) {
-        register(command.node, command.description, command.scopes)
+        register(command.node, command.description, command.scopes, command.featureRestricted)
     }
 
     @Suppress("UNCHECKED_CAST")

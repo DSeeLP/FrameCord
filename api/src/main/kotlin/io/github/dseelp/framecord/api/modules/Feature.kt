@@ -36,13 +36,15 @@ interface Feature {
     val numericId: Long
 
     fun isEnabled(guild: Guild): Boolean = isEnabled(guild.id)
-    fun isEnabled(guildId: Snowflake): Boolean
+    fun isEnabled(guildId: Snowflake): Boolean = isEnabled(guildId.value)
+    fun isEnabled(guildId: Long): Boolean
 
-    suspend fun enable(guild: Guild) {
-        if (isEnabled(guild)) return
-    }
+    suspend fun enable(guild: Guild) = enable(guild.id.value)
 
-    suspend fun disable(guild: Guild) {
-        if (!isEnabled(guild)) return
-    }
+    suspend fun disable(guild: Guild) = disable(guild.id.value)
+
+    suspend fun disable(guildId: Snowflake) = enable(guildId.value)
+    suspend fun disable(guildId: Long)
+    suspend fun enable(guildId: Snowflake) = enable(guildId.value)
+    suspend fun enable(guildId: Long)
 }

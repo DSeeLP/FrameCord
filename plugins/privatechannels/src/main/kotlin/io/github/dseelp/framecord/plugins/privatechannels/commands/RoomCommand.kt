@@ -48,9 +48,11 @@ import io.github.dseelp.framecord.api.command.CommandScope
 import io.github.dseelp.framecord.api.command.GuildSender
 import io.github.dseelp.framecord.api.command.arguments.MentionArgument
 import io.github.dseelp.framecord.api.command.createEmbed
+import io.github.dseelp.framecord.api.modules.FeatureRestricted
 import io.github.dseelp.framecord.api.setup.setup
 import io.github.dseelp.framecord.api.utils.*
 import io.github.dseelp.framecord.plugins.privatechannels.PrivateChannelPlugin
+import io.github.dseelp.framecord.plugins.privatechannels.PrivateChannelPlugin.mId
 import io.github.dseelp.framecord.plugins.privatechannels.PrivateChannelPlugin.suspendingDatabase
 import io.github.dseelp.framecord.plugins.privatechannels.db.ActivePrivateChannel
 import io.github.dseelp.framecord.plugins.privatechannels.db.ActivePrivateChannels
@@ -66,6 +68,7 @@ import kotlin.time.ExperimentalTime
 
 class RoomCommand : Command<GuildSender> {
     override val scopes: Array<CommandScope> = arrayOf(CommandScope.GUILD)
+    override val featureRestricted: FeatureRestricted = FeatureRestricted(FeatureRestricted.Type.MODULE, mId)
 
     @OptIn(ExperimentalTime::class)
     private fun CommandBuilder<GuildSender>.adminCheck() {
