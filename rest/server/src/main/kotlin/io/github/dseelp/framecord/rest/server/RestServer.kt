@@ -55,6 +55,7 @@ object RestServer : CordKoinComponent {
     }
 
     fun startRestServer(plugin: Plugin) {
+        logger.warn("The RestServer is very experimental! It should only be enabled if you really know what you are doing")
         val botConfig: BotConfig by inject()
         if (!botConfig.intents.guildMembers) {
             logger.warn("The GuildMembers intent is not activated! This is dangerous since the RestServer is activated. \nThe intent is required to receive permission updates!")
