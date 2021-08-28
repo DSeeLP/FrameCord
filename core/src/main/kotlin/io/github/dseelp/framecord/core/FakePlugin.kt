@@ -109,10 +109,11 @@ object FakePlugin : Plugin() {
     }
 
     fun enable() {
-        val inviteConfig = InviteCommand.getConfig()
-        if (inviteConfig.invite.enabled && getKoin().get<BotConfig>().clientId > 0) {
+        val config = InviteCommand.getConfig()
+        if (config.invite.enabled && getKoin().get<BotConfig>().clientId > 0) {
             register<InviteCommand>()
         }
-        RestServer.startRestServer(this)
+        if (config.rest.enabled)
+            RestServer.startRestServer(this)
     }
 }
