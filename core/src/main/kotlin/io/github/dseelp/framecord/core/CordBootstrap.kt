@@ -134,7 +134,6 @@ object CordBootstrap {
     @OptIn(DelicateCoroutinesApi::class)
     @JvmStatic
     fun main(args: Array<String>) {
-        println(manifestInfo?.map { "${it.key} - ${it.value}" }?.joinToString(System.lineSeparator()))
         runBlocking {
             ConsoleImpl.terminal
             ConsoleImpl.reader

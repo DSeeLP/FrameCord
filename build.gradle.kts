@@ -29,7 +29,7 @@ group = defaultGroupName
 version = run {
     val env = System.getenv()
     val s = projectVersion
-    if (!env.containsKey("BUILDNUMBER") || env.containsKey("DEPLOY_CENTRAL") || env.containsKey("GITHUB_TOKEN")) return@run s
+    if (!env.containsKey("BUILD_NUMBER") || env.containsKey("DEPLOY_CENTRAL") || env.containsKey("GITHUB_TOKEN")) return@run s
     if (s.contains('+')) return@run s
     val vString = "${env["BUILD_NUMBER"]}-SNAPSHOT"
     if (s.contains('-')) {
