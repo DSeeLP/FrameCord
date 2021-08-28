@@ -34,6 +34,7 @@ application {
     mainClass.set(main)
     @Suppress("DEPRECATION")
     mainClassName = main
+
 }
 
 val coroutinesVersion: String by project
@@ -71,6 +72,11 @@ dependencies {
 val implementationVersion = version
 
 tasks {
+    jar {
+        manifest {
+            attributes("prodBuild" to implementationVersion)
+        }
+    }
     named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar") {
         archiveBaseName.set("shadow")
         mergeServiceFiles()

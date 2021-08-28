@@ -54,14 +54,59 @@ import org.koin.dsl.bind
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
 import org.slf4j.bridge.SLF4JBridgeHandler
+import java.io.IOException
 import java.io.PrintStream
+import java.net.URL
 import java.net.URLClassLoader
+import java.util.*
+import java.util.jar.JarFile
+import java.util.jar.Manifest
 import java.util.logging.LogManager
+
 
 @OptIn(io.github.dseelp.framecord.api.InternalFrameCordApi::class)
 object CordBootstrap {
     val log by logger(ROOT)
-    val version = Version(0, 4, 1)
+    val manifestInfo: Properties?
+        get() {
+            val resEnum: Enumeration<*>
+            try {
+                resEnum = Thread.currentThread().contextClassLoader.getResources(JarFile.MANIFEST_NAME)
+                while (resEnum.hasMoreElements()) {
+                    try {
+                        val url = resEnum.nextElement() as URL
+                        val `is` = url.openStream()
+                        if (`is` != null) {
+                            val manifest = Manifest(`is`)
+                            val mainAttribs = manifest.mainAttributes
+                            val properties = Properties()
+                            for (entry in mainAttribs.entries) {
+                                properties.setProperty(entry.key?.toString(), entry.value?.toString())
+                            }
+                            return properties
+                        }
+                    } catch (e: Exception) { }
+                }
+            } catch (e1: IOException) { }
+            return null
+        }
+
+    val version: Version
+
+    init {
+        val info = manifestInfo
+        val default = Version(0, 4, 1)
+        var temp = default
+        if (info != null && info.contains("prodBuild")) {
+            temp = try {
+                Version.parse(info.getProperty("prodBuild"))
+            } catch (ex: Exception) {
+                System.err.println("Failed to parse prodBuild from Manifest! Falling back to hardcoded value")
+                default
+            }
+        }
+        version = temp
+    }
 
     val defaultModule = module {
         single<Console> { ConsoleImpl } bind ConsoleImpl::class
@@ -88,31 +133,33 @@ object CordBootstrap {
 
     @OptIn(DelicateCoroutinesApi::class)
     @JvmStatic
-    fun main(args: Array<String>) = runBlocking {
-        ConsoleImpl.terminal
-        ConsoleImpl.reader
+    fun main(args: Array<String>) {
+        println(manifestInfo?.map { "${it.key} - ${it.value}" }?.joinToString(System.lineSeparator()))
+        runBlocking {
+            ConsoleImpl.terminal
+            ConsoleImpl.reader
+            val koinApp = koinApplication {
+                modules(defaultModules)
+                allowOverride(true)
+            }
+            CordKoinContext.app = koinApp
+            System.setOut(PrintStream(ConsoleImpl.ActionOutputStream { ConsoleImpl.forceWriteLine(it) }, true))
+            System.setErr(PrintStream(ConsoleImpl.ActionOutputStream { ConsoleImpl.forceWriteLine(it) }, true))
+            ConsoleImpl.replaceSysOut()
+            CoroutineExceptionHandler { coroutineContext, throwable ->
 
-        val koinApp = koinApplication {
-            modules(defaultModules)
-            allowOverride(true)
+            }
+            LogManager.getLogManager().getLogger("").apply {
+                removeHandler(handlers[0])
+                addHandler(SLF4JBridgeHandler())
+            }
+            Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+                //log.debug("Uncaught exception handled in thread handler")
+                log.error("", throwable)
+            }
+            GlobalScope.launch {
+                Core.startup()
+            }.join()
         }
-        CordKoinContext.app = koinApp
-        System.setOut(PrintStream(ConsoleImpl.ActionOutputStream { ConsoleImpl.forceWriteLine(it) }, true))
-        System.setErr(PrintStream(ConsoleImpl.ActionOutputStream { ConsoleImpl.forceWriteLine(it) }, true))
-        ConsoleImpl.replaceSysOut()
-        CoroutineExceptionHandler { coroutineContext, throwable ->
-
-        }
-        LogManager.getLogManager().getLogger("").apply {
-            removeHandler(handlers[0])
-            addHandler(SLF4JBridgeHandler())
-        }
-        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
-            //log.debug("Uncaught exception handled in thread handler")
-            log.error("", throwable)
-        }
-        GlobalScope.launch {
-            Core.startup()
-        }.join()
     }
 }

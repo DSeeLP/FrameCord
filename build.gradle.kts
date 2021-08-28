@@ -26,7 +26,18 @@ val defaultGroupName = "io.github.dseelp.framecord"
 val projectVersion: String by project
 
 group = defaultGroupName
-version = projectVersion
+version = run {
+    val env = System.getenv()
+    val s = projectVersion
+    if (!env.containsKey("BUILDNUMBER") || env.containsKey("DEPLOY_CENTRAL") || env.containsKey("GITHUB_TOKEN")) return@run s
+    if (s.contains('+')) return@run s
+    val vString = "${env["BUILD_NUMBER"]}-SNAPSHOT"
+    if (s.contains('-')) {
+        val splitted = s.split('-')
+        return@run "${splitted[0]}$vString}"
+    }
+    s+vString
+}
 
 plugins {
     base
@@ -35,10 +46,10 @@ plugins {
     signing
     id("org.jetbrains.dokka") version "1.5.0" apply false
 
-    kotlin("jvm") version "1.5.21" apply false
-    kotlin("multiplatform") version "1.5.21" apply false
+    kotlin("jvm") version "1.5.30" apply false
+    kotlin("multiplatform") version "1.5.30" apply false
     id("com.github.johnrengelman.shadow") version "6.1.0" apply false
-    kotlin("plugin.serialization") version "1.5.21" apply false
+    kotlin("plugin.serialization") version "1.5.30" apply false
 }
 
 val isDeployingToCentral = System.getenv().containsKey("DEPLOY_CENTRAL")
@@ -136,14 +147,14 @@ allprojects {
             dependsOn(tasks.build)
             if (project == rootProject) {
                 from(File(rootProject.rootDir, "docs/bundled/html")) {
-                    into("docs/html")
+                    into("docs/")
                 }
                 from(File(rootProject.rootDir, "templates"))
                 dependsOn(javadocJar)
-                from(javadocJar.get().archiveFile) {
+                /*from(javadocJar.get().archiveFile) {
                     rename { "javadoc.jar" }
                     into("docs")
-                }
+                }*/
             } else if (project.name == "core") {
                 val shadowJar = tasks.getByName<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar")
                 from(shadowJar.archiveFile) {

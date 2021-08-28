@@ -35,6 +35,11 @@ import io.github.dseelp.framecord.api.asSnowflake
 import io.github.dseelp.framecord.api.bot
 
 object MentionUtils {
+    val customEmojiRegex = Regex("<a?:.{1,32}:([0-9]{1,19})>")
+    val userRegex = Regex("<@!?([0-9]{1,19})>")
+    val channelRegex = Regex("<@#([0-9]{1,19})>")
+    val roleRegex = Regex("<@&([0-9]{1,19})>")
+    val timestampRegex = Regex("<t:([0-9]{1,19})(:[A-Za-z])?>")
     fun getUserSnowflake(message: String): Snowflake? {
         val msg = when {
             message.startsWith("<@!") && message.endsWith('>') -> message.replaceFirst("<@!", "")
@@ -44,20 +49,24 @@ object MentionUtils {
         return Snowflake(msg)
     }
 
+    private fun matchUser(message: String): Snowflake? {
+        val matchResult = userRegex.find(message) ?: return null
+        return matchResult.groups[1]!!.value.asSnowflake
+    }
+
     suspend fun user(message: String): User? {
-        val snowflake = getUserSnowflake(message) ?: return null
+        val snowflake = matchUser(message) ?: return null
         return bot.kord.getUser(snowflake)
     }
 
     suspend fun member(guild: Guild, message: String): Member? {
-        val snowflake = getUserSnowflake(message) ?: return null
+        val snowflake = matchUser(message) ?: return null
         return guild.getMemberOrNull(snowflake)
     }
 
     private suspend fun getChannel(guild: Guild, message: String): GuildChannel? {
-        return if (message.startsWith("<#") && message.endsWith('>')) {
-            guild.getChannel(message.replaceFirst("<#", "").replaceFirst(">", "").asSnowflake)
-        } else null
+        val result = channelRegex.find(message) ?: return null
+        return guild.getChannel(result.groups[1]!!.value.asSnowflake)
     }
 
     suspend fun channel(guild: Guild, message: String): GuildChannel? = getChannel(guild, message)
@@ -87,7 +96,7 @@ object MentionUtils {
     }
 
     suspend fun role(guild: Guild, message: String): Role? {
-        if (!(message.startsWith("<@&") && message.endsWith('>'))) return null
-        return guild.getRole(Snowflake(message.replaceFirst("<@&", "").replaceFirst(">", "")))
+        val result = roleRegex.find(message) ?: return null
+        return guild.getRole(result.groups[1]!!.value.asSnowflake)
     }
 }
