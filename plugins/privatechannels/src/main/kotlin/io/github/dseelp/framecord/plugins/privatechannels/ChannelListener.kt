@@ -41,6 +41,7 @@ import io.github.dseelp.framecord.api.bot
 import io.github.dseelp.framecord.api.event.EventHandle
 import io.github.dseelp.framecord.api.event.Listener
 import io.github.dseelp.framecord.api.modules.checkModule
+import io.github.dseelp.framecord.api.utils.MentionUtils
 import io.github.dseelp.framecord.api.utils.asOverwrite
 import io.github.dseelp.framecord.plugins.privatechannels.PrivateChannelPlugin.database
 import io.github.dseelp.framecord.plugins.privatechannels.PrivateChannelPlugin.mId
@@ -203,11 +204,11 @@ suspend fun calculateChannelName(
         member.getPresenceOrNull()?.activities?.firstOrNull()?.name ?: channel.defaultGame,
         true
     )
-    return customEmojiRegex.replace(result, "")
+    return MentionUtils.customEmojiRegex.replace(result, "")
 }
 
-suspend fun updateChannel(channel: ActivePrivateChannel) {
-    val guild = bot.kord.getGuild(channel.privateChannel.guildId.asSnowflake) ?: return
+suspend fun updateChannel(channel: ActivePrivateChannel): String? {
+    val guild = bot.kord.getGuild(channel.privateChannel.guildId.asSnowflake) ?: return null
     val guildChannel = guild.getChannel(channel.channelId.asSnowflake)
     val member = if (channel.executiveId == null) guild.getMember(channel.ownerId.asSnowflake) else guild.getMember(
         channel.executiveId!!.asSnowflake
@@ -220,6 +221,7 @@ suspend fun updateChannel(channel: ActivePrivateChannel) {
             name = calculated
         }
     }
+    return calculated
 }
 
 @OptIn(ExperimentalTime::class)

@@ -71,8 +71,8 @@ class SetupBuilder<P : Plugin>(val plugin: P, val channel: GuildMessageChannel) 
         step(SelectionMenuStepBuilder().applySuspending(block).build(plugin))
     }
 
-    fun messageStep(messageBuilder: suspend MessageCreateBuilder.(channel: GuildMessageChannel) -> Unit) {
-        step(MessageStep(messageBuilder))
+    fun messageStep(defaultValue: ButtonDefaultValue? = null, messageBuilder: suspend MessageCreateBuilder.(channel: GuildMessageChannel) -> Unit) {
+        step(MessageStep(messageBuilder, defaultValue))
     }
 
     fun channelStep(messageBuilder: suspend MessageCreateBuilder.(channel: GuildMessageChannel) -> Unit) {

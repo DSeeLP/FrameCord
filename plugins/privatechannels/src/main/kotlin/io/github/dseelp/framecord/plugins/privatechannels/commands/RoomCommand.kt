@@ -49,6 +49,9 @@ import io.github.dseelp.framecord.api.command.GuildSender
 import io.github.dseelp.framecord.api.command.arguments.MentionArgument
 import io.github.dseelp.framecord.api.command.createEmbed
 import io.github.dseelp.framecord.api.modules.FeatureRestricted
+import io.github.dseelp.framecord.api.randomAlphanumeric
+import io.github.dseelp.framecord.api.setup.ButtonDefaultValue
+import io.github.dseelp.framecord.api.setup.buttonDefaultValue
 import io.github.dseelp.framecord.api.setup.setup
 import io.github.dseelp.framecord.api.utils.*
 import io.github.dseelp.framecord.plugins.privatechannels.PrivateChannelPlugin
@@ -250,11 +253,18 @@ class RoomCommand : Command<GuildSender> {
                 val member = sender.getMember()
                 val gFooter = sender.footer()
                 if (checkRateLimit(getMemberChannel(member)!!)) return@execute
+                val resetValue = randomAlphanumeric(128)
                 setup(PrivateChannelPlugin, sender.getChannel()) {
                     checkAccess { m, _ ->
                         member.id == m.id
                     }
-                    messageStep {
+                    messageStep(buttonDefaultValue {
+                        label = "Reset"
+                        computeResult {
+                            sender.interaction.acknowledgePublicDeferredMessageUpdate()
+                            resetValue
+                        }
+                    }) {
                         embed {
                             title = "Channel rename"
                             description = "Please enter the new name for the channel! You can use placeholders."
@@ -284,11 +294,14 @@ class RoomCommand : Command<GuildSender> {
                                     }
                                     return@suspendedTransaction
                                 }
-                                channel.customNameTemplate = nameTemplate
-                                updateChannel(channel)
+                                if (nameTemplate == resetValue) {
+                                    channel.customNameTemplate = null
+                                } else
+                                    channel.customNameTemplate = nameTemplate
+                                val channelName = updateChannel(channel)
                                 sender.createEmbed {
                                     title = "Channel renamed"
-                                    description = "The channel has been renamed to `$name`"
+                                    description = "The channel has been renamed to `$channelName`"
                                     footer = gFooter
                                 }
                             }
@@ -575,7 +588,13 @@ class RoomCommand : Command<GuildSender> {
                             footer = member.footer()
                         }
                     }
-                    messageStep {
+                    messageStep(buttonDefaultValue {
+                        label = "Use default"
+                        computeResult {
+                            sender.interaction.acknowledgePublicDeferredMessageUpdate()
+                            "%user%'s Room"
+                        }
+                    }) {
                         embed {
                             title = "Create Private Channel"
                             description = """
@@ -586,7 +605,13 @@ class RoomCommand : Command<GuildSender> {
                             footer = member.footer()
                         }
                     }
-                    messageStep {
+                    messageStep(buttonDefaultValue {
+                        label = "Use default"
+                        computeResult {
+                            sender.interaction.acknowledgePublicDeferredMessageUpdate()
+                            "a Game"
+                        }
+                    }) {
                         embed {
                             title = "Create Private Channel"
                             description = """

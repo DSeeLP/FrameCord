@@ -256,6 +256,7 @@ class FeatureCommand : Command<GuildChannelSender<GuildMessageChannel>>, FakePlu
                 FakePlugin.unregisterSelectionMenu(stateSelector)
                 FakePlugin.unregisterSelectionMenu(modulesSelector)
                 FakePlugin.unregisterSelectionMenu(enabledSelector)
+                FakePlugin.unregisterButtonAction(buttonAction!!)
             }
             buttonAction = FakePlugin.registerButtonAction(
                 randomAlphanumeric(8),

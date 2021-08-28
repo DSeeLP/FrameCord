@@ -24,9 +24,13 @@
 
 package io.github.dseelp.framecord.api.setup
 
+import de.dseelp.kommon.command.CommandContext
+import dev.kord.common.entity.ButtonStyle
+import dev.kord.common.entity.DiscordPartialEmoji
 import dev.kord.core.entity.Member
 import dev.kord.core.entity.Message
 import dev.kord.core.entity.channel.GuildMessageChannel
+import io.github.dseelp.framecord.api.interactions.ButtonContext
 
 interface SetupStep {
 
@@ -36,5 +40,29 @@ interface SetupStep {
         checkAccess: suspend (member: Member, channel: GuildMessageChannel) -> Boolean
     ): Message
 
-    fun cancel(message: Message)
+    suspend fun cancel(message: Message)
+}
+
+data class ButtonDefaultValue(
+    val result: suspend CommandContext<ButtonContext>.() -> Any?,
+    val style: ButtonStyle,
+    val label: String? = null,
+    val emoji: DiscordPartialEmoji? = null
+)
+
+class ButtonDefaultValueBuilder {
+    var result: suspend CommandContext<ButtonContext>.() -> Any? = { null }
+    var style: ButtonStyle = ButtonStyle.Primary
+    var label: String? = null
+    var emoji: DiscordPartialEmoji? = null
+
+    fun computeResult(block: suspend CommandContext<ButtonContext>.() -> Any?) {
+        result = block
+    }
+
+    fun build() = ButtonDefaultValue(result, style, label, emoji)
+}
+
+fun buttonDefaultValue(builderBlock: ButtonDefaultValueBuilder.() -> Unit): ButtonDefaultValue {
+    return ButtonDefaultValueBuilder().apply(builderBlock).build()
 }

@@ -139,7 +139,7 @@ class SelectionMenuStep(
         action(buttonAction, ButtonStyle.Danger, "", "Cancel", disabled = disabled)
     }
 
-    override fun cancel(message: Message) {
+    override suspend fun cancel(message: Message) {
         plugin.unregisterButtonAction(buttonAction)
         plugin.unregisterSelectionMenu(selectionMenu)
     }

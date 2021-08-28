@@ -65,7 +65,7 @@ object CommandUtils {
             val guildId = sender.getGuild().id.value
             val holder = Commands.getCommandHolder(
                 if (sender is ThreadSender) CommandScope.THREAD else CommandScope.GUILD,
-                parsed.node!!.name!!
+                parsed.root.name!!
             )
             val checked = holder?.featureRestricted?.checkBoolean(guildId)
             if (checked == false) return

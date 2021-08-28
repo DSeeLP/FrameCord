@@ -37,7 +37,7 @@ import io.github.dseelp.framecord.api.bot
 object MentionUtils {
     val customEmojiRegex = Regex("<a?:.{1,32}:([0-9]{1,19})>")
     val userRegex = Regex("<@!?([0-9]{1,19})>")
-    val channelRegex = Regex("<@#([0-9]{1,19})>")
+    val channelRegex = Regex("<#([0-9]{1,19})>")
     val roleRegex = Regex("<@&([0-9]{1,19})>")
     val timestampRegex = Regex("<t:([0-9]{1,19})(:[A-Za-z])?>")
     fun getUserSnowflake(message: String): Snowflake? {

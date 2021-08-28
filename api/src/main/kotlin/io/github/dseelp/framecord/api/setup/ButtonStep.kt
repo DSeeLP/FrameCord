@@ -125,7 +125,7 @@ class ButtonStep(
         }
     }
 
-    override fun cancel(message: Message) {
+    override suspend fun cancel(message: Message) {
         if (!this::buttonAction.isInitialized) return
         plugin.unregisterButtonAction(buttonAction)
     }
