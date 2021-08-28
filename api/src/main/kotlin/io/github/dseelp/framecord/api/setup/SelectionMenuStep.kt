@@ -36,12 +36,12 @@ import dev.kord.rest.builder.component.ActionRowBuilder
 import dev.kord.rest.builder.message.create.MessageCreateBuilder
 import dev.kord.rest.builder.message.create.actionRow
 import dev.kord.rest.builder.message.modify.actionRow
-import io.github.dseelp.framecord.api.action
+import io.github.dseelp.framecord.api.utils.action
 import io.github.dseelp.framecord.api.interactions.ButtonAction
 import io.github.dseelp.framecord.api.interactions.SelectionMenu
 import io.github.dseelp.framecord.api.plugins.Plugin
 import io.github.dseelp.framecord.api.randomAlphanumeric
-import io.github.dseelp.framecord.api.selectionMenu
+import io.github.dseelp.framecord.api.utils.selectionMenu
 import io.github.dseelp.framecord.api.utils.literal
 
 class SelectionMenuStep(
@@ -72,10 +72,10 @@ class SelectionMenuStep(
                 if (isDone) return@execute
                 val acknowledge =
                     sender.interaction.acknowledgePublicDeferredMessageUpdate()
-                val channel = sender.interaction.channel.asChannel()
-                if (channel !is GuildMessageChannel) return@execute
-                val member = sender.interaction.user.asMember(channel.guildId)
-                if (!checkAccess(member, channel)) return@execute
+                val ch = sender.interaction.channel.asChannel()
+                if (ch !is GuildMessageChannel) return@execute
+                val member = sender.interaction.user.asMember(ch.guildId)
+                if (!checkAccess(member, ch)) return@execute
                 isDone = true
                 acknowledge.edit {
                     components?.clear()
@@ -102,10 +102,10 @@ class SelectionMenuStep(
                 val acknowledge =
                     interaction.acknowledgePublicDeferredMessageUpdate()
                 if (isDone) return@onMultipleOptionClick
-                val channel = interaction.channel.asChannel()
-                if (channel !is GuildMessageChannel) return@onMultipleOptionClick
-                val member = interaction.user.asMember(channel.guildId)
-                if (!checkAccess(member, channel)) return@onMultipleOptionClick
+                val ch = interaction.channel.asChannel()
+                if (ch !is GuildMessageChannel) return@onMultipleOptionClick
+                val member = interaction.user.asMember(ch.guildId)
+                if (!checkAccess(member, ch)) return@onMultipleOptionClick
                 acknowledge.edit {
                     components?.clear()
                     actionRow {

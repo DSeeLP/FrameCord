@@ -48,7 +48,6 @@ import io.github.dseelp.framecord.api.modules.Feature
 import io.github.dseelp.framecord.api.modules.Module
 import io.github.dseelp.framecord.api.modules.ModuleManager
 import io.github.dseelp.framecord.api.randomAlphanumeric
-import io.github.dseelp.framecord.api.selectionMenu
 import io.github.dseelp.framecord.api.utils.*
 import io.github.dseelp.framecord.core.FakePlugin
 import io.github.dseelp.framecord.core.plugin.FakePluginComponent

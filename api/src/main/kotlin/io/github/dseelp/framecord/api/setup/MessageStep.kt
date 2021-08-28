@@ -36,7 +36,7 @@ import dev.kord.core.event.message.MessageCreateEvent
 import dev.kord.rest.builder.message.create.MessageCreateBuilder
 import dev.kord.rest.builder.message.create.actionRow
 import dev.kord.rest.builder.message.modify.actionRow
-import io.github.dseelp.framecord.api.action
+import io.github.dseelp.framecord.api.utils.action
 import io.github.dseelp.framecord.api.event.EventHandle
 import io.github.dseelp.framecord.api.interactions.ButtonAction
 import io.github.dseelp.framecord.api.randomAlphanumeric
