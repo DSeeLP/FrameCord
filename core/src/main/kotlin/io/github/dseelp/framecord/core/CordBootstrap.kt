@@ -85,26 +85,29 @@ object CordBootstrap {
                             }
                             return properties
                         }
-                    } catch (e: Exception) { }
+                    } catch (e: Exception) {
+                    }
                 }
-            } catch (e1: IOException) { }
+            } catch (e1: IOException) {
+            }
             return null
         }
 
     val version: Version
 
     init {
-        val info = manifestInfo
+        val info = manifestInfo?.map { it.key.toString() to it.value.toString() }?.toMap()
         val default = Version(0, 4, 1)
         var temp = default
-        if (info != null && info.contains("prodBuild")) {
+        if (info != null && info.containsKey("prodBuild")) {
             temp = try {
-                Version.parse(info.getProperty("prodBuild"))
+                Version.parse(info["prodBuild"]!!)
             } catch (ex: Exception) {
                 System.err.println("Failed to parse prodBuild from Manifest! Falling back to hardcoded value")
                 default
             }
-        }
+        } else
+            println("This is a development build of version $default where no build number is specified!")
         version = temp
     }
 

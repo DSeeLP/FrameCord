@@ -26,18 +26,19 @@ val defaultGroupName = "io.github.dseelp.framecord"
 val projectVersion: String by project
 
 group = defaultGroupName
-version = run {
+val calcVersion = run {
     val env = System.getenv()
     val s = projectVersion
     if (!env.containsKey("BUILD_NUMBER") || env.containsKey("DEPLOY_CENTRAL") || env.containsKey("GITHUB_TOKEN")) return@run s
     if (s.contains('+')) return@run s
-    val vString = "${env["BUILD_NUMBER"]}-SNAPSHOT"
+    val vString = "+${env["BUILD_NUMBER"]}-SNAPSHOT"
     if (s.contains('-')) {
         val splitted = s.split('-')
         return@run "${splitted[0]}$vString}"
     }
     s+vString
 }
+version = calcVersion
 
 plugins {
     base
@@ -65,7 +66,7 @@ val excludedModules = arrayOf("moderation", "plugins", "privatechannels")
 allprojects {
 
     group = defaultGroupName
-    version = projectVersion
+    version = calcVersion
 
     repositories {
         mavenLocal()
