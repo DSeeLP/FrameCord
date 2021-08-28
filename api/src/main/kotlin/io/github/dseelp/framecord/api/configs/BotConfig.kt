@@ -36,7 +36,8 @@ data class BotConfig(
     val intents: IntentsConfig,
     val rest: RestConfig,
     val clientId: Long,
-    val clientSecret: String
+    val clientSecret: String,
+    val botAdmins: Array<Long>
 ) {
     companion object : ConfigSpec("") {
         val instanceId by optional(randomAlphanumeric(4))
@@ -44,6 +45,7 @@ data class BotConfig(
         val clientId by optional(-1L)
         val clientSecret by optional("Hi")
         val showErrors by optional(false)
+        val botAdmins by optional(arrayOf<Long>())
 
         object InviteSpec : ConfigSpec() {
             val enabled by optional(false)
@@ -77,6 +79,7 @@ data class BotConfig(
             ),
             config[clientId],
             config[clientSecret],
+            config[botAdmins]
         )
     }
 
@@ -90,4 +93,34 @@ data class BotConfig(
         val redirectUrl: String,
         val proxySupport: Boolean
     )
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is BotConfig) return false
+
+        if (instanceId != other.instanceId) return false
+        if (debug != other.debug) return false
+        if (showErrors != other.showErrors) return false
+        if (invite != other.invite) return false
+        if (intents != other.intents) return false
+        if (rest != other.rest) return false
+        if (clientId != other.clientId) return false
+        if (clientSecret != other.clientSecret) return false
+        if (!botAdmins.contentEquals(other.botAdmins)) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = instanceId.hashCode()
+        result = 31 * result + debug.hashCode()
+        result = 31 * result + showErrors.hashCode()
+        result = 31 * result + invite.hashCode()
+        result = 31 * result + intents.hashCode()
+        result = 31 * result + rest.hashCode()
+        result = 31 * result + clientId.hashCode()
+        result = 31 * result + clientSecret.hashCode()
+        result = 31 * result + botAdmins.contentHashCode()
+        return result
+    }
 }
