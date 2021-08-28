@@ -17,6 +17,8 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 11
+      - name: Validate Gradle Wrapper
+        uses: gradle/wrapper-validation-action@v1
       - name: Cache Gradle packages
         uses: actions/cache@v2
         with:
@@ -27,9 +29,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
       - name: Test with Gradle
-        run: ./gradlew test
+        run: gradle test
       - name: Generate Distribution
-        run: ./gradlew gitHubDistribution
+        run: gradle gitHubDistribution
         env:
           BUILD_NUMBER: ${{ github.run_number }}
       - name: Cleanup Gradle Cache
