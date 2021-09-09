@@ -24,6 +24,7 @@
 
 package io.github.dseelp.framecord.core
 
+import io.github.dseelp.framecord.api.Version
 import io.github.dseelp.framecord.api.event.EventBus
 import io.github.dseelp.framecord.api.events.ReloadEvent
 import io.github.dseelp.framecord.api.events.ShutdownEvent
@@ -35,6 +36,7 @@ import io.github.dseelp.framecord.api.plugins.PluginManager
 import io.github.dseelp.framecord.api.utils.koin.CordKoinComponent
 import org.koin.core.component.inject
 import java.text.SimpleDateFormat
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.system.exitProcess
 
 @OptIn(io.github.dseelp.framecord.api.InternalFrameCordApi::class)
@@ -44,6 +46,7 @@ object CordImpl : io.github.dseelp.framecord.api.Cord, CordKoinComponent {
     private val coreLog by logger(LogManager.CORE)
     private val loader: PluginLoader by inject()
     private val pluginService: PluginManager by inject()
+    override val version: Version = CordBootstrap.version
 
     override suspend fun reload(vararg scopes: io.github.dseelp.framecord.api.ReloadScope) {
         coreLog.info("Reloading...")
@@ -90,6 +93,11 @@ object CordImpl : io.github.dseelp.framecord.api.Cord, CordKoinComponent {
             }
         }
     }
+
+    override val guildCount: ULong
+        get() = _guildCount.get().toULong()
+
+    var _guildCount: AtomicLong = AtomicLong(0)
 
     val formatter = SimpleDateFormat("dd.MM HH:mm:ss")
 }

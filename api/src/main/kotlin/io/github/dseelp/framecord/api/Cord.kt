@@ -27,14 +27,21 @@ package io.github.dseelp.framecord.api
 import io.github.dseelp.framecord.api.plugins.Plugin
 
 interface Cord {
-    suspend fun reload(vararg scopes: io.github.dseelp.framecord.api.ReloadScope)
+    val version: Version
+    suspend fun reload(vararg scopes: ReloadScope)
 
     suspend fun shutdown()
 
     @io.github.dseelp.framecord.api.InternalFrameCordApi
     suspend fun shutdown(unloadPlugins: Boolean)
 
+
     fun getPlugin(): Plugin
 
     suspend fun reloadPlugins()
+
+    /**
+     * An approximate number of guilds the bot is in.
+     */
+    val guildCount: ULong
 }

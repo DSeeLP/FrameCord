@@ -39,6 +39,7 @@ import io.github.dseelp.framecord.api.modules.ModuleManager
 import io.github.dseelp.framecord.api.plugins.PluginLoader
 import io.github.dseelp.framecord.api.plugins.PluginManager
 import io.github.dseelp.framecord.api.plugins.repository.RepositoryManager
+import io.github.dseelp.framecord.api.presence.PresenceManager
 import io.github.dseelp.framecord.api.setup.SetupManager
 import io.github.dseelp.framecord.api.utils.IReflectionUtils
 import io.github.dseelp.framecord.api.utils.koin.CordKoinContext
@@ -47,6 +48,7 @@ import io.github.dseelp.framecord.core.modules.ModuleManagerImpl
 import io.github.dseelp.framecord.core.plugin.PluginLoaderImpl
 import io.github.dseelp.framecord.core.plugin.PluginManagerImpl
 import io.github.dseelp.framecord.core.plugin.repository.RepositoryManagerImpl
+import io.github.dseelp.framecord.core.presence.FilePresenceManager
 import io.github.dseelp.framecord.core.utils.ReflectionUtilsImpl
 import kotlinx.coroutines.*
 import org.koin.core.qualifier.qualifier
@@ -130,6 +132,7 @@ object CordBootstrap {
         single<GuildManager> { StaticGuildManger }
         single<SetupManager> { StaticSetupManager }
         single<ModuleManager> { ModuleManagerImpl } bind ModuleManagerImpl::class
+        single<PresenceManager> { FilePresenceManager } bind FilePresenceManager::class
     }
 
     val defaultModules = listOf(defaultModule, PathQualifiersImpl.module)

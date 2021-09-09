@@ -25,93 +25,61 @@
 package io.github.dseelp.framecord.core.utils
 
 import com.uchuhimo.konf.ConfigSpec
-import dev.kord.common.entity.ActivityType
-import dev.kord.common.entity.PresenceStatus.*
+import io.github.dseelp.framecord.api.presence.Activity
+import io.github.dseelp.framecord.api.presence.Presence
+import io.github.dseelp.framecord.api.presence.PresenceStatus
 import io.github.dseelp.framecord.core.PathQualifiersImpl
-import kotlinx.serialization.*
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlin.io.path.div
 
 @Serializable
 data class PresenceConfig(val presences: Array<Presence>) {
     companion object : ConfigSpec("") {
-
-        fun load() {
-            val json = Json {
-                prettyPrint = true
-                prettyPrintIndent = "  "
-            }
-            val file = (PathQualifiersImpl.configLocation / "presence.json").toFile()
-            val defaultText = json.encodeToString(
-                PresenceConfig(
-                    arrayOf(
-                        Presence(
-                            PresenceStatus.ONLINE,
-                            Activity.Playing("FrameCord"),
-                            3000,
-                            true
-                        )
+        private val json = Json {
+            prettyPrint = true
+            prettyPrintIndent = "  "
+        }
+        private val file = (PathQualifiersImpl.configLocation / "presence.json").toFile()
+        private val defaultText = json.encodeToString(
+            PresenceConfig(
+                arrayOf(
+                    Presence(
+                        PresenceStatus.ONLINE,
+                        Activity.Playing("FrameCord"),
+                        3000,
+                        true
                     )
                 )
             )
-            if (!file.exists()) {
+        )
+        private fun checkConfig(text: String = defaultText): Boolean {
+            return if (!file.exists()) {
                 file.parentFile.mkdirs()
                 file.createNewFile()
-                file.writeText(defaultText, Charsets.UTF_8)
+                file.writeText(text, Charsets.UTF_8)
+                false
+            } else {
+                true
             }
+        }
+
+        fun load(): PresenceConfig {
+            checkConfig()
             val config = json.decodeFromString<PresenceConfig>(file.readText(Charsets.UTF_8))
-            println(config)
+            return config
+        }
+
+        fun write(config: PresenceConfig) {
+            val text = json.encodeToString(config)
+            if (checkConfig(text)) {
+                file.writeText(text, Charsets.UTF_8)
+            }
         }
     }
 }
 
-@Serializable
-data class Presence(val status: PresenceStatus, val activity: Activity, val stayTime: Long, val enabled: Boolean)
 
-enum class PresenceStatus(val status: dev.kord.common.entity.PresenceStatus) {
-    ONLINE(Online),
-    IDLE(Idle),
-    DO_NOT_DISTURB(DoNotDisturb),
-    INVISIBLE(Invisible)
-}
-
-@Serializable
-sealed class Activity {
-    abstract val activityType: ActivityType
-
-    @Serializable
-    @SerialName("playing")
-    class Playing(val value: String) : Activity() {
-        @Transient
-        override val activityType: ActivityType = ActivityType.Game
-    }
-
-    @Serializable
-    @SerialName("streaming")
-    class Streaming(val value: String) : Activity() {
-        @Transient
-        override val activityType: ActivityType = ActivityType.Game
-    }
-
-    @Serializable
-    @SerialName("listening")
-    class Listening(val value: String) : Activity() {
-        @Transient
-        override val activityType: ActivityType = ActivityType.Listening
-    }
-
-    @Serializable
-    @SerialName("watching")
-    class Watching(val value: String) : Activity() {
-        @Transient
-        override val activityType: ActivityType = ActivityType.Watching
-    }
-
-    @Serializable
-    @SerialName("competing")
-    class Competing(val value: String) : Activity() {
-        @Transient
-        override val activityType: ActivityType = ActivityType.Competing
-    }
-}
 

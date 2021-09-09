@@ -40,6 +40,8 @@ import io.github.dseelp.framecord.api.utils.koin.CordKoinComponent
 import io.github.dseelp.framecord.api.utils.literal
 import io.github.dseelp.framecord.api.utils.red
 import io.ktor.client.*
+import io.ktor.client.features.json.*
+import io.ktor.client.features.json.serializer.*
 import org.koin.core.component.inject
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
@@ -57,7 +59,12 @@ class InviteCommand : Command<Sender>, CordKoinComponent {
 
     private fun oauth2Client() {
         val inviteConfig = getConfig()
-        oauth2Client = DiscordClient(HttpClient(), inviteConfig.clientId.toString(), "", "")
+        oauth2Client = DiscordClient(HttpClient {
+            install(JsonFeature) {
+                serializer = KotlinxSerializer()
+            }
+            expectSuccess = true
+        }, inviteConfig.clientId.toString(), "", "")
     }
 
     private fun checkClient(config: BotConfig = getConfig()) {

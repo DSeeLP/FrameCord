@@ -25,6 +25,7 @@
 package io.github.dseelp.framecord.api.database
 
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Deferred
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.Transaction
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -35,7 +36,7 @@ class DatabaseScope(val cordDatabase: CordDatabase) {
         get() = cordDatabase.exposed
 
 
-    fun <T> transaction(statement: Transaction.() -> T) =
+    fun <T> transaction(statement: Transaction.() -> T): T =
         org.jetbrains.exposed.sql.transactions.transaction(database, statement)
 
     suspend fun <T> suspendedTransaction(context: CoroutineDispatcher? = null, statement: suspend Transaction.() -> T) =
@@ -45,7 +46,7 @@ class DatabaseScope(val cordDatabase: CordDatabase) {
     suspend fun <T> suspendedTransactionAsync(
         context: CoroutineDispatcher? = null,
         statement: suspend Transaction.() -> T
-    ) = org.jetbrains.exposed.sql.transactions.experimental.suspendedTransactionAsync(
+    ): Deferred<T> = org.jetbrains.exposed.sql.transactions.experimental.suspendedTransactionAsync(
         context,
         database,
         statement = statement
