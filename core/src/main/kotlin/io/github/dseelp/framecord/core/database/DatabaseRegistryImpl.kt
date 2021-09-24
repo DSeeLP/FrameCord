@@ -64,7 +64,6 @@ class DatabaseRegistryImpl : DatabaseRegistry {
             val defaultDb = TransactionManager.defaultDatabase
             val cord = CordDatabase(dataSource, Database.connect(dataSource), databaseInfo)
             if (defaultDb != null) TransactionManager.defaultDatabase = defaultDb
-            TransactionManager.defaultDatabase
             databases[plugin] = cord
             databaseScopes[plugin] = DatabaseScope(cord)
             return cord
