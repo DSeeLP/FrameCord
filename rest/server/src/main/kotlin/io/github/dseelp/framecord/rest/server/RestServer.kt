@@ -24,10 +24,11 @@
 
 package io.github.dseelp.framecord.rest.server
 
+import com.log4k.configuration
+import com.log4k.w
 import de.dseelp.oauth2.discord.api.DiscordClient
 import io.github.dseelp.framecord.api.InternalFrameCordApi
 import io.github.dseelp.framecord.api.configs.BotConfig
-import io.github.dseelp.framecord.api.logging.logger
 import io.github.dseelp.framecord.api.plugins.Plugin
 import io.github.dseelp.framecord.api.utils.koin.CordKoinComponent
 import io.github.dseelp.framecord.rest.data.responses.dialect.RestErrors
@@ -45,20 +46,21 @@ import io.ktor.server.netty.*
 import io.ktor.sessions.*
 import kotlinx.serialization.json.Json
 import org.koin.core.component.inject
+import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 
 @OptIn(InternalFrameCordApi::class)
 object RestServer : CordKoinComponent {
-    val logger by logger<RestServer>()
+    val lCfg = configuration()
     fun installApplicationModule(module: Application.() -> Unit) {
         server.application.apply(module)
     }
 
     fun startRestServer(plugin: Plugin) {
-        logger.warn("The RestServer is very experimental! It should only be enabled if you really know what you are doing")
+        w("The RestServer is very experimental! It should only be enabled if you really know what you are doing")
         val botConfig: BotConfig by inject()
         if (!botConfig.intents.guildMembers) {
-            logger.warn("The GuildMembers intent is not activated! This is dangerous since the RestServer is activated. \nThe intent is required to receive permission updates!")
+            w("The GuildMembers intent is not activated! This is dangerous since the RestServer is activated. \nThe intent is required to receive permission updates!")
         }
         val config = botConfig.rest
         if (!config.enabled) return
@@ -74,7 +76,7 @@ object RestServer : CordKoinComponent {
             }
             install(CallLogging) {
                 this.level = Level.DEBUG
-                this.logger = logger<RestServer>().value
+                this.logger = LoggerFactory.getLogger(RestServer::class.java)
             }
             install(StatusPages) {
                 this.exception<NotAuthenticatedException> {

@@ -24,15 +24,12 @@
 
 package io.github.dseelp.framecord.core.logging
 
-import io.github.dseelp.framecord.api.logging.LogManager.ROOT
-import io.github.dseelp.framecord.api.logging.logger
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
 
 class CustomCoroutineExceptionHandler : AbstractCoroutineContextElement(CoroutineExceptionHandler),
     CoroutineExceptionHandler {
-    val log by logger(ROOT)
     override fun handleException(context: CoroutineContext, exception: Throwable) {
         //log.error("", exception)
     }

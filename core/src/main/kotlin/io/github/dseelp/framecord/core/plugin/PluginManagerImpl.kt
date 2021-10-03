@@ -24,6 +24,9 @@
 
 package io.github.dseelp.framecord.core.plugin
 
+import com.log4k.configuration
+import com.log4k.e
+import com.log4k.i
 import io.github.dseelp.framecord.api.event.EventBus
 import io.github.dseelp.framecord.api.event.EventHandle
 import io.github.dseelp.framecord.api.event.Listener
@@ -31,7 +34,6 @@ import io.github.dseelp.framecord.api.events.PluginDisableEvent
 import io.github.dseelp.framecord.api.events.PluginEnableEvent
 import io.github.dseelp.framecord.api.events.PluginEventType
 import io.github.dseelp.framecord.api.events.ShutdownEvent
-import io.github.dseelp.framecord.api.logging.logger
 import io.github.dseelp.framecord.api.plugins.*
 import io.github.dseelp.framecord.api.utils.koin.KoinModules
 import kotlinx.coroutines.runBlocking
@@ -53,21 +55,21 @@ open class PluginManagerImpl : PluginManager {
     val loader: PluginLoader by inject()
     val parentLoader: URLClassLoader by inject(qualifier("pluginClassLoader"))
     val eventBus: EventBus by inject()
-    val logger by logger<PluginManager>()
+    private val lCfg = configuration(PluginManager::class)
 
     @EventHandle
     fun onPluginEvent(event: PluginDisableEvent) {
         when (event.type) {
-            PluginEventType.PRE -> logger.info("Disabling ${event.plugin.name}")
-            PluginEventType.POST -> logger.info("Disabled ${event.plugin.name}")
+            PluginEventType.PRE -> i("Disabling ${event.plugin.name}", config = lCfg)
+            PluginEventType.POST -> i("Disabled ${event.plugin.name}", config = lCfg)
         }
     }
 
     @EventHandle
     fun onPluginEvent(event: PluginEnableEvent) {
         when (event.type) {
-            PluginEventType.PRE -> logger.info("Enabling ${event.plugin.name}")
-            PluginEventType.POST -> logger.info("Enabled ${event.plugin.name}")
+            PluginEventType.PRE -> i("Enabling ${event.plugin.name}", config = lCfg)
+            PluginEventType.POST -> i("Enabled ${event.plugin.name}", config = lCfg)
         }
     }
 
@@ -75,11 +77,11 @@ open class PluginManagerImpl : PluginManager {
     @EventHandle
     @Suppress("UNUSED_PARAMETER")
     suspend fun shutdown(event: ShutdownEvent) {
-        logger.info("Unloading plugins...")
+        i("Unloading plugins...")
         loader.loadedPlugins.onEach {
             unload(it)
         }
-        logger.info("Plugins unloaded")
+        i("Plugins unloaded")
     }
 
     @OptIn(io.github.dseelp.framecord.api.InternalFrameCordApi::class)
@@ -104,12 +106,12 @@ open class PluginManagerImpl : PluginManager {
     override suspend fun unload(path: Path) {
         loader.loadedPlugins.firstOrNull { it.file.toPath() == path }?.let {
             val name = it.meta?.name
-            logger.info("Unloading Plugin ${name}...")
+            i("Unloading Plugin ${name}...", config = lCfg)
             val runCatching = kotlin.runCatching { unload(it) }
             if (runCatching.exceptionOrNull() == null)
-                logger.info("Plugin $name was unloaded.")
+                i("Plugin $name was unloaded.", config = lCfg)
             else {
-                logger.error("Failed to unload plugin $name", runCatching.exceptionOrNull()!!)
+                e("Failed to unload plugin $name", runCatching.exceptionOrNull()!!, config = lCfg)
             }
         }
     }

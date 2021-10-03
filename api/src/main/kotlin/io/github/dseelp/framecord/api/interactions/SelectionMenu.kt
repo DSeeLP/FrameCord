@@ -33,7 +33,6 @@ import dev.kord.core.entity.interaction.SelectMenuInteraction
 import dev.kord.core.event.interaction.InteractionCreateEvent
 import dev.kord.rest.builder.component.SelectMenuBuilder
 import dev.kord.rest.builder.component.SelectOptionBuilder
-import io.github.dseelp.framecord.api.logging.logger
 import io.github.dseelp.framecord.api.plugins.Plugin
 import io.github.dseelp.framecord.api.randomAlphanumeric
 import io.github.dseelp.framecord.api.utils.koin.CordKoinComponent
@@ -98,8 +97,6 @@ data class SelectionMenu(
         const val DELIMITER = "|:|"
 
         val QUALIFIER: String = "cord:${getKoin().get<String>(qualifier("instanceId"))}:"
-
-        val log by logger("Buttons")
     }
 }
 

@@ -24,18 +24,20 @@
 
 package io.github.dseelp.framecord.core
 
+import com.log4k.configuration
+import com.log4k.i
 import dev.kord.common.entity.PresenceStatus
 import dev.kord.core.Kord
 import dev.kord.gateway.Intent
 import dev.kord.gateway.Intents
 import dev.kord.gateway.PrivilegedIntent
 import dev.kord.gateway.editPresence
+import io.github.dseelp.framecord.api.Bot
 import io.github.dseelp.framecord.api.bot
 import io.github.dseelp.framecord.api.configs.BotConfig
-import io.github.dseelp.framecord.api.logging.logger
 import io.github.dseelp.framecord.api.modules.ModuleManager
-import io.github.dseelp.framecord.api.placeholders.PlaceholderContext
-import io.github.dseelp.framecord.api.placeholders.PlaceholderContext.*
+import io.github.dseelp.framecord.api.placeholders.PlaceholderContext.Arguments
+import io.github.dseelp.framecord.api.placeholders.PlaceholderContext.Parameters
 import io.github.dseelp.framecord.api.placeholders.PlaceholderManager
 import io.github.dseelp.framecord.api.placeholders.PlaceholderType
 import io.github.dseelp.framecord.api.presence.Activity
@@ -59,8 +61,6 @@ object BotImpl : io.github.dseelp.framecord.api.Bot, CordKoinComponent {
     override val coroutineContext: CoroutineContext = job + Dispatchers.Default
 
     var _kord: Kord? = null
-
-    val logger by logger<io.github.dseelp.framecord.api.Bot>()
 
     @OptIn(PrivilegedIntent::class)
     suspend fun start() {
@@ -133,6 +133,6 @@ object BotImpl : io.github.dseelp.framecord.api.Bot, CordKoinComponent {
             }
         }
         EventBusListener
-        logger.info("Startup complete")
+        i("Startup complete", configuration(Bot::class))
     }
 }

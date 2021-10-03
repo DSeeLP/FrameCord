@@ -24,10 +24,11 @@
 
 package io.github.dseelp.framecord.api.event
 
+import com.log4k.configuration
+import com.log4k.e
 import io.github.dseelp.framecord.api.bot
 import io.github.dseelp.framecord.api.events.PluginDisableEvent
 import io.github.dseelp.framecord.api.events.PluginEventType
-import io.github.dseelp.framecord.api.logging.logger
 import io.github.dseelp.framecord.api.plugins.Plugin
 import io.github.dseelp.framecord.api.plugins.PluginLoader
 import io.github.dseelp.framecord.api.utils.Criterion
@@ -80,7 +81,6 @@ open class EventBus : CordKoinComponent {
     }
 
     private val pluginLoader: PluginLoader by inject()
-    private val log by logger<EventBus>()
 
     fun searchPackages(plugin: Plugin? = null, vararg packages: String) {
         ReflectionUtils.findClasses(packages.toList().toTypedArray(), plugin) {
@@ -92,7 +92,7 @@ open class EventBus : CordKoinComponent {
                 pluginLoader.loadedPlugins.firstOrNull { it.classLoader == classLoader }?.plugin
             }
             if (p == null) {
-                log.error("Failed to determine plugin for class ${clazz.qualifiedName}")
+                e("Failed to determine plugin for class ${clazz.qualifiedName}")
                 return
             }
             val handler = Handler.ClassHandler(p, clazz)
@@ -177,8 +177,6 @@ open class EventBus : CordKoinComponent {
 
             val methodCache: MutableMap<KClass<*>, List<Pair<KFunction<*>, KParameter>>> = ConcurrentHashMap()
 
-            private val log by logger<EventBus>()
-
             override suspend fun invoke(event: Any) {
                 val eventClass = event::class
                 methodCache.getOrPut(eventClass) {
@@ -191,9 +189,10 @@ open class EventBus : CordKoinComponent {
                             event
                         )
                     } catch (e: Throwable) {
-                        log.error(
+                        e(
                             "Failed to call method ${method.name} in ${clazz.qualifiedName}",
-                            e
+                            e,
+                            configuration(EventBus::class)
                         )
                     }
                 }

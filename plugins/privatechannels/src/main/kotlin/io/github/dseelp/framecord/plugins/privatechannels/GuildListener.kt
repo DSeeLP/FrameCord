@@ -33,13 +33,13 @@ import io.github.dseelp.framecord.api.event.EventHandle
 import io.github.dseelp.framecord.api.event.Listener
 import io.github.dseelp.framecord.api.modules.checkModule
 import io.github.dseelp.framecord.plugins.privatechannels.ChannelListener.handleJoin
-import io.github.dseelp.framecord.plugins.privatechannels.PrivateChannelPlugin.database
-import io.github.dseelp.framecord.plugins.privatechannels.PrivateChannelPlugin.mId
-import io.github.dseelp.framecord.plugins.privatechannels.PrivateChannelPlugin.suspendingDatabase
-import io.github.dseelp.framecord.plugins.privatechannels.db.ActivePrivateChannel
-import io.github.dseelp.framecord.plugins.privatechannels.db.ActivePrivateChannels
-import io.github.dseelp.framecord.plugins.privatechannels.db.PrivateChannel
-import io.github.dseelp.framecord.plugins.privatechannels.db.PrivateChannels
+import io.github.dseelp.framecord.plugins.privatechannels.PrivateChannels.database
+import io.github.dseelp.framecord.plugins.privatechannels.PrivateChannels.mId
+import io.github.dseelp.framecord.plugins.privatechannels.PrivateChannels.suspendingDatabase
+import io.github.dseelp.framecord.plugins.privatechannels.db.ActivePrivateChannelEntity
+import io.github.dseelp.framecord.plugins.privatechannels.db.ActivePrivateChannelsTable
+import io.github.dseelp.framecord.plugins.privatechannels.db.PrivateChannelEntity
+import io.github.dseelp.framecord.plugins.privatechannels.db.PrivateChannelsTable
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.count
 import org.jetbrains.exposed.sql.deleteWhere
@@ -53,7 +53,7 @@ object GuildListener {
         val guildId = event.guildId.value
         database {
             transaction {
-                PrivateChannels.deleteWhere { PrivateChannels.guildId eq guildId }
+                PrivateChannelsTable.deleteWhere { PrivateChannelsTable.guildId eq guildId }
             }
         }
     }
@@ -65,9 +65,9 @@ object GuildListener {
         val guild = event.guild.asGuild()
         suspendingDatabase {
             suspendedTransaction {
-                val pnChannels = PrivateChannel.find { PrivateChannels.guildId eq guildId }
+                val pnChannels = PrivateChannelEntity.find { PrivateChannelsTable.guildId eq guildId }
                 val active =
-                    ActivePrivateChannel.find { ActivePrivateChannels.privateChannel inList pnChannels.map { it.id } }
+                    ActivePrivateChannelEntity.find { ActivePrivateChannelsTable.privateChannel inList pnChannels.map { it.id } }
                 val shouldDeleted = pnChannels.filter {
                     val channel = guild.getChannelOrNull(it.joinChannelId.asSnowflake)
                     channel == null

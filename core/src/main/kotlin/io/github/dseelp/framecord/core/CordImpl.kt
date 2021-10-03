@@ -24,54 +24,60 @@
 
 package io.github.dseelp.framecord.core
 
+import com.log4k.LoggerConfig
+import com.log4k.configuration
+import com.log4k.e
+import com.log4k.i
+import io.github.dseelp.framecord.api.Cord
 import io.github.dseelp.framecord.api.Version
 import io.github.dseelp.framecord.api.event.EventBus
 import io.github.dseelp.framecord.api.events.ReloadEvent
 import io.github.dseelp.framecord.api.events.ShutdownEvent
-import io.github.dseelp.framecord.api.logging.LogManager
-import io.github.dseelp.framecord.api.logging.logger
 import io.github.dseelp.framecord.api.plugins.Plugin
 import io.github.dseelp.framecord.api.plugins.PluginLoader
 import io.github.dseelp.framecord.api.plugins.PluginManager
 import io.github.dseelp.framecord.api.utils.koin.CordKoinComponent
+import kotlinx.coroutines.cancelAndJoin
 import org.koin.core.component.inject
 import java.text.SimpleDateFormat
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.system.exitProcess
 
 @OptIn(io.github.dseelp.framecord.api.InternalFrameCordApi::class)
-object CordImpl : io.github.dseelp.framecord.api.Cord, CordKoinComponent {
+@LoggerConfig(tag = "Core")
+object CordImpl : Cord, CordKoinComponent {
     private val eventBus by inject<EventBus>()
     private val bot: io.github.dseelp.framecord.api.Bot by inject()
-    private val coreLog by logger(LogManager.CORE)
     private val loader: PluginLoader by inject()
     private val pluginService: PluginManager by inject()
     override val version: Version = CordBootstrap.version
+    private val cCfg = configuration(Cord::class)
 
     override suspend fun reload(vararg scopes: io.github.dseelp.framecord.api.ReloadScope) {
-        coreLog.info("Reloading...")
+        i("Reloading...", cCfg)
         eventBus.callAsync(ReloadEvent(scopes.toList().toTypedArray()))
-        coreLog.info("Reload complete!")
+        i("Reload complete!", cCfg)
     }
 
     override suspend fun shutdown() = shutdown(true)
 
     @io.github.dseelp.framecord.api.InternalFrameCordApi
     override suspend fun shutdown(unloadPlugins: Boolean) {
-        coreLog.also { log ->
-            log.info("Shutting down...")
-            eventBus.callAsync(ShutdownEvent())
-            ConsoleImpl.stopReading()
-            ConsoleImpl.stopCurrentRead()
-            Thread {
-                Thread.sleep(10000)
-                log.error("Shutdown took too long")
-                log.error("Forcing shutdown...")
-                exitProcess(1)
-            }.start()
-            bot.kord.shutdown()
-            println("Shutdown complete")
-        }
+        i("Shutting down...")
+        eventBus.callAsync(ShutdownEvent())
+        ConsoleImpl.stopReading()
+        ConsoleImpl.stopCurrentRead()
+        Thread {
+            Thread.sleep(10000)
+            e("Shutdown took too long")
+            e("Forcing shutdown...")
+            exitProcess(1)
+        }.start()
+        i("Canceling Bot Job")
+        bot.job.cancelAndJoin()
+        i("Bot Job cancelled")
+        bot.kord.shutdown()
+        println("Shutdown complete")
     }
 
     override fun getPlugin(): Plugin = FakePlugin
@@ -89,7 +95,7 @@ object CordImpl : io.github.dseelp.framecord.api.Cord, CordKoinComponent {
                 val load = Core.pluginService.load(path)
                 Core.pluginService.enable(load.plugin!!)
             } catch (t: Throwable) {
-                Core.log.error("Failed to load plugin $path", t)
+                e("Failed to load plugin $path", t, config = configuration(Core::class))
             }
         }
     }

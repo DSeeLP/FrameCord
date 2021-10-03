@@ -50,17 +50,16 @@ import io.github.dseelp.framecord.api.command.arguments.MentionArgument
 import io.github.dseelp.framecord.api.command.createEmbed
 import io.github.dseelp.framecord.api.modules.FeatureRestricted
 import io.github.dseelp.framecord.api.randomAlphanumeric
-import io.github.dseelp.framecord.api.setup.ButtonDefaultValue
 import io.github.dseelp.framecord.api.setup.buttonDefaultValue
 import io.github.dseelp.framecord.api.setup.setup
 import io.github.dseelp.framecord.api.utils.*
-import io.github.dseelp.framecord.plugins.privatechannels.PrivateChannelPlugin
-import io.github.dseelp.framecord.plugins.privatechannels.PrivateChannelPlugin.mId
-import io.github.dseelp.framecord.plugins.privatechannels.PrivateChannelPlugin.suspendingDatabase
-import io.github.dseelp.framecord.plugins.privatechannels.db.ActivePrivateChannel
-import io.github.dseelp.framecord.plugins.privatechannels.db.ActivePrivateChannels
-import io.github.dseelp.framecord.plugins.privatechannels.db.PrivateChannel
-import io.github.dseelp.framecord.plugins.privatechannels.db.PrivateChannels
+import io.github.dseelp.framecord.plugins.privatechannels.PrivateChannels
+import io.github.dseelp.framecord.plugins.privatechannels.PrivateChannels.mId
+import io.github.dseelp.framecord.plugins.privatechannels.PrivateChannels.suspendingDatabase
+import io.github.dseelp.framecord.plugins.privatechannels.db.ActivePrivateChannelEntity
+import io.github.dseelp.framecord.plugins.privatechannels.db.ActivePrivateChannelsTable
+import io.github.dseelp.framecord.plugins.privatechannels.db.PrivateChannelEntity
+import io.github.dseelp.framecord.plugins.privatechannels.db.PrivateChannelsTable
 import io.github.dseelp.framecord.plugins.privatechannels.isRateLimited
 import io.github.dseelp.framecord.plugins.privatechannels.remainingRateLimited
 import io.github.dseelp.framecord.plugins.privatechannels.updateChannel
@@ -101,7 +100,7 @@ class RoomCommand : Command<GuildSender> {
     }
 
     @OptIn(ExperimentalTime::class)
-    suspend fun CommandContext<GuildSender>.checkRateLimit(channel: ActivePrivateChannel): Boolean {
+    suspend fun CommandContext<GuildSender>.checkRateLimit(channel: ActivePrivateChannelEntity): Boolean {
         if (channel.isRateLimited) {
             channel.remainingRateLimited?.toComponents { minutes, seconds, _ ->
                 sender.createEmbed {
@@ -139,11 +138,11 @@ class RoomCommand : Command<GuildSender> {
         }
     }
 
-    suspend fun getMemberChannel(member: Member): ActivePrivateChannel? = suspendingDatabase {
+    suspend fun getMemberChannel(member: Member): ActivePrivateChannelEntity? = suspendingDatabase {
         suspendedTransaction {
             val voiceState = member.getVoiceStateOrNull() ?: return@suspendedTransaction null
             val channelId = voiceState.channelId?.value ?: return@suspendedTransaction null
-            val channel = ActivePrivateChannel.find { ActivePrivateChannels.channelId eq channelId }.firstOrNull()
+            val channel = ActivePrivateChannelEntity.find { ActivePrivateChannelsTable.channelId eq channelId }.firstOrNull()
             return@suspendedTransaction channel
         }
     }
@@ -179,7 +178,7 @@ class RoomCommand : Command<GuildSender> {
             execute {
                 sender.message.deleteIgnoringNotFound()
                 val member = sender.getMember()
-                setup(PrivateChannelPlugin, sender.getChannel()) {
+                setup(PrivateChannels, sender.getChannel()) {
                     checkAccess { m, _ ->
                         member.id == m.id
                     }
@@ -254,7 +253,7 @@ class RoomCommand : Command<GuildSender> {
                 val gFooter = sender.footer()
                 if (checkRateLimit(getMemberChannel(member)!!)) return@execute
                 val resetValue = randomAlphanumeric(128)
-                setup(PrivateChannelPlugin, sender.getChannel()) {
+                setup(PrivateChannels, sender.getChannel()) {
                     checkAccess { m, _ ->
                         member.id == m.id
                     }
@@ -563,7 +562,7 @@ class RoomCommand : Command<GuildSender> {
                 suspendingDatabase {
                     suspendedTransaction {
                         val guildId = sender.getGuild().id.value
-                        val privateChannelCount = PrivateChannel.find { PrivateChannels.guildId eq guildId }.count()
+                        val privateChannelCount = PrivateChannelEntity.find { PrivateChannelsTable.guildId eq guildId }.count()
                         if (privateChannelCount >= 25) {
                             sender.createEmbed {
                                 title = "Limit reached"
@@ -575,7 +574,7 @@ class RoomCommand : Command<GuildSender> {
                     }
                 }
                 if (shouldReturn) return@execute
-                setup(PrivateChannelPlugin, channel) {
+                setup(PrivateChannels, channel) {
                     checkAccess { executor, channel ->
                         executor.id == member.id
                     }
@@ -635,7 +634,7 @@ class RoomCommand : Command<GuildSender> {
                         suspendingDatabase {
                             suspendedTransaction {
                                 val channelId = joinChannel.id.value
-                                if (PrivateChannel.find { PrivateChannels.joinChannelId eq channelId }.count() != 0L) {
+                                if (PrivateChannelEntity.find { PrivateChannelsTable.joinChannelId eq channelId }.count() != 0L) {
                                     channel.createEmbed {
                                         title = "Private Channel creation failed"
                                         color = Color.red
@@ -643,7 +642,7 @@ class RoomCommand : Command<GuildSender> {
                                     }
                                     return@suspendedTransaction
                                 }
-                                PrivateChannel.new {
+                                PrivateChannelEntity.new {
                                     joinChannelId = channelId
                                     guildId = joinChannel.guildId.value
                                     nameTemplate = result.results[1] as String
@@ -671,11 +670,11 @@ class RoomCommand : Command<GuildSender> {
                     val guildId = channel.guildId.value
                     val guild = channel.guild.asGuild()
                     val (privateChannels, count) = suspendedTransaction {
-                        val channels = PrivateChannel.find { PrivateChannels.guildId eq guildId }
+                        val channels = PrivateChannelEntity.find { PrivateChannelsTable.guildId eq guildId }
                         channels to channels.count()
                     }
                     val member = sender.getMember()
-                    if (count != 0L) setup(PrivateChannelPlugin, channel) {
+                    if (count != 0L) setup(PrivateChannels, channel) {
                         checkAccess { executor, channel ->
                             executor.id == member.id
                         }
@@ -732,9 +731,9 @@ class RoomCommand : Command<GuildSender> {
                                 suspendedTransaction {
                                     val value = snowflake.value
                                     val privateChannel =
-                                        PrivateChannel.find { (PrivateChannels.joinChannelId eq value) and (PrivateChannels.guildId eq guildId) }
+                                        PrivateChannelEntity.find { (PrivateChannelsTable.joinChannelId eq value) and (PrivateChannelsTable.guildId eq guildId) }
                                             .firstOrNull() ?: return@suspendedTransaction
-                                    ActivePrivateChannel.find { ActivePrivateChannels.privateChannel eq privateChannel.id }
+                                    ActivePrivateChannelEntity.find { ActivePrivateChannelsTable.privateChannel eq privateChannel.id }
                                         .onEach {
                                             guild.getChannelOrNull(it.channelId.asSnowflake)?.delete()
                                             it.delete()

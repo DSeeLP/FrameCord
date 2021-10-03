@@ -24,18 +24,14 @@
 
 package org.slf4j.impl
 
-import io.github.dseelp.framecord.api.console.Console
-import io.github.dseelp.framecord.api.console.ConsoleColor
+import com.log4k.*
+import io.github.dseelp.framecord.api.configs.BotConfig
+import io.github.dseelp.framecord.api.logging.CommandLogLevel
 import io.github.dseelp.framecord.api.logging.KLogger
 import io.github.dseelp.framecord.api.utils.koin.CordKoinComponent
-import io.github.dseelp.framecord.core.ConsoleImpl
-import io.github.dseelp.framecord.core.CordImpl
-import io.github.dseelp.framecord.core.logging.ErrorManagerImpl
-import org.koin.core.component.inject
 import org.slf4j.helpers.MarkerIgnoringBase
 import org.slf4j.helpers.MessageFormatter
 import org.slf4j.spi.LocationAwareLogger
-import java.io.PrintStream
 
 @OptIn(io.github.dseelp.framecord.api.InternalFrameCordApi::class)
 class CordLogger(name: String) : MarkerIgnoringBase(), KLogger, CordKoinComponent {
@@ -46,121 +42,44 @@ class CordLogger(name: String) : MarkerIgnoringBase(), KLogger, CordKoinComponen
     private val LOG_LEVEL_WARN = LocationAwareLogger.WARN_INT
     private val LOG_LEVEL_ERROR = LocationAwareLogger.ERROR_INT
 
-    private val console by inject<Console>()
+    val cName: String = name
 
-    var currentLogLevel = if (System.getProperty("debugMode").toBoolean()) LOG_LEVEL_DEBUG else LOG_LEVEL_INFO
+    var currentLogLevel = LOG_LEVEL_INFO
         private set
 
     fun isLevelEnabled(logLevel: Int): Boolean {
-        currentLogLevel = if (System.getProperty("debugMode").toBoolean()) LOG_LEVEL_DEBUG else LOG_LEVEL_INFO
+        //currentLogLevel = LOG_LEVEL_INFO
+        currentLogLevel = when (kotlin.runCatching { getKoin().get<BotConfig>() }.getOrNull()?.logging?.defaultLevel) {
+            Level.Verbose -> LOG_LEVEL_TRACE
+            Level.Debug -> LOG_LEVEL_DEBUG
+            Level.Info -> LOG_LEVEL_INFO
+            CommandLogLevel -> LOG_LEVEL_COMMAND
+            Level.Warn -> LOG_LEVEL_WARN
+            Level.Error -> LOG_LEVEL_ERROR
+            Level.Assert -> LOG_LEVEL_ERROR+10
+            else -> LOG_LEVEL_INFO
+        }
         return logLevel >= currentLogLevel
     }
 
     val showErrors: Boolean
         get() = currentLogLevel == LOG_LEVEL_DEBUG || System.getProperty("showErrors").toBoolean()
 
-    private val shortLogName = name.substring(name.lastIndexOf(".") + 1)
+    private val shortLogName = name?.substring(name.lastIndexOf(".") + 1)
 
-    fun log(level: Int, message: String?, throwable: Throwable? = null) {
-        if (!isLevelEnabled(level)) return
-        val lines = message?.lines()
-        if (lines == null) {
-            logAndPrint(level, null, throwable)
-            return
+    val unknownLevel = object : Level(-1F) {}
+
+    fun log(levelInt: Int, message: String, throwable: Throwable? = null) {
+        val level = when(levelInt) {
+            LOG_LEVEL_TRACE -> Level.Verbose
+            LOG_LEVEL_DEBUG -> Level.Debug
+            LOG_LEVEL_INFO -> Level.Info
+            LOG_LEVEL_WARN -> Level.Warn
+            LOG_LEVEL_ERROR -> Level.Error
+            else -> unknownLevel
         }
-        lines.forEachIndexed { index, s ->
-            val t = if (index == lines.lastIndex) throwable else null
-            logAndPrint(level, s, t)
-        }
-    }
-
-    fun stream(level: Int) = PrintStream(ConsoleImpl.ActionOutputStream { logAndPrint(level, it) }, true)
-
-    val colored = true
-
-    /*fun logAndPrint(level: Int, message: String?, throwable: Throwable? = null) {
-        if (!isLevelEnabled(level)) return
-        val builtMessage = if (message != null) buildString {
-            append(CordImpl.formatter.format(System.currentTimeMillis()))
-            append(' ')
-            append("[${renderLevel(level)}]")
-            if (shortLogName != "") append(" $shortLogName")
-            append(" - ")
-            append(message)
-        } else null
-        if (builtMessage != null) console.forceWriteLine(builtMessage)
-        throwable?.printStackTrace(console.printStream)
-    }*/
-
-    fun logAndPrint(level: Int, message: String?, throwable: Throwable? = null) {
-        if (!isLevelEnabled(level)) return
-        val builtMessage = if (message != null) buildString {
-            appendColor(ConsoleColor.DARK_GRAY)
-            append("[")
-            appendColor(ConsoleColor.WHITE)
-            append(CordImpl.formatter.format(System.currentTimeMillis()))
-            appendColor(ConsoleColor.DARK_GRAY)
-            append("] ")
-            appendColor(ConsoleColor.GRAY)
-            append(renderLevel(level))
-            appendColor(ConsoleColor.DARK_GRAY)
-            append(": ")
-            appendColor(ConsoleColor.DEFAULT)
-            if (shortLogName != "") {
-                appendColor(ConsoleColor.DARK_GRAY)
-                append("[")
-                appendColor(ConsoleColor.WHITE)
-                append(shortLogName)
-                appendColor(ConsoleColor.DARK_GRAY)
-                append("] ")
-                appendColor(ConsoleColor.DEFAULT)
-            }
-            if (level >= LOG_LEVEL_WARN) appendColor(ConsoleColor.YELLOW)
-            append(message)
-            appendColor(ConsoleColor.DEFAULT)
-        } else null
-        if (builtMessage != null && !(message?.isEmpty() == true && throwable != null)) console.forceWriteLine(
-            builtMessage
-        )
-        throwable?.let { t ->
-            val stream = stream(level)
-            if (showErrors) {
-                t.printStackTrace(stream)
-            } else {
-                val uuid = ErrorManagerImpl.dispatch(t)
-                stream.println("${t::class.qualifiedName}${if (t.message == null) "" else ": ${t.message}"} ($uuid)")
-            }
-        }
-    }
-
-    fun StringBuilder.appendColor(color: ConsoleColor) {
-        if (colored) append(color)
-    }
-
-    private fun renderLevel(level: Int): String {
-        return renderLeveColor(level) + when (level) {
-            LOG_LEVEL_TRACE -> "TRACE"
-            LOG_LEVEL_DEBUG -> "DEBUG"
-            LOG_LEVEL_INFO -> "INFO"
-            LOG_LEVEL_COMMAND -> "COMMAND"
-            LOG_LEVEL_WARN -> "WARNING"
-            LOG_LEVEL_ERROR -> "ERROR"
-            else -> throw IllegalStateException("Unrecognized level [$level]")
-        }
-
-    }
-
-    private fun renderLeveColor(level: Int): String {
-        if (!colored) return ""
-        return when (level) {
-            LOG_LEVEL_TRACE -> ConsoleColor.WHITE
-            LOG_LEVEL_DEBUG -> ConsoleColor.WHITE
-            LOG_LEVEL_INFO -> ConsoleColor.WHITE
-            LOG_LEVEL_COMMAND -> ConsoleColor.WHITE
-            LOG_LEVEL_WARN -> ConsoleColor.RED
-            LOG_LEVEL_ERROR -> ConsoleColor.RED
-            else -> throw IllegalStateException("Unrecognized level [$level]")
-        }.toString()
+        val event = if (throwable == null) SimpleEvent(message) else SimpleThrowableEvent(message, throwable)
+        Log4k.log(level, Config(tag = cName), event)
     }
 
     private fun formatAndLog(level: Int, format: String, vararg args: Any) {

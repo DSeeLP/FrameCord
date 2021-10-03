@@ -29,18 +29,26 @@ import org.jetbrains.exposed.dao.LongEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.LongIdTable
 
-class PrivateChannel(id: EntityID<Long>) : LongEntity(id) {
-    companion object : LongEntityClass<PrivateChannel>(PrivateChannels)
+class ActivePrivateChannelEntity(id: EntityID<Long>) : LongEntity(id) {
+    companion object : LongEntityClass<ActivePrivateChannelEntity>(ActivePrivateChannelsTable)
 
-    var guildId by PrivateChannels.guildId
-    var joinChannelId by PrivateChannels.joinChannelId
-    var nameTemplate by PrivateChannels.nameTemplate
-    var defaultGame by PrivateChannels.defaultGame
+    var privateChannel by PrivateChannelEntity referencedOn ActivePrivateChannelsTable.privateChannel
+    var channelId by ActivePrivateChannelsTable.channelId
+    var ownerId by ActivePrivateChannelsTable.ownerId
+    var executiveId by ActivePrivateChannelsTable.executiveId
+    var customNameTemplate by ActivePrivateChannelsTable.customNameTemplate
+    var lastUpdated by ActivePrivateChannelsTable.lastUpdated
+    var locked by ActivePrivateChannelsTable.locked
+    var userLimit by ActivePrivateChannelsTable.userLimit
 }
 
-object PrivateChannels : LongIdTable() {
-    val guildId = long("guildId")
-    val joinChannelId = long("joinChannelId")
-    val nameTemplate = varchar("nameTemplate", 1000).default("%user%'s Room")
-    val defaultGame = varchar("defaultGame", 100).default("a Game")
+object ActivePrivateChannelsTable : LongIdTable() {
+    val privateChannel = reference("privateChannel", PrivateChannelsTable)
+    val channelId = long("channelId")
+    val ownerId = long("ownerId")
+    val executiveId = long("executiveId").nullable()
+    val customNameTemplate = varchar("customNameTemplate", 1000).nullable()
+    val lastUpdated = long("lastUpdatedMillis").nullable()
+    val locked = bool("locked").default(false)
+    val userLimit = short("userLimit").default(0)
 }

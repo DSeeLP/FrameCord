@@ -24,6 +24,7 @@
 
 package io.github.dseelp.framecord.api.utils
 
+import com.log4k.d
 import de.dseelp.kommon.command.CommandDispatcher
 import de.dseelp.kommon.command.CommandNode
 import de.dseelp.kommon.command.ParsedResult
@@ -36,7 +37,6 @@ import io.github.dseelp.framecord.api.InternalFrameCordApi
 import io.github.dseelp.framecord.api.checkPermissions
 import io.github.dseelp.framecord.api.command.*
 import io.github.dseelp.framecord.api.interactions.ButtonContext
-import io.github.dseelp.framecord.api.logging.logger
 import io.github.dseelp.framecord.api.modules.FeatureRestricted
 import io.github.dseelp.framecord.api.modules.checkBoolean
 import io.github.dseelp.framecord.api.plugins.Plugin
@@ -87,7 +87,7 @@ object CommandUtils {
             if (throwable is RestRequestException && throwable.error?.code == JsonErrorCode.PermissionLack) {
                 if (sender is GuildSender) {
                     val selfMember = sender.getGuild().getMember(bot.kord.selfId)
-                    logger.debug("", throwable)
+                    d("", throwable)
                     if (selfMember.checkPermissions(sender.getChannel(), Permission.SendMessages)) {
                         sender.createEmbed {
                             title = "Not enough permissions!"
@@ -114,7 +114,6 @@ object CommandUtils {
 
         @OptIn(InternalFrameCordApi::class)
         companion object : CordKoinComponent {
-            val logger by logger("CommandUtils")
             private val bot: io.github.dseelp.framecord.api.Bot by inject()
             fun <T : Any> noOperation() = object : Actions<T> {
 

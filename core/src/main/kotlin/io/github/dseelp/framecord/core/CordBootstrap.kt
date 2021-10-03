@@ -24,17 +24,18 @@
 
 package io.github.dseelp.framecord.core
 
+import com.uchuhimo.konf.Config
 import de.dseelp.kommon.command.CommandDispatcher
 import io.github.dseelp.framecord.api.Version
 import io.github.dseelp.framecord.api.command.ConsoleSender
 import io.github.dseelp.framecord.api.command.GuildSender
 import io.github.dseelp.framecord.api.command.PrivateSender
+import io.github.dseelp.framecord.api.configs.BotConfig
+import io.github.dseelp.framecord.api.configs.file
 import io.github.dseelp.framecord.api.console.Console
 import io.github.dseelp.framecord.api.database.DatabaseRegistry
 import io.github.dseelp.framecord.api.event.EventBus
 import io.github.dseelp.framecord.api.guild.GuildManager
-import io.github.dseelp.framecord.api.logging.LogManager.ROOT
-import io.github.dseelp.framecord.api.logging.logger
 import io.github.dseelp.framecord.api.modules.ModuleManager
 import io.github.dseelp.framecord.api.plugins.PluginLoader
 import io.github.dseelp.framecord.api.plugins.PluginManager
@@ -44,31 +45,35 @@ import io.github.dseelp.framecord.api.setup.SetupManager
 import io.github.dseelp.framecord.api.utils.IReflectionUtils
 import io.github.dseelp.framecord.api.utils.koin.CordKoinContext
 import io.github.dseelp.framecord.core.database.DatabaseRegistryImpl
+import io.github.dseelp.framecord.core.logging.setupLogging
 import io.github.dseelp.framecord.core.modules.ModuleManagerImpl
 import io.github.dseelp.framecord.core.plugin.PluginLoaderImpl
 import io.github.dseelp.framecord.core.plugin.PluginManagerImpl
 import io.github.dseelp.framecord.core.plugin.repository.RepositoryManagerImpl
 import io.github.dseelp.framecord.core.presence.FilePresenceManager
 import io.github.dseelp.framecord.core.utils.ReflectionUtilsImpl
-import kotlinx.coroutines.*
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.koin.core.qualifier.qualifier
 import org.koin.dsl.bind
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
 import org.slf4j.bridge.SLF4JBridgeHandler
 import java.io.IOException
-import java.io.PrintStream
 import java.net.URL
 import java.net.URLClassLoader
 import java.util.*
 import java.util.jar.JarFile
 import java.util.jar.Manifest
 import java.util.logging.LogManager
+import kotlin.io.path.Path
+import kotlin.io.path.div
 
 
 @OptIn(io.github.dseelp.framecord.api.InternalFrameCordApi::class)
 object CordBootstrap {
-    val log by logger(ROOT)
     val manifestInfo: Properties?
         get() {
             val resEnum: Enumeration<*>
@@ -99,7 +104,7 @@ object CordBootstrap {
 
     init {
         val info = manifestInfo?.map { it.key.toString() to it.value.toString() }?.toMap()
-        val default = Version(0, 4, 1)
+        val default = Version(0, 5)
         var temp = default
         if (info != null && info.containsKey("prodBuild")) {
             temp = try {
@@ -143,25 +148,24 @@ object CordBootstrap {
         runBlocking {
             ConsoleImpl.terminal
             ConsoleImpl.reader
+            setupLogging(BotConfig.fromConfig(Config { addSpec(BotConfig) }.from.json.file(Path("") / "config.json")).logging)
             val koinApp = koinApplication {
                 modules(defaultModules)
                 allowOverride(true)
             }
             CordKoinContext.app = koinApp
-            System.setOut(PrintStream(ConsoleImpl.ActionOutputStream { ConsoleImpl.forceWriteLine(it) }, true))
-            System.setErr(PrintStream(ConsoleImpl.ActionOutputStream { ConsoleImpl.forceWriteLine(it) }, true))
             ConsoleImpl.replaceSysOut()
-            CoroutineExceptionHandler { coroutineContext, throwable ->
+            /*CoroutineExceptionHandler { coroutineContext, throwable ->
 
-            }
+            }*/
             LogManager.getLogManager().getLogger("").apply {
                 removeHandler(handlers[0])
                 addHandler(SLF4JBridgeHandler())
             }
-            Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            /*Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
                 //log.debug("Uncaught exception handled in thread handler")
-                log.error("", throwable)
-            }
+                //log.error("", throwable)
+            }*/
             GlobalScope.launch {
                 Core.startup()
             }.join()

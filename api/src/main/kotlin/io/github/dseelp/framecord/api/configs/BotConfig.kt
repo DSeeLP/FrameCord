@@ -24,14 +24,15 @@
 
 package io.github.dseelp.framecord.api.configs
 
+import com.log4k.Level
 import com.uchuhimo.konf.Config
 import com.uchuhimo.konf.ConfigSpec
+import io.github.dseelp.framecord.api.logging.CommandLogLevel
 import io.github.dseelp.framecord.api.randomAlphanumeric
 
 data class BotConfig(
     val instanceId: String,
-    val debug: Boolean,
-    val showErrors: Boolean,
+    val logging: LoggingConfig,
     val invite: InviteConfig,
     val intents: IntentsConfig,
     val rest: RestConfig,
@@ -41,11 +42,22 @@ data class BotConfig(
 ) {
     companion object : ConfigSpec("") {
         val instanceId by optional(randomAlphanumeric(4))
-        val debugMode by optional(false)
         val clientId by optional(-1L)
         val clientSecret by optional("Hi")
-        val showErrors by optional(false)
         val botAdmins by optional(arrayOf<Long>())
+
+        object LoggingSpec : ConfigSpec() {
+            val showErrors by optional(false)
+            val fullClassNames by optional(false)
+            val defaultLevel by optional(LogLevel.INFO)
+            val ignorePatterns by optional(false)
+            val patterns by optional(
+                arrayOf(
+                    InLogPattern("^com.zaxxer.hikari.*", LogLevel.WARN),
+                    InLogPattern("^Exposed\$", LogLevel.WARN)
+                )
+            )
+        }
 
         object InviteSpec : ConfigSpec() {
             val enabled by optional(false)
@@ -64,10 +76,34 @@ data class BotConfig(
             val proxySupport by optional(false)
         }
 
+        enum class LogLevel {
+            VERBOSE,
+            DEBUG,
+            INFO,
+            COMMAND,
+            WARN,
+            ERROR;
+
+            val log4k: Level
+                get() = when (this) {
+                    VERBOSE -> Level.Verbose
+                    DEBUG -> Level.Debug
+                    INFO -> Level.Info
+                    COMMAND -> CommandLogLevel
+                    WARN -> Level.Warn
+                    ERROR -> Level.Error
+                }
+        }
+
         fun fromConfig(config: Config): BotConfig = BotConfig(
             config[instanceId],
-            config[debugMode],
-            config[showErrors],
+            LoggingConfig(
+                config[LoggingSpec.defaultLevel].log4k,
+                config[LoggingSpec.showErrors],
+                config[LoggingSpec.ignorePatterns],
+                config[LoggingSpec.fullClassNames],
+                config[LoggingSpec.patterns].map { LogPattern(Regex(it.pattern), it.level) }.toTypedArray()
+            ),
             InviteConfig(config[InviteSpec.enabled]),
             IntentsConfig(config[IntentsSpec.presence], config[IntentsSpec.guildMembers]),
             RestConfig(
@@ -94,13 +130,47 @@ data class BotConfig(
         val proxySupport: Boolean
     )
 
+    data class LoggingConfig(
+        val defaultLevel: Level,
+        val showErrors: Boolean,
+        val ignorePatterns: Boolean,
+        val fullClassNames: Boolean,
+        val patterns: Array<LogPattern>
+    ) {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is LoggingConfig) return false
+
+            if (defaultLevel != other.defaultLevel) return false
+            if (showErrors != other.showErrors) return false
+            if (ignorePatterns != other.ignorePatterns) return false
+            if (fullClassNames != other.fullClassNames) return false
+            if (!patterns.contentEquals(other.patterns)) return false
+
+            return true
+        }
+
+        override fun hashCode(): Int {
+            var result = defaultLevel.hashCode()
+            result = 31 * result + showErrors.hashCode()
+            result = 31 * result + ignorePatterns.hashCode()
+            result = 31 * result + fullClassNames.hashCode()
+            result = 31 * result + patterns.contentHashCode()
+            return result
+        }
+
+    }
+
+
+    data class InLogPattern(val pattern: String, val level: LogLevel)
+    data class LogPattern(val pattern: Regex, val level: LogLevel)
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is BotConfig) return false
 
         if (instanceId != other.instanceId) return false
-        if (debug != other.debug) return false
-        if (showErrors != other.showErrors) return false
+        if (logging != other.logging) return false
         if (invite != other.invite) return false
         if (intents != other.intents) return false
         if (rest != other.rest) return false
@@ -113,8 +183,7 @@ data class BotConfig(
 
     override fun hashCode(): Int {
         var result = instanceId.hashCode()
-        result = 31 * result + debug.hashCode()
-        result = 31 * result + showErrors.hashCode()
+        result = 31 * result + logging.hashCode()
         result = 31 * result + invite.hashCode()
         result = 31 * result + intents.hashCode()
         result = 31 * result + rest.hashCode()

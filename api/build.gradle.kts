@@ -49,6 +49,7 @@ val exposedVersion: String by project
 val hikaricpVersion: String by project
 val ktorVersion: String by project
 val kordxEmojiVersion: String by project
+val log4kVersion: String by project
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
@@ -74,6 +75,7 @@ dependencies {
         isChanging = true
     }
     api("dev.kord.x:emoji:$kordxEmojiVersion")
+    api("com.github.hadilq:log4k-jvm:${log4kVersion}")
 }
 
 val implementationVersion = version
