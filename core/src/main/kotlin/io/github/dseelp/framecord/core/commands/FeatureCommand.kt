@@ -48,11 +48,7 @@ import io.github.dseelp.framecord.api.modules.Feature
 import io.github.dseelp.framecord.api.modules.Module
 import io.github.dseelp.framecord.api.modules.ModuleManager
 import io.github.dseelp.framecord.api.randomAlphanumeric
-import io.github.dseelp.framecord.api.selectionMenu
-import io.github.dseelp.framecord.api.utils.deleteAfter
-import io.github.dseelp.framecord.api.utils.footer
-import io.github.dseelp.framecord.api.utils.literal
-import io.github.dseelp.framecord.api.utils.red
+import io.github.dseelp.framecord.api.utils.*
 import io.github.dseelp.framecord.core.FakePlugin
 import io.github.dseelp.framecord.core.plugin.FakePluginComponent
 import kotlinx.coroutines.flow.collect
@@ -67,12 +63,15 @@ class FeatureCommand : Command<GuildChannelSender<GuildMessageChannel>>, FakePlu
 
     override val scopes: Array<CommandScope> = arrayOf(CommandScope.GUILD)
 
+    override val description: String = "Used to enable/disable modules or features of the bot"
+
     @OptIn(InternalFrameCordApi::class, KordPreview::class, kotlin.time.ExperimentalTime::class)
     override val node: CommandNode<GuildChannelSender<GuildMessageChannel>> = literal("modules") {
         checkAccess {
             sender.getMember().checkPermissions(Permission.ManageGuild)
         }
         noAccess {
+            sender.message.deleteIgnoringNotFound()
             sender.createEmbed {
                 title = "Permission denied"
                 color = Color.red
@@ -256,6 +255,7 @@ class FeatureCommand : Command<GuildChannelSender<GuildMessageChannel>>, FakePlu
                 FakePlugin.unregisterSelectionMenu(stateSelector)
                 FakePlugin.unregisterSelectionMenu(modulesSelector)
                 FakePlugin.unregisterSelectionMenu(enabledSelector)
+                FakePlugin.unregisterButtonAction(buttonAction!!)
             }
             buttonAction = FakePlugin.registerButtonAction(
                 randomAlphanumeric(8),

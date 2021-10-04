@@ -79,7 +79,7 @@ class DbUser(id: EntityID<Long>) : LongEntity(id) {
                 this@DbUser.id.value,
                 name,
                 discriminator,
-                avatarHash,
+                "UNSUPPORTED", //TODO: Add real avatar url here
                 permissions.toSimplePermissions().toTypedArray()
             )
         }
@@ -88,7 +88,7 @@ class DbUser(id: EntityID<Long>) : LongEntity(id) {
 object DbUsers : LongIdTable("users") {
     val name = varchar("name", 32)
     val discriminator = integer("discriminator")
-    val avatarHash = text("avatarUrl", eagerLoading = true)
+    val avatarHash = text("avatarUrl", eagerLoading = true).nullable()
     val refreshToken = text("refreshToken", eagerLoading = true)
     val accessToken = text("accessToken", eagerLoading = true)
     val expirationTime = long("expirationTime")

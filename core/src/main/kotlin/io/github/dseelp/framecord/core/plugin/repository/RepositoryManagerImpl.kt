@@ -24,10 +24,11 @@
 
 package io.github.dseelp.framecord.core.plugin.repository
 
+import com.log4k.configuration
+import com.log4k.w
 import io.github.dseelp.framecord.api.event.EventHandle
 import io.github.dseelp.framecord.api.event.Listener
 import io.github.dseelp.framecord.api.events.PluginDisableEvent
-import io.github.dseelp.framecord.api.logging.logger
 import io.github.dseelp.framecord.api.plugins.Plugin
 import io.github.dseelp.framecord.api.plugins.repository.*
 import io.ktor.client.*
@@ -46,7 +47,7 @@ import kotlin.io.path.div
 
 @Listener
 class RepositoryManagerImpl : RepositoryManager {
-    private val logger by logger<RepositoryManager>()
+    private val lCfg = configuration(RepositoryManager::class)
     var mutex: Mutex = Mutex()
     val httpClient: HttpClient = HttpClient(CIO) {
         install(JsonFeature) {
@@ -128,7 +129,7 @@ class RepositoryManagerImpl : RepositoryManager {
                 pathComponents("index.json")
             }
         }?.meta ?: run {
-            logger.warn("Failed to load plugin repository! $url")
+            w("Failed to load plugin repository! $url", lCfg)
             return null
         }
         val loader = getLoaderByTypeOrNull(meta.type) ?: return null

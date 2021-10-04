@@ -37,7 +37,7 @@ import dev.kord.core.entity.Member
 import dev.kord.rest.builder.message.create.actionRow
 import dev.kord.rest.builder.message.create.embed
 import dev.kord.rest.builder.message.modify.embed
-import io.github.dseelp.framecord.api.action
+import io.github.dseelp.framecord.api.utils.action
 import io.github.dseelp.framecord.api.asSnowflake
 import io.github.dseelp.framecord.api.checkPermissions
 import io.github.dseelp.framecord.api.command.Command

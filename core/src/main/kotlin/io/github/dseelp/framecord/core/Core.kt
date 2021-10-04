@@ -24,6 +24,8 @@
 
 package io.github.dseelp.framecord.core
 
+import com.log4k.e
+import com.log4k.i
 import com.uchuhimo.konf.Config
 import com.uchuhimo.konf.source.json.toJson
 import io.github.dseelp.framecord.api.bot
@@ -31,9 +33,6 @@ import io.github.dseelp.framecord.api.configs.BotConfig
 import io.github.dseelp.framecord.api.configs.file
 import io.github.dseelp.framecord.api.configs.toFile
 import io.github.dseelp.framecord.api.event.EventBus
-import io.github.dseelp.framecord.api.logging.KLogger
-import io.github.dseelp.framecord.api.logging.LogManager.CORE
-import io.github.dseelp.framecord.api.logging.logger
 import io.github.dseelp.framecord.api.plugins.PluginManager
 import io.github.dseelp.framecord.api.utils.koin.CordKoinComponent
 import io.github.dseelp.framecord.core.listeners.CoreListener
@@ -47,7 +46,6 @@ import kotlin.io.path.div
 @OptIn(io.github.dseelp.framecord.api.InternalFrameCordApi::class)
 object Core : CordKoinComponent {
 
-    val log by logger(CORE)
     val pluginService by inject<PluginManager>()
     val pathQualifiers by inject<io.github.dseelp.framecord.api.PathQualifiers>()
     private val eventBus by inject<EventBus>()
@@ -55,6 +53,7 @@ object Core : CordKoinComponent {
 
     suspend fun startup() {
         loadConfig()
+        val config: BotConfig by inject()
         ConsoleImpl.startReading()
         loadKoinModules(module {
             single { pathQualifiers.root }
@@ -71,12 +70,12 @@ object Core : CordKoinComponent {
         FakePlugin.enable()
         CordImpl.reloadPlugins()
         BotImpl.start()
-        log.info("Startup complete")
+        i("Startup complete")
         bot.job.join()
     }
 
-    fun loadToken(log: KLogger = logger(CORE).value) {
-        log.info("Loading Bot Token")
+    fun loadToken() {
+        i("Loading Bot Token")
         val path = pathQualifiers.root / "token.json"
         val cfg = Config { addSpec(TokenConfig) }.from.json.file(path)
             .apply { toJson.toFile(path) }.from.systemProperties().from.env()
@@ -88,24 +87,22 @@ object Core : CordKoinComponent {
         })
     }
 
-    suspend fun loadConfig(log: KLogger = logger(CORE).value) {
-        log.info("Loading Config")
+    suspend fun loadConfig() {
+        i("Loading Config")
         val path = pathQualifiers.root / "config.json"
         val cfg = Config { addSpec(BotConfig) }.from.json.file(path)
         cfg.toJson.toFile(path)
         val config = BotConfig.fromConfig(cfg)
         if (config.instanceId.length > 4) {
-            log.error("The length of an instanceId should not exceed 4 characters")
+            e("The length of an instanceId should not exceed 4 characters")
             CordImpl.shutdown()
             return
         }
-        System.setProperty("debugMode", config.debug.toString())
-        System.setProperty("showErrors", config.showErrors.toString())
+        System.setProperty("showErrors", config.logging.showErrors.toString())
         loadKoinModules(module {
             single { config }
             single(qualifier("instanceId")) { config.instanceId }
             single(qualifier("config")) { this@module }
-            single(qualifier("debugMode")) { config.debug }
         })
     }
 

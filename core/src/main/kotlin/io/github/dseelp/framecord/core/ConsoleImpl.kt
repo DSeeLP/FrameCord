@@ -24,12 +24,14 @@
 
 package io.github.dseelp.framecord.core
 
+import com.log4k.Config
+import com.log4k.Level
+import com.log4k.Log4k
+import com.log4k.SimpleEvent
 import io.github.dseelp.framecord.api.console.Console
 import io.github.dseelp.framecord.api.console.ConsoleColor
 import io.github.dseelp.framecord.api.event.EventBus
 import io.github.dseelp.framecord.api.events.ConsoleMessageEvent
-import io.github.dseelp.framecord.api.logging.LogManager
-import io.github.dseelp.framecord.api.logging.logger
 import kotlinx.coroutines.*
 import org.fusesource.jansi.AnsiConsole
 import org.jline.reader.LineReaderBuilder
@@ -47,7 +49,6 @@ import kotlin.system.exitProcess
 object ConsoleImpl : Console {
     val terminal: Terminal
     val reader: LineReaderImpl
-    val defaultLogger by logger(LogManager.ROOT)
     private val _lastWrittenMessages = object : ArrayList<String>() {
         override fun add(element: String): Boolean {
             if (size > 200) {
@@ -124,9 +125,17 @@ object ConsoleImpl : Console {
         get() = _lastWrittenMessages.toTypedArray()
 
 
+    var realSysOut = System.out
+    private set
+    var realSysErr = System.err
+    private set
+
+
     fun replaceSysOut() {
-        System.setOut(PrintStream(ActionOutputStream { defaultLogger.info(it) }, true))
-        System.setErr(PrintStream(ActionOutputStream { defaultLogger.error(it) }, true))
+        realSysOut = System.out
+        realSysErr = System.err
+        System.setOut(PrintStream(ActionOutputStream { Log4k.log(Level.Info, Config(tag = ""), SimpleEvent(it)) }, true))
+        System.setErr(PrintStream(ActionOutputStream { Log4k.log(Level.Error, Config(tag = ""), SimpleEvent(it)) }, true))
     }
 
     override fun forceWriteLine(vararg messages: String) {

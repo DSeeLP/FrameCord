@@ -24,9 +24,17 @@
 
 package io.github.dseelp.framecord.core
 
+import dev.kord.core.Kord
+import dev.kord.core.event.guild.GuildCreateEvent
+import dev.kord.core.event.guild.GuildDeleteEvent
+import dev.kord.gateway.Gateway
 import io.github.dseelp.framecord.api.Version
-import io.github.dseelp.framecord.api.configs.BotConfig
+import io.github.dseelp.framecord.api.bot
+import io.github.dseelp.framecord.api.event.EventHandle
 import io.github.dseelp.framecord.api.event.Listener
+import io.github.dseelp.framecord.api.placeholders.PlaceholderContext.Arguments
+import io.github.dseelp.framecord.api.placeholders.PlaceholderContext.Parameters
+import io.github.dseelp.framecord.api.placeholders.PlaceholderType
 import io.github.dseelp.framecord.api.plugins.DatabaseConfig
 import io.github.dseelp.framecord.api.plugins.Plugin
 import io.github.dseelp.framecord.api.plugins.PluginData
@@ -105,14 +113,33 @@ object FakePlugin : Plugin() {
             ex.printStackTrace()
         }
         ModuleManagerImpl
+        registerPlaceholder(Arguments.Cord.Version, PlaceholderType.PRESENCE) { CordImpl.version }
+        registerPlaceholder(Arguments.Shard.Id, PlaceholderType.PRESENCE) { it[Parameters.Shard.Id] }
+        registerPlaceholder(
+            Arguments.Discord.JoinedGuilds,
+            PlaceholderType.PRESENCE
+        ) { CordImpl._guildCount.get() }
         searchCommands("io.github.dseelp.framecord.core")
     }
 
     fun enable() {
-        val inviteConfig = InviteCommand.getConfig()
-        if (inviteConfig.invite.enabled && getKoin().get<BotConfig>().clientId > 0) {
+        val config = InviteCommand.getConfig()
+        if (config.invite.enabled && config.clientId > 0) {
             register<InviteCommand>()
         }
-        RestServer.startRestServer(this)
+        if (config.rest.enabled)
+            RestServer.startRestServer(this)
+    }
+
+    @EventHandle
+    fun onGuildCreate(event: GuildCreateEvent) {
+        CordImpl._guildCount.incrementAndGet()
+    }
+
+    @EventHandle
+    fun onGuildDelete(event: GuildDeleteEvent) {
+        if (event.unavailable) return
+        CordImpl._guildCount.decrementAndGet()
+
     }
 }

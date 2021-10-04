@@ -113,7 +113,7 @@ fun Application.securityModule() {
                 }
             }
 
-            client.configureKtorRoute(this, "oauth2", noCodeHandler = {
+            client.configureKtorRoute(this, "oauth2", errorHandler = {
                 call.respondCodeError()
             }) {
                 if (it is DiscordOauth2Response.FailedDiscordOauth2Response) {

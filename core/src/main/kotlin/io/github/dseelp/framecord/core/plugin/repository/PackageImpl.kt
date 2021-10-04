@@ -24,6 +24,8 @@
 
 package io.github.dseelp.framecord.core.plugin.repository
 
+import com.log4k.e
+import com.log4k.i
 import io.github.dseelp.framecord.api.Version
 import io.github.dseelp.framecord.api.plugins.repository.Package
 import io.github.dseelp.framecord.api.plugins.repository.PackageVersion
@@ -62,32 +64,33 @@ data class PackageImpl(
         if (!this::repository.isInitialized) throw IllegalArgumentException("The repository is not yet initialized!")
         val packageVersion = findVersion(version)
         if (packageVersion == null) {
-            repository.log.error("There is no version $version of the package $groupId$artifactId")
+
+            e("There is no version $version of the package $groupId$artifactId", repository.lCfg)
             return
         }
         if (!isCoreVersionSupported(version)) {
-            repository.log.error("The version of the package $groupId$artifactId $version is not supported by the current FrameCord version (${CordBootstrap.version})")
+            e("The version of the package $groupId$artifactId $version is not supported by the current FrameCord version (${CordBootstrap.version})", repository.lCfg)
             val firstSupported = versions.copyOfRange(versions.indexOf(packageVersion), versions.lastIndex)
                 .firstOrNull { isCoreVersionSupported(packageVersion) }
             if (firstSupported == null) {
-                repository.log.error("There is no version of this package for the current FrameCord version (${CordBootstrap.version})")
+                e("There is no version of this package for the current FrameCord version (${CordBootstrap.version})", repository.lCfg)
             } else {
-                repository.log.error("The first version that supports this FrameCord version is ${firstSupported.version}")
+                e("The first version that supports this FrameCord version is ${firstSupported.version}", repository.lCfg)
             }
             return
         }
         val lazyFailMessage = { "Failed to install the package $groupId:$artifactId@$version" }
         if (isInstalled) {
-            repository.log.error("${lazyFailMessage()} it is already installed")
+            e("${lazyFailMessage()} it is already installed", repository.lCfg)
         }
         val fileName = "$artifactId-$version.jar"
         val filePath = io.github.dseelp.framecord.api.PathQualifiers.PLUGIN_LOCATION / fileName
         if (filePath.exists()) {
-            repository.log.error("${lazyFailMessage.invoke()} the file $filePath already exists!")
+            e("${lazyFailMessage.invoke()} the file $filePath already exists!", repository.lCfg)
             return
         }
         val file = filePath.toFile()
-        repository.log.info("Installing package $groupId:$artifactId@$version")
+        i("Installing package $groupId:$artifactId@$version", repository.lCfg)
         repositoryManager.mutex.lock()
         val resultDeferred = repository.httpClient.get<HttpResponse> {
             timeout {
@@ -102,7 +105,7 @@ data class PackageImpl(
         }.downloadFile(file)
         resultDeferred.invokeOnCompletion {
             if (it == null) if (resultDeferred.getCompleted() < 0) {
-                repository.log.error("Failed to download plugin. HttpStatusCode: ${resultDeferred.getCompleted() * -1L}")
+                e("Failed to download plugin. HttpStatusCode: ${resultDeferred.getCompleted() * -1L}", repository.lCfg)
                 file.delete()
             } else {
                 database {
@@ -114,9 +117,9 @@ data class PackageImpl(
                         }
                     }
                 }
-                repository.log.info("The plugin $groupId$artifactId@$version was installed!")
+                i("The plugin $groupId$artifactId@$version was installed!", repository.lCfg)
             }
-            else repository.log.error("${lazyFailMessage()}. Download failed!", it)
+            else e("${lazyFailMessage()}. Download failed!", it, repository.lCfg)
             repositoryManager.mutex.unlock()
         }
         if (returnImmediately) return
@@ -133,7 +136,7 @@ data class PackageImpl(
         val fileName = "$artifactId-${installed.version}.jar"
         val filePath = io.github.dseelp.framecord.api.PathQualifiers.PLUGIN_LOCATION / fileName
         if (!filePath.exists()) {
-            repository.log.error("Failed to find plugin file $fileName. It looks like the file was deleted or renamed. Removing from remote installed packages list")
+            e("Failed to find plugin file $fileName. It looks like the file was deleted or renamed. Removing from remote installed packages list", repository.lCfg)
             database {
                 transaction {
                     InstalledPackage.findByPackage(this@PackageImpl).first().delete()

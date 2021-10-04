@@ -24,18 +24,19 @@
 
 package io.github.dseelp.framecord.api.command
 
+import com.log4k.LoggerConfig
 import io.github.dseelp.framecord.api.console.ConsoleColor
-import io.github.dseelp.framecord.api.logging.logger
+import io.github.dseelp.framecord.api.logging.cmd
 
 /**
  * This Sender is used when a command was executed in the console
  * @author DSeeLP
  */
+@LoggerConfig(tag = "")
 object ConsoleSender : Sender {
-    private val log by logger("")
     override val type: CommandScope = CommandScope.CONSOLE
     override val name: String = "Console"
     override suspend fun sendMessage(vararg messages: String, parseColors: Boolean) {
-        messages.onEach { log.command(if (parseColors) ConsoleColor.toColouredString('&', it) else it) }
+        messages.onEach { cmd(if (parseColors) ConsoleColor.toColouredString('&', it) else it) }
     }
 }

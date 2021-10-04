@@ -35,9 +35,12 @@ import io.github.dseelp.framecord.api.interactions.ButtonAction
 import io.github.dseelp.framecord.api.interactions.ButtonContext
 import io.github.dseelp.framecord.api.interactions.SelectionMenu
 import io.github.dseelp.framecord.api.interactions.SelectionMenuBuilder
-import io.github.dseelp.framecord.api.logging.logger
 import io.github.dseelp.framecord.api.modules.Module
 import io.github.dseelp.framecord.api.modules.ModuleManager
+import io.github.dseelp.framecord.api.placeholders.Placeholder
+import io.github.dseelp.framecord.api.placeholders.PlaceholderContext
+import io.github.dseelp.framecord.api.placeholders.PlaceholderManager
+import io.github.dseelp.framecord.api.placeholders.PlaceholderType
 import io.github.dseelp.framecord.api.utils.Criterion
 import io.github.dseelp.framecord.api.utils.ReflectionUtils
 import io.github.dseelp.framecord.api.utils.koin.KoinModules
@@ -80,8 +83,6 @@ abstract class Plugin : PluginComponent<Plugin> {
     val dataFolder: Path
         get() = meta.dataFolder.also { it.createDirectories() }
 
-    val logger by logger()
-
     val buttonActions: Array<ButtonAction>
         get() = _buttonActions.toTypedArray()
 
@@ -108,6 +109,9 @@ abstract class Plugin : PluginComponent<Plugin> {
         _buttonActions.add(action)
         return action
     }
+
+    fun registerPlaceholder(name: String, type: PlaceholderType, factory: (PlaceholderContext) -> Any?) = PlaceholderManager.registerPlaceholder(this, name, type, factory)
+    fun registerPlaceholder(placeholder: Placeholder) = PlaceholderManager.registerPlaceholder(this, placeholder)
 
     fun unregisterButtonAction(action: ButtonAction) {
         _buttonActions.remove(action)

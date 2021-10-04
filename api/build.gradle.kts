@@ -49,6 +49,7 @@ val exposedVersion: String by project
 val hikaricpVersion: String by project
 val ktorVersion: String by project
 val kordxEmojiVersion: String by project
+val log4kVersion: String by project
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
@@ -70,10 +71,11 @@ dependencies {
     api("com.zaxxer:HikariCP:$hikaricpVersion")
     api("io.ktor:ktor-client-core:$ktorVersion")
     api("io.ktor:ktor-client-serialization:$ktorVersion")
-    api("io.github.dseelp:discord-oauth2-api:0.2") {
+    api("io.github.dseelp:discord-oauth2-api:0.3") {
         isChanging = true
     }
     api("dev.kord.x:emoji:$kordxEmojiVersion")
+    api("com.github.hadilq:log4k-jvm:${log4kVersion}")
 }
 
 val implementationVersion = version

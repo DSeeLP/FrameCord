@@ -24,25 +24,26 @@
 
 package io.github.dseelp.framecord.plugins.privatechannels
 
+import com.log4k.w
 import io.github.dseelp.framecord.api.configs.BotConfig
 import io.github.dseelp.framecord.api.database.DatabaseType
 import io.github.dseelp.framecord.api.plugins.DatabaseConfig
 import io.github.dseelp.framecord.api.plugins.Plugin
 import io.github.dseelp.framecord.api.plugins.PluginAction
 import io.github.dseelp.framecord.api.plugins.PluginInfo
-import io.github.dseelp.framecord.plugins.privatechannels.db.ActivePrivateChannels
-import io.github.dseelp.framecord.plugins.privatechannels.db.PrivateChannels
+import io.github.dseelp.framecord.plugins.privatechannels.db.ActivePrivateChannelsTable
+import io.github.dseelp.framecord.plugins.privatechannels.db.PrivateChannelsTable
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.koin.core.component.inject
 
 @PluginInfo(
     "io.github.dseelp.framecord.plugins",
     "PrivateChannels",
-    "0.4.1",
+    "0.5.0",
     "This is a Private Channel Module",
     ["DSeeLP"]
 )
-object PrivateChannelPlugin : Plugin() {
+object PrivateChannels : Plugin() {
     val mId = "framecord/privatechannels"
 
     @PluginAction(PluginAction.Action.ENABLE)
@@ -51,8 +52,8 @@ object PrivateChannelPlugin : Plugin() {
         checkModule(mId, "PrivateChannels").features
         val config by inject<BotConfig>()
         if (!config.intents.presence) {
-            logger.warn("The Presence Intent isn't enabled! Without that intent enabled it can't show the games people play in the channel names")
-            logger.warn("You can enable the intent in the config.json of the bot. You need to enable it in the bot dashboard too.")
+            w("The Presence Intent isn't enabled! Without that intent enabled it can't show the games people play in the channel names")
+            w("You can enable the intent in the config.json of the bot. You need to enable it in the bot dashboard too.")
         }
         val packageName = "io.github.dseelp.framecord.plugins.privatechannels"
         searchCommands(packageName)
@@ -63,7 +64,7 @@ object PrivateChannelPlugin : Plugin() {
         registerDatabase(DatabaseConfig.load(this, defaultDbConfig).toDatabaseInfo(this))
         database {
             transaction {
-                SchemaUtils.createMissingTablesAndColumns(PrivateChannels, ActivePrivateChannels)
+                SchemaUtils.createMissingTablesAndColumns(PrivateChannelsTable, ActivePrivateChannelsTable)
             }
         }
     }

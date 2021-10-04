@@ -24,13 +24,14 @@
 
 package io.github.dseelp.framecord.core.database
 
+import com.log4k.configuration
+import com.log4k.e
 import com.zaxxer.hikari.HikariDataSource
 import io.github.dseelp.framecord.api.database.*
 import io.github.dseelp.framecord.api.event.EventHandle
 import io.github.dseelp.framecord.api.event.Listener
 import io.github.dseelp.framecord.api.events.PluginDisableEvent
 import io.github.dseelp.framecord.api.events.PluginEventType
-import io.github.dseelp.framecord.api.logging.logger
 import io.github.dseelp.framecord.api.plugins.Plugin
 import io.github.dseelp.framecord.core.CordBootstrap
 import kotlinx.coroutines.sync.Mutex
@@ -40,10 +41,10 @@ import org.jetbrains.exposed.sql.transactions.TransactionManager
 
 @Listener
 class DatabaseRegistryImpl : DatabaseRegistry {
-    val log by logger<DatabaseRegistry>()
     val databases = mutableMapOf<Plugin, CordDatabase>()
     val databaseScopes = mutableMapOf<Plugin, DatabaseScope>()
     val mutex = Mutex()
+    private val lCfg = configuration(DatabaseRegistry::class)
 
     @EventHandle
     @Suppress("UNUSED")
@@ -64,7 +65,6 @@ class DatabaseRegistryImpl : DatabaseRegistry {
             val defaultDb = TransactionManager.defaultDatabase
             val cord = CordDatabase(dataSource, Database.connect(dataSource), databaseInfo)
             if (defaultDb != null) TransactionManager.defaultDatabase = defaultDb
-            TransactionManager.defaultDatabase
             databases[plugin] = cord
             databaseScopes[plugin] = DatabaseScope(cord)
             return cord
@@ -84,11 +84,11 @@ class DatabaseRegistryImpl : DatabaseRegistry {
 
     override suspend fun unregister(plugin: Plugin) {
         if (checkClassLoader(CordBootstrap::class.java.classLoader) {
-                log.error("Only the core can unregister a Database.")
+                e("Only the core can unregister a Database.", lCfg)
             }) return
         mutex.withLock {
             if (!hasDatabase(plugin)) {
-                log.error("There is no database defined for the plugin ${plugin.name}")
+                e("There is no database defined for the plugin ${plugin.name}", lCfg)
             }
             val database = get(plugin)
             if (!database.isClosed) database.close()

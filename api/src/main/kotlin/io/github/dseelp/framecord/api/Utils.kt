@@ -193,40 +193,6 @@ suspend fun Member.checkPermissions(channel: TopGuildChannel, permissions: Permi
         it.contains(permissions) || it.contains(Permission.Administrator)
     }
 
-@OptIn(KordPreview::class)
-fun ActionRowBuilder.action(
-    action: ButtonAction,
-    style: ButtonStyle,
-    command: String,
-    label: String? = null,
-    emoji: DiscordPartialEmoji? = null,
-    disabled: Boolean = false
-) {
-    if (style == ButtonStyle.Link) throw UnsupportedOperationException("Link Buttons are not support as actions!")
-    interactionButton(style, action.encodedId(command)) {
-        this.label = label
-        this.emoji = emoji
-        this.disabled = disabled
-    }
-}
-
-@OptIn(KordPreview::class)
-fun ActionRowBuilder.selectionMenu(
-    selectionMenu: SelectionMenu,
-    disabled: Boolean = false
-) {
-    components.add(selectionMenu.discordComponentBuilder())
-}
-
-@OptIn(KordPreview::class)
-fun ActionRowBuilder.selectionMenu(
-    plugin: Plugin,
-    block: SelectionMenuBuilder.() -> Unit
-) {
-    val menu = plugin.registerSelectionMenu(block)
-    selectionMenu(menu)
-}
-
 @OptIn(InternalFrameCordApi::class)
 val bot: Bot
     get() = CordKoinContext.app!!.koin.get()

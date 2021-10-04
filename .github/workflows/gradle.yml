@@ -17,6 +17,8 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 11
+      - name: Validate Gradle Wrapper
+        uses: gradle/wrapper-validation-action@v1
       - name: Cache Gradle packages
         uses: actions/cache@v2
         with:
@@ -27,12 +29,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
       - name: Test with Gradle
-        run: ./gradlew test
+        run: gradle test
       - name: Generate Distribution
-        run: ./gradlew gitHubDistribution
-      - name: Rerun Generate Distribution
-        # For some reason the core is not present in the zip when only running once. But it is in the distribution folder.
-        run: ./gradlew gitHubDistribution
+        run: gradle gitHubDistribution
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
       - name: Cleanup Gradle Cache
         # Remove some files from the Gradle cache, so they aren't cached by GitHub Actions.
         # Restoring these files from a GitHub Actions cache might cause problems for future builds.

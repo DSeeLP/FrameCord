@@ -36,7 +36,7 @@ import dev.kord.core.event.message.MessageCreateEvent
 import dev.kord.rest.builder.message.create.MessageCreateBuilder
 import dev.kord.rest.builder.message.create.actionRow
 import dev.kord.rest.builder.message.modify.actionRow
-import io.github.dseelp.framecord.api.action
+import io.github.dseelp.framecord.api.utils.action
 import io.github.dseelp.framecord.api.event.EventHandle
 import io.github.dseelp.framecord.api.interactions.ButtonAction
 import io.github.dseelp.framecord.api.randomAlphanumeric
@@ -44,6 +44,7 @@ import io.github.dseelp.framecord.api.utils.literal
 
 open class MessageStep(
     val messageBuilder: suspend MessageCreateBuilder.(channel: GuildMessageChannel) -> Unit,
+    val defaultValue: ButtonDefaultValue? = null
 ) : SetupStep {
     @OptIn(KordPreview::class)
     protected lateinit var channel: GuildMessageChannel
@@ -70,10 +71,17 @@ open class MessageStep(
                     components?.clear()
                     actionRow {
                         action(buttonAction, ButtonStyle.Danger, "", "Cancel", disabled = true)
+                        if (defaultValue != null) action(buttonAction, defaultValue.style, "default", defaultValue.label, defaultValue.emoji, disabled = true)
                     }
-
                 }
             }
+            if (defaultValue != null)
+                literal("default") {
+                    execute {
+                        editMessage()
+                        setup.completeStep(defaultValue.result.invoke(this))
+                    }
+                }
         })
         this.channel = channel
         this.setup = setup
@@ -83,13 +91,15 @@ open class MessageStep(
             components.clear()
             actionRow {
                 action(buttonAction, ButtonStyle.Danger, "", "Cancel")
+                if (defaultValue != null) action(buttonAction, defaultValue.style, "default", defaultValue.label, defaultValue.emoji)
             }
         }
         return message
     }
 
-    override fun cancel(message: Message) {
+    override suspend fun cancel(message: Message) {
         setup.plugin.unregisterButtonAction(buttonAction)
+        editMessage()
     }
 
     @OptIn(KordPreview::class)
@@ -104,13 +114,18 @@ open class MessageStep(
         if (event.guildId != channel.guildId) return
         if (!checkAccess(event.member!!, channel)) return
         val ok = handleMessage(message)
-        if (ok) this.message.edit {
+        if (ok) editMessage()
+        if (ok) isDone = true
+    }
+
+    suspend fun editMessage() {
+        this.message.edit {
             components?.clear()
             actionRow {
                 action(buttonAction, ButtonStyle.Danger, "", "Cancel", disabled = true)
+                if (defaultValue != null) action(buttonAction, defaultValue.style, "default", defaultValue.label, defaultValue.emoji, disabled = true)
             }
         }
-        if (ok) isDone = true
     }
 
     open suspend fun handleMessage(message: Message): Boolean {

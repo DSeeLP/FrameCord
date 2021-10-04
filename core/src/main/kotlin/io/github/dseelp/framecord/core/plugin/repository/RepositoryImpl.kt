@@ -24,7 +24,8 @@
 
 package io.github.dseelp.framecord.core.plugin.repository
 
-import io.github.dseelp.framecord.api.logging.logger
+import com.log4k.configuration
+import com.log4k.e
 import io.github.dseelp.framecord.api.plugins.repository.*
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -40,7 +41,7 @@ class RepositoryImpl(
     indexes: Array<RepositoryIndex> = arrayOf()
 ) : Repository {
 
-    val log by logger<RepositoryManager>()
+    val lCfg = configuration(Repository::class)
 
     private val parsedUrl = Url(url)
 
@@ -75,7 +76,7 @@ class RepositoryImpl(
             }
         } catch (ex: Throwable) {
             if (ex is ConnectException) {
-                log.error("Failed to connect to repository! $url")
+                e("Failed to connect to repository! $url")
             } else throw InvalidRepositoryException("Invalid Repository! $url", ex)
         }
         return null

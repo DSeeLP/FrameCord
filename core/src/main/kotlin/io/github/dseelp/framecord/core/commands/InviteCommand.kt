@@ -24,6 +24,7 @@
 
 package io.github.dseelp.framecord.core.commands
 
+import com.log4k.w
 import de.dseelp.kommon.command.CommandNode
 import de.dseelp.oauth2.discord.api.DiscordClient
 import de.dseelp.oauth2.discord.api.entities.GuildPermission
@@ -32,14 +33,14 @@ import dev.kord.core.behavior.channel.createMessage
 import dev.kord.rest.builder.message.create.embed
 import io.github.dseelp.framecord.api.command.*
 import io.github.dseelp.framecord.api.configs.BotConfig
-import io.github.dseelp.framecord.api.logging.LogManager
-import io.github.dseelp.framecord.api.logging.logger
 import io.github.dseelp.framecord.api.plugins.DisableAutoLoad
 import io.github.dseelp.framecord.api.utils.deleteAfter
 import io.github.dseelp.framecord.api.utils.koin.CordKoinComponent
 import io.github.dseelp.framecord.api.utils.literal
 import io.github.dseelp.framecord.api.utils.red
 import io.ktor.client.*
+import io.ktor.client.features.json.*
+import io.ktor.client.features.json.serializer.*
 import org.koin.core.component.inject
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
@@ -57,7 +58,12 @@ class InviteCommand : Command<Sender>, CordKoinComponent {
 
     private fun oauth2Client() {
         val inviteConfig = getConfig()
-        oauth2Client = DiscordClient(HttpClient(), inviteConfig.clientId.toString(), "", "")
+        oauth2Client = DiscordClient(HttpClient {
+            install(JsonFeature) {
+                serializer = KotlinxSerializer()
+            }
+            expectSuccess = true
+        }, inviteConfig.clientId.toString(), "", "")
     }
 
     private fun checkClient(config: BotConfig = getConfig()) {
@@ -70,8 +76,6 @@ class InviteCommand : Command<Sender>, CordKoinComponent {
             return config
         }
     }
-
-    val logger by logger(LogManager.ROOT)
 
     override val scopes: Array<CommandScope> = arrayOf(CommandScope.GUILD, CommandScope.PRIVATE, CommandScope.CONSOLE)
 
@@ -94,7 +98,7 @@ class InviteCommand : Command<Sender>, CordKoinComponent {
                     }.deleteAfter(seconds(5000))
                     return@execute
                 } else {
-                    logger.warn("The invite command is disabled in the config")
+                    w("The invite command is disabled in the config")
                 }
 
             }

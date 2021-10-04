@@ -41,14 +41,15 @@ import io.github.dseelp.framecord.api.bot
 import io.github.dseelp.framecord.api.event.EventHandle
 import io.github.dseelp.framecord.api.event.Listener
 import io.github.dseelp.framecord.api.modules.checkModule
+import io.github.dseelp.framecord.api.utils.MentionUtils
 import io.github.dseelp.framecord.api.utils.asOverwrite
-import io.github.dseelp.framecord.plugins.privatechannels.PrivateChannelPlugin.database
-import io.github.dseelp.framecord.plugins.privatechannels.PrivateChannelPlugin.mId
-import io.github.dseelp.framecord.plugins.privatechannels.PrivateChannelPlugin.suspendingDatabase
-import io.github.dseelp.framecord.plugins.privatechannels.db.ActivePrivateChannel
-import io.github.dseelp.framecord.plugins.privatechannels.db.ActivePrivateChannels
-import io.github.dseelp.framecord.plugins.privatechannels.db.PrivateChannel
-import io.github.dseelp.framecord.plugins.privatechannels.db.PrivateChannels
+import io.github.dseelp.framecord.plugins.privatechannels.PrivateChannels.database
+import io.github.dseelp.framecord.plugins.privatechannels.PrivateChannels.mId
+import io.github.dseelp.framecord.plugins.privatechannels.PrivateChannels.suspendingDatabase
+import io.github.dseelp.framecord.plugins.privatechannels.db.ActivePrivateChannelEntity
+import io.github.dseelp.framecord.plugins.privatechannels.db.ActivePrivateChannelsTable
+import io.github.dseelp.framecord.plugins.privatechannels.db.PrivateChannelEntity
+import io.github.dseelp.framecord.plugins.privatechannels.db.PrivateChannelsTable
 import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.flow.first
 import org.jetbrains.exposed.sql.and
@@ -66,9 +67,9 @@ object ChannelListener {
         suspendingDatabase {
             suspendedTransaction {
                 val channelId = event.channel.id.value
-                val pnChannels = PrivateChannel.find { PrivateChannels.joinChannelId eq channelId }
+                val pnChannels = PrivateChannelEntity.find { PrivateChannelsTable.joinChannelId eq channelId }
                 val guild = event.channel.getGuild()
-                ActivePrivateChannel.find { ActivePrivateChannels.channelId eq channelId or (ActivePrivateChannels.privateChannel inList pnChannels.map { it.id }) }
+                ActivePrivateChannelEntity.find { ActivePrivateChannelsTable.channelId eq channelId or (ActivePrivateChannelsTable.privateChannel inList pnChannels.map { it.id }) }
                     .forEach {
                         it.delete()
                         if (it.channelId == channelId) return@forEach
@@ -133,14 +134,14 @@ object ChannelListener {
 
     fun getJoinChannel(guildId: Long, channelId: Long) = database {
         return@database transaction {
-            PrivateChannel.find { (PrivateChannels.joinChannelId eq channelId) and (PrivateChannels.guildId eq guildId) }
+            PrivateChannelEntity.find { (PrivateChannelsTable.joinChannelId eq channelId) and (PrivateChannelsTable.guildId eq guildId) }
                 .firstOrNull()
         }
     }
 
     fun getChannel(guildId: Long, channelId: Long) = database {
         return@database transaction {
-            val possibleChannels = ActivePrivateChannel.find { (ActivePrivateChannels.channelId eq channelId) }
+            val possibleChannels = ActivePrivateChannelEntity.find { (ActivePrivateChannelsTable.channelId eq channelId) }
             val matchingGuildChannels = possibleChannels.filter { it.privateChannel.guildId == guildId }
             if (matchingGuildChannels.size > 1) throw IllegalStateException("This should simply not happen")
             return@transaction matchingGuildChannels.firstOrNull()
@@ -184,7 +185,7 @@ object ChannelListener {
             this.voiceChannelId = created.id
         }
         transaction {
-            ActivePrivateChannel.new {
+            ActivePrivateChannelEntity.new {
                 this.channelId = created.id.value
                 this.ownerId = member.id.value
                 this.privateChannel = joinChannel
@@ -193,15 +194,21 @@ object ChannelListener {
     }
 }
 
-suspend fun calculateChannelName(channel: PrivateChannel, member: Member, template: String = channel.nameTemplate) =
-    template.replace("%user%", member.displayName, true).replace(
+suspend fun calculateChannelName(
+    channel: PrivateChannelEntity,
+    member: Member,
+    template: String = channel.nameTemplate
+): String {
+    val result = template.replace("%user%", member.displayName, true).replace(
         "%game%",
         member.getPresenceOrNull()?.activities?.firstOrNull()?.name ?: channel.defaultGame,
         true
     )
+    return MentionUtils.customEmojiRegex.replace(result, "")
+}
 
-suspend fun updateChannel(channel: ActivePrivateChannel) {
-    val guild = bot.kord.getGuild(channel.privateChannel.guildId.asSnowflake) ?: return
+suspend fun updateChannel(channel: ActivePrivateChannelEntity): String? {
+    val guild = bot.kord.getGuild(channel.privateChannel.guildId.asSnowflake) ?: return null
     val guildChannel = guild.getChannel(channel.channelId.asSnowflake)
     val member = if (channel.executiveId == null) guild.getMember(channel.ownerId.asSnowflake) else guild.getMember(
         channel.executiveId!!.asSnowflake
@@ -214,16 +221,17 @@ suspend fun updateChannel(channel: ActivePrivateChannel) {
             name = calculated
         }
     }
+    return calculated
 }
 
 @OptIn(ExperimentalTime::class)
 private val tenMinutesInMillis = minutes(10).inWholeMilliseconds
 
-val ActivePrivateChannel.isRateLimited: Boolean
+val ActivePrivateChannelEntity.isRateLimited: Boolean
     get() = lastUpdated.let { if (it == null) false else System.currentTimeMillis() - it < tenMinutesInMillis }
 
 @OptIn(ExperimentalTime::class)
-val ActivePrivateChannel.remainingRateLimited: Duration?
+val ActivePrivateChannelEntity.remainingRateLimited: Duration?
     get() {
         if (!isRateLimited) return null
         return Duration.milliseconds((lastUpdated!! + tenMinutesInMillis) - System.currentTimeMillis())

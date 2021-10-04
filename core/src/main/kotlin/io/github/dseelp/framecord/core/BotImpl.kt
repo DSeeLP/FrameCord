@@ -24,20 +24,28 @@
 
 package io.github.dseelp.framecord.core
 
+import com.log4k.configuration
+import com.log4k.i
+import dev.kord.common.entity.PresenceStatus
 import dev.kord.core.Kord
 import dev.kord.gateway.Intent
 import dev.kord.gateway.Intents
 import dev.kord.gateway.PrivilegedIntent
+import dev.kord.gateway.editPresence
+import io.github.dseelp.framecord.api.Bot
 import io.github.dseelp.framecord.api.bot
 import io.github.dseelp.framecord.api.configs.BotConfig
-import io.github.dseelp.framecord.api.logging.logger
 import io.github.dseelp.framecord.api.modules.ModuleManager
+import io.github.dseelp.framecord.api.placeholders.PlaceholderContext.Arguments
+import io.github.dseelp.framecord.api.placeholders.PlaceholderContext.Parameters
+import io.github.dseelp.framecord.api.placeholders.PlaceholderManager
+import io.github.dseelp.framecord.api.placeholders.PlaceholderType
+import io.github.dseelp.framecord.api.presence.Activity
+import io.github.dseelp.framecord.api.presence.Presence
+import io.github.dseelp.framecord.api.presence.PresenceManager
 import io.github.dseelp.framecord.api.utils.koin.CordKoinComponent
 import io.github.dseelp.framecord.core.listeners.EventBusListener
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import org.koin.core.component.inject
 import org.koin.core.qualifier.qualifier
 import kotlin.coroutines.CoroutineContext
@@ -47,14 +55,12 @@ object BotImpl : io.github.dseelp.framecord.api.Bot, CordKoinComponent {
     override val kord: Kord
         get() = _kord!!
     override val isStarted: Boolean
-        get() = TODO("Not yet implemented")
+        get() = _kord != null
     override val job: Job = SupervisorJob()
     override val moduleManager: ModuleManager by inject()
     override val coroutineContext: CoroutineContext = job + Dispatchers.Default
 
     var _kord: Kord? = null
-
-    val logger by logger<io.github.dseelp.framecord.api.Bot>()
 
     @OptIn(PrivilegedIntent::class)
     suspend fun start() {
@@ -69,9 +75,64 @@ object BotImpl : io.github.dseelp.framecord.api.Bot, CordKoinComponent {
             }
         }
         bot.launch {
-            kord.login()
+            kord.login {
+                status = PresenceStatus.DoNotDisturb
+                playing("Starting...")
+            }
+        }
+        bot.launch {
+            delay(1000)
+            val presenceManager by inject<PresenceManager>()
+            var currentPresence: Presence?
+            var currentIndex = 0
+            var isFirst = true
+            loop@ while (isActive) {
+                val all = presenceManager.getAll()
+                if (all.isEmpty()) {
+                    delay(1000)
+                    continue
+                }
+                if (!bot.isStarted) {
+                    delay(100)
+                    continue
+                }
+                var runs = 0
+                do {
+                    runs++
+                    if (!isFirst) currentIndex++
+                    else isFirst = false
+                    if (currentIndex > all.lastIndex) currentIndex = 0
+                    currentPresence = presenceManager.getAll().getOrNull(currentIndex)
+                    if (runs > 10 && (currentPresence == null || !currentPresence.enabled)) currentPresence = Presence(
+                        io.github.dseelp.framecord.api.presence.PresenceStatus.ONLINE,
+                        Activity.Playing("FrameCord v${CordImpl.version}"),
+                        10000,
+                        true
+                    )
+                } while (currentPresence?.enabled == false)
+                if (currentPresence == null) continue@loop
+                val baseArguments = mapOf(Arguments.Cord.Version to CordImpl.version)
+                bot.kord.gateway.gateways.onEach {
+                    val gateway = it.value
+                    val arguments = baseArguments + mapOf(Parameters.Shard.Id to it.key)
+                    gateway.editPresence {
+                        val activity = currentPresence.activity
+                        status = currentPresence.status.status
+
+                        val processedName = PlaceholderManager.replacePlaceholders(arguments, PlaceholderType.PRESENCE, activity.name)
+                        when (activity) {
+                            is Activity.Competing -> competing(processedName)
+                            is Activity.Listening -> listening(processedName)
+                            is Activity.Playing -> playing(processedName)
+                            is Activity.Streaming -> streaming(processedName, PlaceholderManager.replacePlaceholders(arguments, PlaceholderType.PRESENCE, activity.url))
+                            is Activity.Watching -> watching(processedName)
+                        }
+                    }
+                }
+                delay(currentPresence.stayTime)
+            }
         }
         EventBusListener
-        logger.info("Startup complete")
+        i("Startup complete", configuration(Bot::class))
     }
 }

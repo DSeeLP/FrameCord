@@ -24,10 +24,18 @@
 
 package io.github.dseelp.framecord.api.utils
 
+import dev.kord.common.annotation.KordPreview
+import dev.kord.common.entity.ButtonStyle
+import dev.kord.common.entity.DiscordPartialEmoji
 import dev.kord.core.behavior.MessageBehavior
 import dev.kord.core.behavior.UserBehavior
+import dev.kord.rest.builder.component.ActionRowBuilder
 import dev.kord.rest.builder.message.EmbedBuilder
 import dev.kord.rest.request.RestRequestException
+import io.github.dseelp.framecord.api.interactions.ButtonAction
+import io.github.dseelp.framecord.api.interactions.SelectionMenu
+import io.github.dseelp.framecord.api.interactions.SelectionMenuBuilder
+import io.github.dseelp.framecord.api.plugins.Plugin
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -81,6 +89,40 @@ suspend fun UserBehavior.footer(): EmbedBuilder.Footer {
         text = member.tag
         icon = member.avatar.url
     }
+}
+
+@OptIn(KordPreview::class)
+fun ActionRowBuilder.action(
+    action: ButtonAction,
+    style: ButtonStyle,
+    command: String,
+    label: String? = null,
+    emoji: DiscordPartialEmoji? = null,
+    disabled: Boolean = false
+) {
+    if (style == ButtonStyle.Link) throw UnsupportedOperationException("Link Buttons are not support as actions!")
+    interactionButton(style, action.encodedId(command)) {
+        this.label = label
+        this.emoji = emoji
+        this.disabled = disabled
+    }
+}
+
+@OptIn(KordPreview::class)
+fun ActionRowBuilder.selectionMenu(
+    selectionMenu: SelectionMenu,
+    disabled: Boolean = false
+) {
+    components.add(selectionMenu.discordComponentBuilder())
+}
+
+@OptIn(KordPreview::class)
+fun ActionRowBuilder.selectionMenu(
+    plugin: Plugin,
+    block: SelectionMenuBuilder.() -> Unit
+) {
+    val menu = plugin.registerSelectionMenu(block)
+    return selectionMenu(menu)
 }
 
 

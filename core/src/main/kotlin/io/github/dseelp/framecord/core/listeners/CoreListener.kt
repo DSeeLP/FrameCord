@@ -24,6 +24,9 @@
 
 package io.github.dseelp.framecord.core.listeners
 
+import com.log4k.Config
+import com.log4k.d
+import com.log4k.w
 import de.dseelp.kommon.command.CommandDispatcher
 import de.dseelp.kommon.command.ParsedResult
 import dev.kord.common.annotation.KordPreview
@@ -42,8 +45,6 @@ import io.github.dseelp.framecord.api.events.ReloadEvent
 import io.github.dseelp.framecord.api.guild.info
 import io.github.dseelp.framecord.api.interactions.ButtonAction
 import io.github.dseelp.framecord.api.interactions.SelectionOptionClickContext
-import io.github.dseelp.framecord.api.logging.LogManager
-import io.github.dseelp.framecord.api.logging.logger
 import io.github.dseelp.framecord.api.plugins.PluginLoader
 import io.github.dseelp.framecord.api.plugins.PluginManager
 import io.github.dseelp.framecord.api.utils.CommandUtils
@@ -71,8 +72,6 @@ object CoreListener : CordKoinComponent {
             CordImpl.reloadPlugins()
         }
     }
-
-    val buttonLog by logger("Buttons")
 
     private val guildDispatcher by inject<CommandDispatcher<Sender>>(qualifier("guild"))
     private val privateDispatcher by inject<CommandDispatcher<Sender>>(qualifier("private"))
@@ -105,8 +104,6 @@ object CoreListener : CordKoinComponent {
         }
     }
 
-    val rootLogger by logger(LogManager.ROOT)
-
     @EventHandle
     suspend fun onConsoleMessage(event: ConsoleMessageEvent) {
         if (event.message.isBlank() || event.message.isEmpty()) return
@@ -116,7 +113,7 @@ object CoreListener : CordKoinComponent {
             bypassAccess = true,
             actions = object : CommandUtils.Actions<Sender> {
                 override suspend fun error(message: String, result: ParsedResult<Sender>?, throwable: Throwable?) {
-                    if (result == null) rootLogger.warn("Command could not be found! For help, use the command \"help\".")
+                    if (result == null) w("Command could not be found! For help, use the command \"help\".", Config(tag = ""))
                     handleError(message, result, throwable)
                 }
 
@@ -125,7 +122,7 @@ object CoreListener : CordKoinComponent {
             })
     }
 
-    val interactionLog by logger("Interactions")
+    private val btCfg = Config(tag = "Interactions")
 
     @OptIn(KordPreview::class)
     @EventHandle
@@ -138,15 +135,15 @@ object CoreListener : CordKoinComponent {
         var id = interaction.componentId
         if (!id.startsWith(ButtonAction.QUALIFIER)) {
             if (id.startsWith("cord:"))
-                buttonLog.debug("Tried to execute button click event from another instance of FrameCord")
-            else buttonLog.debug("Tried to execute button click event from an unknown button!")
+                d("Tried to execute button click event from another instance of FrameCord", btCfg)
+            else d("Tried to execute button click event from an unknown button!", btCfg)
             return
         }
         id = id.replaceFirst(ButtonAction.QUALIFIER, "")
         when (interaction.component) {
             is ButtonComponent -> executeButtonClick(id, event)
             is SelectMenuComponent -> executeSelectMenuClick(id, event)
-            else -> interactionLog.debug("Unsupported interaction occured ${if (interaction.component != null) interaction.component!!::class.qualifiedName else "null"}")
+            else -> d("Unsupported interaction occured ${if (interaction.component != null) interaction.component!!::class.qualifiedName else "null"}", btCfg)
         }
     }
 
@@ -184,6 +181,6 @@ object CoreListener : CordKoinComponent {
             action.execute(event)
             break
         }
-        if (!found) buttonLog.debug("No Button with the id ${splittedId[0]} was found!")
+        if (!found) d("No Button with the id ${splittedId[0]} was found!", btCfg)
     }
 }

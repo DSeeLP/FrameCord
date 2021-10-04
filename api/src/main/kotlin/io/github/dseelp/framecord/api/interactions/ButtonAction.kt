@@ -24,12 +24,12 @@
 
 package io.github.dseelp.framecord.api.interactions
 
+import com.log4k.w
 import de.dseelp.kommon.command.CommandDispatcher
 import de.dseelp.kommon.command.CommandNode
 import dev.kord.common.annotation.KordPreview
 import dev.kord.core.entity.interaction.ComponentInteraction
 import dev.kord.core.event.interaction.ComponentInteractionCreateEvent
-import io.github.dseelp.framecord.api.logging.logger
 import io.github.dseelp.framecord.api.plugins.Plugin
 import io.github.dseelp.framecord.api.utils.CommandUtils
 import io.github.dseelp.framecord.api.utils.CommandUtils.execute
@@ -63,8 +63,8 @@ class ButtonAction(plugin: Plugin, val name: String, val node: CommandNode<Butto
         var id = interaction.componentId
         if (!id.startsWith(QUALIFIER)) {
             if (id.startsWith("cord:"))
-                log.warn("Tried to execute button click event from another instance of FrameCord")
-            else log.warn("Tried to execute button click event from an unknown button!")
+                w("Tried to execute button click event from another instance of FrameCord")
+            else w("Tried to execute button click event from an unknown button!")
             return
         }
         id = id.replaceFirst(QUALIFIER, "")
@@ -99,8 +99,6 @@ class ButtonAction(plugin: Plugin, val name: String, val node: CommandNode<Butto
         const val DELIMITER = "|:|"
 
         val QUALIFIER: String = "cord:${getKoin().get<String>(qualifier("instanceId"))}:"
-
-        val log by logger("Buttons")
     }
 }
 
