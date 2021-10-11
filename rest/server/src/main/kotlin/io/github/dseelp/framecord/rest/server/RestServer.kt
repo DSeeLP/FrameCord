@@ -52,6 +52,11 @@ import org.slf4j.event.Level
 @OptIn(InternalFrameCordApi::class)
 object RestServer : CordKoinComponent {
     val lCfg = configuration()
+    val json = Json {
+        prettyPrint = true
+        //encodeDefaults = true
+    }
+
     fun installApplicationModule(module: Application.() -> Unit) {
         server.application.apply(module)
     }
@@ -72,7 +77,7 @@ object RestServer : CordKoinComponent {
         }) {
             install(IgnoreTrailingSlash)
             install(ContentNegotiation) {
-                json(json = Json { prettyPrint = true })
+                json(json = this@RestServer.json)
             }
             install(CallLogging) {
                 this.level = Level.DEBUG

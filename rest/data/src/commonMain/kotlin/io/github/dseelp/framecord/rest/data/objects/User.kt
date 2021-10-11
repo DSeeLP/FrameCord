@@ -24,15 +24,18 @@
 
 package io.github.dseelp.framecord.rest.data.objects
 
+import io.github.dseelp.framecord.rest.data.CdnUtils
+import io.ktor.http.*
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 
 @Serializable
 data class User(
     val id: Long,
     val name: String,
     val discriminator: Int,
-    val avatarUrl: String,
-    val permissions: Array<SimplePermission>
+    val avatarHash: String?,
+    @Serializable(with = PermissionArraySerializer::class) val permissions: Array<Permission>
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -45,4 +48,7 @@ data class User(
     override fun hashCode(): Int {
         return id.hashCode()
     }
+
+    @Transient
+    val avatarUrl: Url = CdnUtils.avatarUrl(this)
 }

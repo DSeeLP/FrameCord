@@ -35,14 +35,17 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation(project(":rest:data"))
+                implementation(kotlin("stdlib"))
                 implementation("io.ktor:ktor-client:$ktorVersion")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.0")
                 implementation("io.ktor:ktor-client-serialization:$ktorVersion")
             }
         }
         val jvmMain by getting {
             dependencies {
+                implementation("io.ktor:ktor-client-logging:$ktorVersion")
                 implementation("io.ktor:ktor-client-cio:$ktorVersion")
+                implementation("org.slf4j:slf4j-simple:1.7.32")
             }
         }
     }

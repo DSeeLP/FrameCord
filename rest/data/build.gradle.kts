@@ -30,12 +30,25 @@ plugins {
 val ktorVersion: String by project
 
 kotlin {
-    jvm()
+    jvm {
+        compilations.all {
+            kotlinOptions.jvmTarget = "11"
+        }
+        testRuns["test"].executionTask.configure {
+            useTestNG()
+        }
+    }
     sourceSets {
         val commonMain by getting {
             dependencies {
                 implementation("io.ktor:ktor-http:$ktorVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.2")
+            }
+        }
+        val commonTest by getting {
+            dependencies {
+                implementation(kotlin("test-common"))
+                implementation(kotlin("test-annotations-common"))
             }
         }
     }

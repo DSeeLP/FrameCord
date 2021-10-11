@@ -79,7 +79,7 @@ class DbUser(id: EntityID<Long>) : LongEntity(id) {
                 this@DbUser.id.value,
                 name,
                 discriminator,
-                "UNSUPPORTED", //TODO: Add real avatar url here
+                avatarHash,
                 permissions.toSimplePermissions().toTypedArray()
             )
         }

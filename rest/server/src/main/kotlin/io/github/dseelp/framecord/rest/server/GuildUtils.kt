@@ -33,16 +33,15 @@ import io.github.dseelp.framecord.api.bot
 import io.github.dseelp.framecord.api.checkPermissions
 import io.github.dseelp.framecord.rest.data.objects.User
 import io.github.dseelp.framecord.rest.server.db.DbUser
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.toCollection
+import kotlinx.coroutines.flow.*
 import kotlinx.datetime.Instant
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
 suspend fun User.getAdminGuilds(): List<Guild> {
     return newSuspendedTransaction {
         val db = DbUser.findById(this@getAdminGuilds.id) ?: throw IllegalStateException("User is not in database")
-        db.guildIds.mapNotNull { bot.kord.getGuild(it.asSnowflake) }
+        val guildIds = db.guildIds
+        bot.kord.guilds.mapNotNull { if (guildIds.contains(it.id.value)) it else null }.toList()
     }
 }
 

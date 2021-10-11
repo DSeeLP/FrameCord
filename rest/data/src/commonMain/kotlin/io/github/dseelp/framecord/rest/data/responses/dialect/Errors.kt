@@ -32,3 +32,24 @@ object RestErrors {
     val NotFound = FullRestError(HttpStatusCode.NotFound, 404, "Not found")
     val InternalServerError = FullRestError(HttpStatusCode.InternalServerError, 500, "An internal error occurred")
 }
+
+infix fun RestError.matches(other: RestError): Boolean {
+    val idMatches = id == other.id
+    if (!idMatches) return false
+    val p = getPermission()
+    val op = other.getPermission()
+    if (p != null && op != null) return p == op
+    if (p == null && op != null) return false
+    if (p != null && op == null) return true
+    return false
+}
+
+private fun RestError.getPermission(): Int? {
+    return when (this) {
+        is PermissionRestError -> missingPermission
+        is DetailedPermissionRestError -> missingPermission
+        is FullPermissionRestError -> missingPermission
+        is FullDetailedPermissionRestError -> missingPermission
+        else -> null
+    }
+}

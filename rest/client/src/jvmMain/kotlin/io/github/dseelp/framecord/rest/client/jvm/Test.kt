@@ -26,13 +26,18 @@ package io.github.dseelp.framecord.rest.client.jvm
 
 import io.github.dseelp.framecord.rest.client.RestClient
 import io.ktor.http.*
+import kotlinx.serialization.ExperimentalSerializationApi
 
+@OptIn(ExperimentalSerializationApi::class)
 suspend fun main() {
-    val client = RestClient(
-        Url("http://127.0.0.1:2340/"),
-        "token=%23sbEqFPV5IH8RvtnxQkIZnF5WrEOiRNqyChhux8GJnkZvNC2CoEvVzMPfVxBTN9BvnxpI4zIeyG0IM4cwIaJreAp5BzsRn18yIAGiHSXkhhjeHmlOpbSq0Bi1Ncp2xF24D"
-    )
+    //val serializer = RestResponse.serializer(String.serializer())
+    //println(serializer.descriptor)
+    //println(RestResult.serializer(String.serializer()).descriptor)
+    val token =
+        "token=%23sAtynMoFQQ8YuimaEcHI4p0d4KKDROrv47925WPTb7DiKT9wL66Q0KoyUmW6MZqvDh3Gczn1DOGfEPBzDQ8Z7DQOfkhlDqMliBGRYPbX6oXQvXtGVbtD67MreCXHC2wQ3"
+    val client = RestClient(Url("http://127.0.0.1:2340/"))
+    println(client.authorizeToken(token))
     val user = client.getUser()
     println(user)
-    client.invalidateSession()
+    //client.invalidateSession()
 }

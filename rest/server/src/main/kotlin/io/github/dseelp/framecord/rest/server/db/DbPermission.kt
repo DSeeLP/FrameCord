@@ -25,6 +25,7 @@
 package io.github.dseelp.framecord.rest.server.db
 
 import io.github.dseelp.framecord.rest.data.objects.FullPermission
+import io.github.dseelp.framecord.rest.data.objects.Permission
 import io.github.dseelp.framecord.rest.data.objects.SimplePermission
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
@@ -33,9 +34,16 @@ import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.SizedIterable
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.mapLazy
+import org.jetbrains.exposed.sql.transactions.transaction
 
 class DbPermission(id: EntityID<Int>) : IntEntity(id) {
-    companion object : IntEntityClass<DbPermission>(DbPermissions)
+    companion object : IntEntityClass<DbPermission>(DbPermissions) {
+        init {
+            Permission.getPermissions = {
+                transaction { DbPermission.all().toFullPermissions().toTypedArray() }
+            }
+        }
+    }
 
     var name by DbPermissions.name
     var description by DbPermissions.description

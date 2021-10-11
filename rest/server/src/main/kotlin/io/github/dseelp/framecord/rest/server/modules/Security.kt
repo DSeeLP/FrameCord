@@ -29,6 +29,7 @@ import de.dseelp.oauth2.discord.api.authentication.DiscordOauth2Response
 import de.dseelp.oauth2.discord.api.utils.Scope
 import io.github.dseelp.framecord.api.configs.BotConfig
 import io.github.dseelp.framecord.rest.data.objects.Permission
+import io.github.dseelp.framecord.rest.data.responses.PermissionResponse
 import io.github.dseelp.framecord.rest.data.responses.UserResponse
 import io.github.dseelp.framecord.rest.data.responses.dialect.RestErrors
 import io.github.dseelp.framecord.rest.data.responses.dialect.detailed
@@ -60,7 +61,7 @@ import java.util.concurrent.TimeUnit
 fun Application.securityModule() {
     transaction {
         SchemaUtils.createMissingTablesAndColumns(DbUsers, DbUserSessions, DbPermissions, DbPermissionLink, DbGuildLink)
-        DbPermission.findById(0) ?: DbPermission.new(0) {
+        DbPermission.findById(1) ?: DbPermission.new(1) {
             this.name = "Admin"
             this.description = "Gives admin access over the entire system"
         }
@@ -105,6 +106,9 @@ fun Application.securityModule() {
                 get {
                     call.respondValue(UserResponse(call.userPrincipal().user), HttpStatusCode.OK)
                 }
+                get("permissions") {
+                    call.respondValue(PermissionResponse(Permission.getPermissions()), HttpStatusCode.OK)
+                }
                 delete {
                     transaction {
                         call.getUserSession()?.delete()
@@ -123,7 +127,6 @@ fun Application.securityModule() {
                 val session = it.generateSession(client)
                 val user = session.getUser()
                 val idLong = user.id.toLong()
-                println(session.getGuilds())
                 val db = newSuspendedTransaction {
                     var created = false
                     val db = DbUser.findById(idLong) ?: run {
@@ -186,7 +189,7 @@ fun ApplicationCall.getUserSession(): DbUserSession? {
 fun ApplicationCall.hasPermission(permissionId: Int) =
     getDbUser()?.permissions?.firstOrNull { it.id.value == permissionId } != null
 
-fun ApplicationCall.hasPermission(permission: Permission) = hasPermission(permission.id)
+fun ApplicationCall.hasPermission(permission: Permission) = hasPermission(permission.offset)
 
 fun ApplicationCall.getDbUser(): DbUser? {
     return getUserSession()?.let {
