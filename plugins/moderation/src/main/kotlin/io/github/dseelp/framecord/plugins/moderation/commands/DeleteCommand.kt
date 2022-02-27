@@ -27,18 +27,16 @@ package io.github.dseelp.framecord.plugins.moderation.commands
 import de.dseelp.kommon.command.CommandNode
 import de.dseelp.kommon.command.arguments.LongArgument
 import de.dseelp.kommon.command.literal
-import dev.kord.common.annotation.KordPreview
 import dev.kord.common.entity.ButtonStyle
 import dev.kord.common.entity.ChannelType
 import dev.kord.common.entity.Permission
 import dev.kord.common.kColor
-import dev.kord.core.behavior.interaction.edit
-import dev.kord.core.behavior.interaction.followUpEphemeral
+import dev.kord.core.behavior.interaction.response.edit
+import dev.kord.core.behavior.interaction.response.followUpEphemeral
 import dev.kord.core.entity.channel.GuildMessageChannel
 import dev.kord.rest.builder.message.create.actionRow
 import dev.kord.rest.builder.message.create.embed
 import dev.kord.rest.builder.message.modify.embed
-import io.github.dseelp.framecord.api.utils.action
 import io.github.dseelp.framecord.api.asSnowflake
 import io.github.dseelp.framecord.api.checkPermissions
 import io.github.dseelp.framecord.api.command.Command
@@ -46,19 +44,19 @@ import io.github.dseelp.framecord.api.command.CommandScope
 import io.github.dseelp.framecord.api.command.GuildSender
 import io.github.dseelp.framecord.api.command.arguments.MentionArgument
 import io.github.dseelp.framecord.api.command.createMessage
+import io.github.dseelp.framecord.api.utils.action
 import io.github.dseelp.framecord.plugins.moderation.ModerationPlugin
 import java.awt.Color
 
 object DeleteCommand : Command<GuildSender> {
     override val scopes: Array<CommandScope> = arrayOf(CommandScope.GUILD)
 
-    @OptIn(KordPreview::class)
     val channelAction = ModerationPlugin.registerButtonAction("ChannelDelete", literal("") {
         checkAccess {
             sender.interaction.message?.getAuthorAsMember()?.checkPermissions(Permission.ManageChannels) ?: false
         }
         noAccess {
-            sender.interaction.acknowledgeEphemeral().followUpEphemeral {
+            sender.interaction.deferEphemeralMessage().followUpEphemeral {
                 embed {
                     color = Color.RED.kColor
                     title = "Permission Denied"
@@ -77,7 +75,7 @@ object DeleteCommand : Command<GuildSender> {
             literal("cancel") {
                 execute {
                     val channel: GuildMessageChannel? = get("channel")
-                    sender.interaction.acknowledgePublicDeferredMessageUpdate().edit {
+                    sender.interaction.deferPublicMessageUpdate().edit {
                         components = mutableListOf()
                         embed {
                             title = "Channel Deletion cancelled"
@@ -89,7 +87,7 @@ object DeleteCommand : Command<GuildSender> {
 
             execute {
                 val channel: GuildMessageChannel? = get("channel")
-                sender.interaction.acknowledgePublicDeferredMessageUpdate().edit {
+                sender.interaction.deferPublicMessageUpdate().edit {
                     components = mutableListOf()
                     embed {
                         title = "Channel Deleted"
@@ -101,7 +99,6 @@ object DeleteCommand : Command<GuildSender> {
         }
     })
 
-    @OptIn(KordPreview::class)
     override val node: CommandNode<GuildSender> = literal("delete") {
         argument(MentionArgument.messageChannel("channel")) {
             execute {
@@ -113,8 +110,8 @@ object DeleteCommand : Command<GuildSender> {
                         description = "Please confirm that the channel ${deleted.mention} should be deleted!"
                     }
                     actionRow {
-                        action(channelAction, ButtonStyle.Secondary, "${deleted.id.asString} cancel", "Cancel")
-                        action(channelAction, ButtonStyle.Danger, deleted.id.asString, "Delete")
+                        action(channelAction, ButtonStyle.Secondary, "${deleted.id} cancel", "Cancel")
+                        action(channelAction, ButtonStyle.Danger, deleted.id.toString(), "Delete")
                     }
                 }
             }
