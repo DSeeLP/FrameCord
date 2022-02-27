@@ -31,13 +31,12 @@ import dev.kord.common.annotation.KordPreview
 import dev.kord.common.entity.ButtonStyle
 import dev.kord.common.entity.Permission
 import dev.kord.common.kColor
-import dev.kord.core.behavior.interaction.edit
-import dev.kord.core.behavior.interaction.followUpEphemeral
+import dev.kord.core.behavior.interaction.response.edit
+import dev.kord.core.behavior.interaction.response.followUpEphemeral
 import dev.kord.core.entity.Member
 import dev.kord.rest.builder.message.create.actionRow
 import dev.kord.rest.builder.message.create.embed
 import dev.kord.rest.builder.message.modify.embed
-import io.github.dseelp.framecord.api.utils.action
 import io.github.dseelp.framecord.api.asSnowflake
 import io.github.dseelp.framecord.api.checkPermissions
 import io.github.dseelp.framecord.api.command.Command
@@ -45,13 +44,14 @@ import io.github.dseelp.framecord.api.command.CommandScope
 import io.github.dseelp.framecord.api.command.GuildSender
 import io.github.dseelp.framecord.api.command.arguments.MentionArgument
 import io.github.dseelp.framecord.api.command.createMessage
+import io.github.dseelp.framecord.api.utils.action
 import io.github.dseelp.framecord.plugins.moderation.ModerationPlugin
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import java.awt.Color
-import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 object KickCommand : Command<GuildSender> {
     override val scopes: Array<CommandScope> = arrayOf(CommandScope.GUILD)
@@ -59,10 +59,10 @@ object KickCommand : Command<GuildSender> {
     @OptIn(KordPreview::class, kotlin.time.ExperimentalTime::class)
     val channelAction = ModerationPlugin.registerButtonAction("UserKick", literal("") {
         checkAccess {
-            sender.interaction.message?.getAuthorAsMember()?.checkPermissions(Permission.KickMembers) ?: false
+            sender.interaction.message.getAuthorAsMember()?.checkPermissions(Permission.KickMembers) ?: false
         }
         noAccess {
-            sender.interaction.acknowledgeEphemeral().followUpEphemeral {
+            sender.interaction.deferEphemeralMessage().followUpEphemeral {
                 embed {
                     color = Color.RED.kColor
                     title = "Permission Denied"
@@ -72,7 +72,7 @@ object KickCommand : Command<GuildSender> {
         }
         argument(LongArgument("user")) {
             map<Long, Member?>("user") {
-                sender.interaction.message?.getGuild()?.getMemberOrNull(it.asSnowflake)
+                sender.interaction.message.getGuild().getMemberOrNull(it.asSnowflake)
             }
 
             literal("cancel") {
@@ -96,7 +96,7 @@ object KickCommand : Command<GuildSender> {
 
             execute {
                 val member: Member? = get("user")
-                val msg = sender.interaction.acknowledgePublicDeferredMessageUpdate().edit {
+                val msg = sender.interaction.deferPublicMessageUpdate().edit {
                     components = mutableListOf()
                     embed {
                         title = "User kicked"
@@ -106,7 +106,7 @@ object KickCommand : Command<GuildSender> {
                 member?.kick()
                 coroutineScope {
                     launch {
-                        delay(Duration.seconds(20))
+                        delay(20.seconds)
                         msg.delete()
                     }
                 }

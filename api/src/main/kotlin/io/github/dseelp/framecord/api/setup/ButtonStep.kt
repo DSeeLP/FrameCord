@@ -25,11 +25,10 @@
 package io.github.dseelp.framecord.api.setup
 
 import de.dseelp.kommon.command.CommandContext
-import dev.kord.common.annotation.KordPreview
 import dev.kord.common.entity.ButtonStyle
 import dev.kord.common.entity.DiscordPartialEmoji
 import dev.kord.core.behavior.channel.createMessage
-import dev.kord.core.behavior.interaction.edit
+import dev.kord.core.behavior.interaction.response.edit
 import dev.kord.core.entity.Member
 import dev.kord.core.entity.Message
 import dev.kord.core.entity.channel.GuildMessageChannel
@@ -37,11 +36,11 @@ import dev.kord.rest.builder.component.ActionRowBuilder
 import dev.kord.rest.builder.message.create.MessageCreateBuilder
 import dev.kord.rest.builder.message.create.actionRow
 import dev.kord.rest.builder.message.modify.actionRow
-import io.github.dseelp.framecord.api.utils.action
 import io.github.dseelp.framecord.api.interactions.ButtonAction
 import io.github.dseelp.framecord.api.interactions.ButtonContext
 import io.github.dseelp.framecord.api.plugins.Plugin
 import io.github.dseelp.framecord.api.randomAlphanumeric
+import io.github.dseelp.framecord.api.utils.action
 import io.github.dseelp.framecord.api.utils.literal
 
 class ButtonStep(
@@ -55,7 +54,6 @@ class ButtonStep(
     private lateinit var buttonAction: ButtonAction
     private lateinit var checkAccess: suspend (member: Member, channel: GuildMessageChannel) -> Boolean
 
-    @OptIn(KordPreview::class)
     override suspend fun send(
         setup: Setup<*>,
         channel: GuildMessageChannel,
@@ -68,7 +66,7 @@ class ButtonStep(
                 literal(action.key) {
                     execute {
                         val acknowledge =
-                            sender.interaction.acknowledgePublicDeferredMessageUpdate()
+                            sender.interaction.deferPublicMessageUpdate()
                         if (isDone) return@execute
                         val ch = sender.interaction.channel.asChannel()
                         if (ch !is GuildMessageChannel) return@execute
@@ -89,7 +87,7 @@ class ButtonStep(
                 literal("cancel") {
                     execute {
                         val acknowledge =
-                            sender.interaction.acknowledgePublicDeferredMessageUpdate()
+                            sender.interaction.deferPublicMessageUpdate()
                         if (isDone) return@execute
                         val ch = sender.interaction.channel.asChannel()
                         if (ch !is GuildMessageChannel) return@execute
@@ -112,7 +110,6 @@ class ButtonStep(
         }
     }
 
-    @OptIn(KordPreview::class)
     private fun buildActionRows(disabledButtons: Boolean = false): Array<ActionRowBuilder.() -> Unit> {
         return arrayOf<ActionRowBuilder.() -> Unit>({
             for ((key, action) in actions) {
@@ -131,7 +128,7 @@ class ButtonStep(
     }
 }
 
-data class ButtonStepAction @OptIn(KordPreview::class) constructor(
+data class ButtonStepAction constructor(
     val style: ButtonStyle,
     val label: String? = null,
     val emoji: DiscordPartialEmoji? = null,

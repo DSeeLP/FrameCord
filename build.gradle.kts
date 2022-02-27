@@ -45,12 +45,12 @@ plugins {
     java
     `maven-publish`
     signing
-    id("org.jetbrains.dokka") version "1.5.0" apply false
+    id("org.jetbrains.dokka") version "1.6.10" apply false
 
-    kotlin("jvm") version "1.5.31" apply false
-    kotlin("multiplatform") version "1.5.31" apply false
-    id("com.github.johnrengelman.shadow") version "6.1.0" apply false
-    kotlin("plugin.serialization") version "1.5.31" apply false
+    kotlin("jvm") version "1.6.10" apply false
+    kotlin("multiplatform") version "1.6.10" apply false
+    id("com.github.johnrengelman.shadow") version "7.1.0" apply false
+    kotlin("plugin.serialization") version "1.6.10" apply false
 }
 
 val isDeployingToCentral = System.getenv().containsKey("DEPLOY_CENTRAL")
@@ -62,7 +62,7 @@ val rootProject = project
 
 val multiplatformProjects = arrayOf<String>("data", "client")
 
-val excludedModules = arrayOf("moderation", "plugins", "privatechannels")
+val excludedModules = arrayOf("moderation", "plugins")
 allprojects {
 
     group = defaultGroupName
@@ -146,6 +146,7 @@ allprojects {
         val distributionDir = File(rootProject.rootDir, "distribution")
         val assembleGithubDistribution = tasks.register<Copy>("assembleGitHubDistribution") {
             dependsOn(tasks.build)
+            dependsOn(project(":plugins:privatechannels").tasks.getByName("jar"))
             if (project == rootProject) {
                 from(File(rootProject.rootDir, "docs/bundled/html")) {
                     into("docs/")
@@ -160,6 +161,11 @@ allprojects {
                 val shadowJar = tasks.getByName<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar")
                 from(shadowJar.archiveFile) {
                     rename { "${project.name}.jar" }
+                }
+            } else if (project.name == "privatechannels") {
+                val jarTask = tasks.getByName<Jar>("jar")
+                from(jarTask.archiveFile) {
+                    rename { "${project.name}-${project.version}-plugin.jar" }
                 }
             }
             into(distributionDir)

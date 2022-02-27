@@ -95,7 +95,7 @@ class InviteCommand : Command<Sender>, CordKoinComponent {
                             title = "Error!"
                             description = "The invite command is disabled!"
                         }
-                    }.deleteAfter(seconds(5000))
+                    }.deleteAfter(10.seconds)
                     return@execute
                 } else {
                     w("The invite command is disabled in the config")

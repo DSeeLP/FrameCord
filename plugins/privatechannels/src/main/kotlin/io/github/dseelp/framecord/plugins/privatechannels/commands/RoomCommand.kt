@@ -27,6 +27,7 @@ package io.github.dseelp.framecord.plugins.privatechannels.commands
 import de.dseelp.kommon.command.CommandBuilder
 import de.dseelp.kommon.command.CommandContext
 import de.dseelp.kommon.command.CommandNode
+import de.dseelp.kommon.command.arguments.StringArgument
 import dev.kord.common.Color
 import dev.kord.common.entity.ButtonStyle
 import dev.kord.common.entity.Permission
@@ -72,8 +73,7 @@ class RoomCommand : Command<GuildSender> {
     override val scopes: Array<CommandScope> = arrayOf(CommandScope.GUILD)
     override val featureRestricted: FeatureRestricted = FeatureRestricted(FeatureRestricted.Type.MODULE, mId)
 
-    @OptIn(ExperimentalTime::class)
-    private fun CommandBuilder<GuildSender>.adminCheck() {
+    internal fun CommandBuilder<GuildSender>.adminCheck() {
         checkAccess {
             sender.getMember().checkPermissions(Permission.ManageChannels)
         }
@@ -84,7 +84,7 @@ class RoomCommand : Command<GuildSender> {
                 color = Color.red
                 description = "You need the ManageChannel Permission to use this command"
                 footer = sender.getMember().footer()
-            }.deleteAfter(seconds(10))
+            }.deleteAfter(10.seconds)
         }
     }
 
@@ -99,7 +99,6 @@ class RoomCommand : Command<GuildSender> {
         }
     }
 
-    @OptIn(ExperimentalTime::class)
     suspend fun CommandContext<GuildSender>.checkRateLimit(channel: ActivePrivateChannelEntity): Boolean {
         if (channel.isRateLimited) {
             channel.remainingRateLimited?.toComponents { minutes, seconds, _ ->
@@ -107,19 +106,19 @@ class RoomCommand : Command<GuildSender> {
                     color = Color.red
                     title = "Command blocked"
                     description =
-                        "You can execute the command again in ${if (minutes == 0) "$seconds seconds" else "$minutes minutes"}"
+                        "You can execute the command again in ${if (minutes == 0L) "$seconds seconds" else "$minutes minutes"}"
                     footer = sender.footer()
-                }.deleteAfter(seconds(20))
+                }.deleteAfter(20.seconds)
             }
             return true
         }
         return false
     }
 
-    @OptIn(ExperimentalTime::class)
-    private fun CommandBuilder<GuildSender>.userCheck(allowExecutive: Boolean = true) {
+    internal fun CommandBuilder<GuildSender>.userCheck(allowExecutive: Boolean = true) {
         checkAccess {
             val member = sender.getMember()
+            if (member.isOwner()) return@checkAccess true
             val channel = getMemberChannel(member) ?: return@checkAccess false
             suspendingDatabase {
                 suspendedTransaction {
@@ -134,7 +133,7 @@ class RoomCommand : Command<GuildSender> {
                 color = Color.red
                 description = "You are not the room owner or not in any room."
                 footer = sender.getMember().footer()
-            }.deleteAfter(seconds(10))
+            }.deleteAfter(10.seconds)
         }
     }
 
@@ -170,6 +169,27 @@ class RoomCommand : Command<GuildSender> {
                     room move - Moves the ownership of a room to another person
                 """.trimIndent()
                 footer = sender.getMember().footer()
+            }
+        }
+
+        literal("roles", arrayOf("role")) {
+            execute {
+                sender.message.deleteIgnoringNotFound()
+                sender.getChannel().createEmbed {
+                    title = "Rooms Help"
+                    description = """
+                    room roles create <rolename> - Creates a role with the specified name
+                """.trimIndent()
+                    footer = sender.getMember().footer()
+                }
+            }
+            literal("create") {
+                execute {
+
+                }
+                argument(StringArgument("roleName")) {
+
+                }
             }
         }
 
@@ -332,7 +352,7 @@ class RoomCommand : Command<GuildSender> {
                 sender.getChannel().createEmbed {
                     title = "Error!"
                     description = "Please provide the member that should be banned from your channel!"
-                }.deleteAfter(seconds(10))
+                }.deleteAfter(10.seconds)
             }
 
             argument(MentionArgument.member("member")) {
@@ -359,7 +379,7 @@ class RoomCommand : Command<GuildSender> {
                             sender.getChannel().createEmbed {
                                 title = "User banned"
                                 description = "The user ${target.mention} was banned from ${channel.mention}"
-                            }.deleteAfter(seconds(10))
+                            }.deleteAfter(10.seconds)
                         }
                     }
                 }
@@ -376,7 +396,7 @@ class RoomCommand : Command<GuildSender> {
                     color = Color.red
                     description = "You must be in a room to execute this command"
                     footer = sender.getMember().footer()
-                }.deleteAfter(seconds(10))
+                }.deleteAfter(10.seconds)
             }
 
             execute {
@@ -403,7 +423,7 @@ class RoomCommand : Command<GuildSender> {
                                 if (channel.locked) "Locked" else "Open"
                             }
                             footer = member.footer()
-                        }.deleteAfter(seconds(30))
+                        }.deleteAfter(30.seconds)
                     }
                 }
             }
@@ -416,7 +436,7 @@ class RoomCommand : Command<GuildSender> {
                 sender.getChannel().createEmbed {
                     title = "Error!"
                     description = "Please provide the member that should be unbanned from your channel!"
-                }.deleteAfter(seconds(10))
+                }.deleteAfter(10.seconds)
             }
 
             argument(MentionArgument.member("member")) {
@@ -440,7 +460,7 @@ class RoomCommand : Command<GuildSender> {
                             sender.getChannel().createEmbed {
                                 title = "User unbanned"
                                 description = "The user ${target.mention} was unbanned from ${channel.mention}"
-                            }.deleteAfter(seconds(10))
+                            }.deleteAfter(10.seconds)
                         }
                     }
                 }
@@ -454,7 +474,7 @@ class RoomCommand : Command<GuildSender> {
                 sender.getChannel().createEmbed {
                     title = "Error!"
                     description = "Please provide the member that should be unbanned from your channel!"
-                }.deleteAfter(seconds(10))
+                }.deleteAfter(10.seconds)
             }
 
             argument(MentionArgument.member("member")) {
@@ -478,7 +498,7 @@ class RoomCommand : Command<GuildSender> {
                             sender.getChannel().createEmbed {
                                 title = "User kicked"
                                 description = "The user ${target.mention} was kicked from ${channel.mention}"
-                            }.deleteAfter(seconds(10))
+                            }.deleteAfter(10.seconds)
                         }
                     }
                 }
@@ -504,7 +524,7 @@ class RoomCommand : Command<GuildSender> {
                         title = "Channel locked"
                         description = "The channel ${channel.mention} is now locked"
                         footer = member.footer()
-                    }.deleteAfter(seconds(10))
+                    }.deleteAfter(10.seconds)
                 }
             }
         }
@@ -524,7 +544,7 @@ class RoomCommand : Command<GuildSender> {
                         title = "Channel deleted"
                         description = "The channel `${channel.name}` was deleted"
                         footer = member.footer()
-                    }.deleteAfter(seconds(10))
+                    }.deleteAfter(10.seconds)
                 }
             }
         }

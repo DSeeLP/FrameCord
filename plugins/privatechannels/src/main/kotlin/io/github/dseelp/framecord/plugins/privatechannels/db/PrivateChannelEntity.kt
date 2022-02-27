@@ -38,9 +38,10 @@ class PrivateChannelEntity(id: EntityID<Long>) : LongEntity(id) {
     var defaultGame by PrivateChannelsTable.defaultGame
 }
 
+@OptIn(ExperimentalUnsignedTypes::class)
 object PrivateChannelsTable : LongIdTable() {
-    val guildId = long("guildId")
-    val joinChannelId = long("joinChannelId")
+    val guildId = ulong("guildId")
+    val joinChannelId = ulong("joinChannelId")
     val nameTemplate = varchar("nameTemplate", 1000).default("%user%'s Room")
     val defaultGame = varchar("defaultGame", 100).default("a Game")
 }

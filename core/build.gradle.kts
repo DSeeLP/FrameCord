@@ -1,4 +1,5 @@
-/*
+/*val Long.asSnowflake
+    get() = Snowflake(this)
  * Copyright (c) 2021 DSeeLP & FrameCord contributors
  *
  * MIT License

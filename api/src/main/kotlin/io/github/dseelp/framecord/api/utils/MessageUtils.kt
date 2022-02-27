@@ -87,7 +87,7 @@ suspend fun UserBehavior.footer(): EmbedBuilder.Footer {
     val member = asUser()
     return EmbedBuilder.Footer().apply {
         text = member.tag
-        icon = member.avatar.url
+        icon = member.avatar?.url
     }
 }
 
@@ -113,7 +113,8 @@ fun ActionRowBuilder.selectionMenu(
     selectionMenu: SelectionMenu,
     disabled: Boolean = false
 ) {
-    components.add(selectionMenu.discordComponentBuilder())
+    val menuBuilder = selectionMenu.discordComponentBuilder().apply { this.disabled = disabled }
+    components.add(menuBuilder)
 }
 
 @OptIn(KordPreview::class)

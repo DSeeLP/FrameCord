@@ -49,7 +49,7 @@ class ModuleImpl(id: String, override val name: String) : Module {
             dbModule.features.asFlow().map { FeatureImpl(this@ModuleImpl, it.id.value.lowercase(), name) }
         }
 
-    override suspend fun disable(guildId: Long) = newSuspendedTransaction {
+    override suspend fun disable(guildId: ULong) = newSuspendedTransaction {
         features.onEach {
             it.disable(guildId)
         }.collect()
@@ -60,7 +60,7 @@ class ModuleImpl(id: String, override val name: String) : Module {
         }
     }
 
-    override suspend fun enable(guildId: Long) = newSuspendedTransaction {
+    override suspend fun enable(guildId: ULong) = newSuspendedTransaction {
         features.onEach {
             it.enable(guildId)
         }.collect()
@@ -72,7 +72,7 @@ class ModuleImpl(id: String, override val name: String) : Module {
         }
     }
 
-    override fun isEnabled(guildId: Long): Boolean {
+    override fun isEnabled(guildId: ULong): Boolean {
         val id = EntityID(guildId, DbGuilds)
         val count = transaction {
             DbModulesLink.select {

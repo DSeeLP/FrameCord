@@ -55,6 +55,7 @@ import kotlinx.coroutines.flow.first
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.or
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.ExperimentalTime
 
@@ -132,16 +133,17 @@ object ChannelListener {
         }
     }
 
-    fun getJoinChannel(guildId: Long, channelId: Long) = database {
+    fun getJoinChannel(guildId: ULong, channelId: ULong) = database {
         return@database transaction {
             PrivateChannelEntity.find { (PrivateChannelsTable.joinChannelId eq channelId) and (PrivateChannelsTable.guildId eq guildId) }
                 .firstOrNull()
         }
     }
 
-    fun getChannel(guildId: Long, channelId: Long) = database {
+    fun getChannel(guildId: ULong, channelId: ULong) = database {
         return@database transaction {
-            val possibleChannels = ActivePrivateChannelEntity.find { (ActivePrivateChannelsTable.channelId eq channelId) }
+            val possibleChannels =
+                ActivePrivateChannelEntity.find { (ActivePrivateChannelsTable.channelId eq channelId) }
             val matchingGuildChannels = possibleChannels.filter { it.privateChannel.guildId == guildId }
             if (matchingGuildChannels.size > 1) throw IllegalStateException("This should simply not happen")
             return@transaction matchingGuildChannels.firstOrNull()
@@ -225,7 +227,7 @@ suspend fun updateChannel(channel: ActivePrivateChannelEntity): String? {
 }
 
 @OptIn(ExperimentalTime::class)
-private val tenMinutesInMillis = minutes(10).inWholeMilliseconds
+private val tenMinutesInMillis = 10.minutes.inWholeMilliseconds
 
 val ActivePrivateChannelEntity.isRateLimited: Boolean
     get() = lastUpdated.let { if (it == null) false else System.currentTimeMillis() - it < tenMinutesInMillis }
@@ -234,5 +236,5 @@ val ActivePrivateChannelEntity.isRateLimited: Boolean
 val ActivePrivateChannelEntity.remainingRateLimited: Duration?
     get() {
         if (!isRateLimited) return null
-        return Duration.milliseconds((lastUpdated!! + tenMinutesInMillis) - System.currentTimeMillis())
+        return ((lastUpdated!! + tenMinutesInMillis) - System.currentTimeMillis()).milliseconds
     }

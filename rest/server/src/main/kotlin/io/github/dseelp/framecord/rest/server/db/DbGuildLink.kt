@@ -26,7 +26,8 @@ package io.github.dseelp.framecord.rest.server.db
 
 import org.jetbrains.exposed.sql.Table
 
+@OptIn(ExperimentalUnsignedTypes::class)
 object DbGuildLink : Table() {
     val user = reference("user", DbUsers)
-    val guildId = long("guildId")
+    val guildId = ulong("guildId")
 }

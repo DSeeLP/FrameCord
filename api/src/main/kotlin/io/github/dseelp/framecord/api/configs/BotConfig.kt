@@ -66,6 +66,7 @@ data class BotConfig(
         object IntentsSpec : ConfigSpec() {
             val presence by optional(false)
             val guildMembers by optional(false)
+            val messages by optional(false)
         }
 
         object RestSpec : ConfigSpec() {
@@ -105,7 +106,7 @@ data class BotConfig(
                 config[LoggingSpec.patterns].map { LogPattern(Regex(it.pattern), it.level) }.toTypedArray()
             ),
             InviteConfig(config[InviteSpec.enabled]),
-            IntentsConfig(config[IntentsSpec.presence], config[IntentsSpec.guildMembers]),
+            IntentsConfig(config[IntentsSpec.presence], config[IntentsSpec.guildMembers], config[IntentsSpec.messages]),
             RestConfig(
                 config[RestSpec.enabled],
                 config[RestSpec.host],
@@ -121,7 +122,7 @@ data class BotConfig(
 
 
     data class InviteConfig(val enabled: Boolean)
-    data class IntentsConfig(val presence: Boolean, val guildMembers: Boolean)
+    data class IntentsConfig(val presence: Boolean, val guildMembers: Boolean, val messages: Boolean)
     data class RestConfig(
         val enabled: Boolean,
         val host: String,

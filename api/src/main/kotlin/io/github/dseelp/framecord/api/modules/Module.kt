@@ -40,16 +40,16 @@ interface Module {
 
     suspend fun disable(guild: Guild) = disable(guild.id.value)
     suspend fun disable(guildId: Snowflake) = disable(guildId.value)
-    suspend fun disable(guildId: Long)
+    suspend fun disable(guildId: ULong)
 
     suspend fun enable(guildId: Snowflake) = enable(guildId.value)
-    suspend fun enable(guildId: Long)
+    suspend fun enable(guildId: ULong)
 
     suspend fun enable(guild: Guild) = enable(guild.id.value)
 
     fun isEnabled(guild: Guild): Boolean = isEnabled(guild.id.value)
     fun isEnabled(guildId: Snowflake): Boolean = isEnabled(guildId.value)
-    fun isEnabled(guildId: Long): Boolean
+    fun isEnabled(guildId: ULong): Boolean
 
     fun registerFeature(feature: Feature)
 }

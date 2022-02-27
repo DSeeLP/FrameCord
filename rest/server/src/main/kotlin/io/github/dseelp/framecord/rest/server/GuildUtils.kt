@@ -37,6 +37,7 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toCollection
 import kotlinx.datetime.Instant
+import org.jetbrains.exposed.sql.SizedCollection
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
 suspend fun User.getAdminGuilds(): List<Guild> {
@@ -58,14 +59,14 @@ suspend fun DbUser.refreshUser() = newSuspendedTransaction {
     val dcUser = session.getUser()
     val user = this@refreshUser
     val kord = bot.kord
-    val mappedGuilds = session.getGuilds().map { it.id.toLong() }
+    val mappedGuilds = session.getGuilds().map { it.id }
     val userId = user.id.value.asSnowflake
-    val guildList = mutableListOf<Long>()
+    val guildList = mutableListOf<ULong>()
     kord.guilds.filter {
         it.id.value in mappedGuilds && it.getMember(userId).checkPermissions(Permission.Administrator)
     }.map { it.id.value }.toCollection(guildList)
-    user.guildIds = guildList
-    println(user.guildIds.toTypedArray().contentToString())
+    user.guildIds = SizedCollection(guildList)
+    println(user.guildIds.toList().toTypedArray().contentToString())
     user.accessToken = session.accessToken
     user.refreshToken = session.refreshToken
     user.name = dcUser.username

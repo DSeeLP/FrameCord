@@ -27,14 +27,14 @@ package io.github.dseelp.framecord.core.modules
 import dev.kord.common.entity.Snowflake
 import io.github.dseelp.framecord.api.asSnowflake
 import io.github.dseelp.framecord.api.guild.GuildInfo
-import org.jetbrains.exposed.dao.LongEntity
-import org.jetbrains.exposed.dao.LongEntityClass
+import io.github.dseelp.framecord.api.utils.ULongEntity
+import io.github.dseelp.framecord.api.utils.ULongEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IdTable
 import org.jetbrains.exposed.sql.Column
 
-class DbGuild(id: EntityID<Long>) : LongEntity(id) {
-    companion object : LongEntityClass<DbGuild>(DbGuilds) {
+class DbGuild(id: EntityID<ULong>) : ULongEntity(id) {
+    companion object : ULongEntityClass<DbGuild>(DbGuilds) {
         fun findById(guildId: Snowflake) = DbGuild.findById(guildId.value)
         fun new(guildId: Snowflake, init: DbGuild.() -> Unit) = DbGuild.new(guildId.value, init)
     }
@@ -53,10 +53,10 @@ class DbGuild(id: EntityID<Long>) : LongEntity(id) {
         get() = GuildInfo(guildId, prefix)
 }
 
-object DbGuilds : IdTable<Long>("guilds") {
+object DbGuilds : IdTable<ULong>("guilds") {
     val name = varchar("name", 255).nullable()
     val botJoined = long("botJoined")
     val prefix = varchar("prefix", 32).default("!")
-    override val id: Column<EntityID<Long>> = long("id").entityId()
+    override val id: Column<EntityID<ULong>> = ulong("id").entityId()
     override val primaryKey by lazy { super.primaryKey ?: PrimaryKey(id) }
 }

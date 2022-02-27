@@ -51,11 +51,11 @@ object Commands : CordKoinComponent {
 
     internal val pluginCommands = hashMapOf<Plugin, MutableList<CommandHolder>>()
 
-    fun getDescription(scope: CommandScope, commandName: String, guildId: Long? = null): String? =
+    fun getDescription(scope: CommandScope, commandName: String, guildId: ULong? = null): String? =
         getCommandHolder(scope, commandName, guildId)?.description
 
     @InternalFrameCordApi
-    fun getCommandHolder(scope: CommandScope, commandName: String, guildId: Long? = null): CommandHolder? {
+    fun getCommandHolder(scope: CommandScope, commandName: String, guildId: ULong? = null): CommandHolder? {
         return pluginCommands.values.mapNotNull { entry ->
             entry.firstOrNull {
                 it.scopes.contains(scope) && it.name.lowercase() == commandName.lowercase() && if (guildId == null) true else it.featureRestricted?.checkBoolean(
@@ -66,7 +66,7 @@ object Commands : CordKoinComponent {
             .firstOrNull()
     }
 
-    fun getCommandsForScope(scope: CommandScope, guildId: Long? = null): Map<Plugin, List<CommandHolder>> {
+    fun getCommandsForScope(scope: CommandScope, guildId: ULong? = null): Map<Plugin, List<CommandHolder>> {
         return pluginCommands.map { entry -> entry.key to entry.value.filter { it.scopes.contains(scope) } }
             .filterNot { it.second.isEmpty() }.associate {
                 it.first to if (guildId == null) it.second else it.second.filter { holder ->

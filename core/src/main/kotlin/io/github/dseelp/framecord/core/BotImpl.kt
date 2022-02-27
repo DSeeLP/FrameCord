@@ -31,6 +31,7 @@ import dev.kord.core.Kord
 import dev.kord.gateway.Intent
 import dev.kord.gateway.Intents
 import dev.kord.gateway.PrivilegedIntent
+import dev.kord.gateway.builder.PresenceBuilder
 import dev.kord.gateway.editPresence
 import io.github.dseelp.framecord.api.Bot
 import io.github.dseelp.framecord.api.bot
@@ -51,7 +52,7 @@ import org.koin.core.qualifier.qualifier
 import kotlin.coroutines.CoroutineContext
 
 @OptIn(io.github.dseelp.framecord.api.InternalFrameCordApi::class)
-object BotImpl : io.github.dseelp.framecord.api.Bot, CordKoinComponent {
+object BotImpl : Bot, CordKoinComponent {
     override val kord: Kord
         get() = _kord!!
     override val isStarted: Boolean
@@ -68,16 +69,20 @@ object BotImpl : io.github.dseelp.framecord.api.Bot, CordKoinComponent {
         val config by inject<BotConfig>()
         val intentConfig = config.intents
         _kord = Kord(token) {
-            intents = Intents {
-                +Intents.all
-                if (!intentConfig.presence) -Intent.GuildPresences
-                if (!intentConfig.guildMembers) -Intent.GuildMembers
-            }
+
         }
         bot.launch {
             kord.login {
-                status = PresenceStatus.DoNotDisturb
-                playing("Starting...")
+                intents = Intents {
+                    +Intents.all
+                    if (!intentConfig.presence) -Intent.GuildPresences
+                    if (!intentConfig.guildMembers) -Intent.GuildMembers
+                    if (!intentConfig.messages) Intent.GuildMessages //TODO: When using v10 make use of this setting
+                }
+                presence = PresenceBuilder().apply {
+                    status = PresenceStatus.DoNotDisturb
+                    playing("Starting...")
+                }.toPresence()
             }
         }
         bot.launch {
@@ -119,12 +124,20 @@ object BotImpl : io.github.dseelp.framecord.api.Bot, CordKoinComponent {
                         val activity = currentPresence.activity
                         status = currentPresence.status.status
 
-                        val processedName = PlaceholderManager.replacePlaceholders(arguments, PlaceholderType.PRESENCE, activity.name)
+                        val processedName =
+                            PlaceholderManager.replacePlaceholders(arguments, PlaceholderType.PRESENCE, activity.name)
                         when (activity) {
                             is Activity.Competing -> competing(processedName)
                             is Activity.Listening -> listening(processedName)
                             is Activity.Playing -> playing(processedName)
-                            is Activity.Streaming -> streaming(processedName, PlaceholderManager.replacePlaceholders(arguments, PlaceholderType.PRESENCE, activity.url))
+                            is Activity.Streaming -> streaming(
+                                processedName,
+                                PlaceholderManager.replacePlaceholders(
+                                    arguments,
+                                    PlaceholderType.PRESENCE,
+                                    activity.url
+                                )
+                            )
                             is Activity.Watching -> watching(processedName)
                         }
                     }

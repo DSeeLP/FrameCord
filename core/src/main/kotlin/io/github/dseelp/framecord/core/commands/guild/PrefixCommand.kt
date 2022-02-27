@@ -55,7 +55,7 @@ class PrefixCommand : Command<GuildSender> {
                 title = "Prefix"
                 description = "The guild prefix is `${guildInfo.prefix}`"
                 footer = sender.footer()
-            }.deleteAfter(seconds(10))
+            }.deleteAfter(10.seconds)
         }
 
         argument(StringArgument("prefix")) {
@@ -69,7 +69,7 @@ class PrefixCommand : Command<GuildSender> {
                     color = Color.red
                     description = "You need the ManageGuild Permission to use this command"
                     footer = sender.getMember().footer()
-                }.deleteAfter(seconds(10))
+                }.deleteAfter(10.seconds)
             }
             execute {
                 val prefix: String = get("prefix")

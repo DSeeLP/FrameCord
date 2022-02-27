@@ -29,10 +29,7 @@ import org.jetbrains.exposed.dao.LongEntity
 import org.jetbrains.exposed.dao.LongEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.LongIdTable
-import org.jetbrains.exposed.sql.SizedCollection
-import org.jetbrains.exposed.sql.batchInsert
-import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 
 class DbUser(id: EntityID<Long>) : LongEntity(id) {
@@ -49,9 +46,9 @@ class DbUser(id: EntityID<Long>) : LongEntity(id) {
     /*val guildIds
         get() = ungzip(Base64.getDecoder().decode(guilds)).split(";").map { it.toLong() }*/
 
-    var guildIds: List<Long>
+    var guildIds: SizedIterable<ULong>
         get() {
-            return DbGuildLink.select { DbGuildLink.user eq id }.map { it[DbGuildLink.guildId] }
+            return DbGuildLink.select { DbGuildLink.user eq id }.mapLazy { it[DbGuildLink.guildId] }
         }
         set(value) {
             DbGuildLink.deleteWhere { DbGuildLink.user eq id }

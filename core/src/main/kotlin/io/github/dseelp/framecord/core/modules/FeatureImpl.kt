@@ -49,12 +49,12 @@ class FeatureImpl(override val module: Module, override val id: String, override
         }
     override val numericId: Long by lazy { transaction { dbFeature.numericId } }
 
-    override fun isEnabled(guildId: Long): Boolean = transaction {
+    override fun isEnabled(guildId: ULong): Boolean = transaction {
         val guild = DbGuild.findById(guildId)
         return@transaction dbFeature.guilds.contains(guild)
     }
 
-    override suspend fun enable(guildId: Long) = transaction {
+    override suspend fun enable(guildId: ULong) = transaction {
         val guild = DbGuild.findById(guildId) ?: return@transaction
         if (!dbFeature.guilds.contains(guild)) return@transaction
         DbFeaturesLink.insert {
@@ -63,7 +63,7 @@ class FeatureImpl(override val module: Module, override val id: String, override
         }
     }
 
-    override suspend fun disable(guildId: Long) = transaction {
+    override suspend fun disable(guildId: ULong) = transaction {
         val guild = DbGuild.findById(guildId) ?: return@transaction
         if (dbFeature.guilds.contains(guild)) return@transaction
         DbFeaturesLink.deleteWhere {

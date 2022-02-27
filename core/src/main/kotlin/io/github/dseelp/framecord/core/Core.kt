@@ -26,6 +26,7 @@ package io.github.dseelp.framecord.core
 
 import com.log4k.e
 import com.log4k.i
+import com.log4k.w
 import com.uchuhimo.konf.Config
 import com.uchuhimo.konf.source.json.toJson
 import io.github.dseelp.framecord.api.bot
@@ -97,6 +98,9 @@ object Core : CordKoinComponent {
             e("The length of an instanceId should not exceed 4 characters")
             CordImpl.shutdown()
             return
+        }
+        if (!config.intents.messages) {
+            w("The privileged message intent is disabled! Therefore the only working bot prefix is @YourBot.")
         }
         System.setProperty("showErrors", config.logging.showErrors.toString())
         loadKoinModules(module {

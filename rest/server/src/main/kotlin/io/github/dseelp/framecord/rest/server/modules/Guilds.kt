@@ -52,7 +52,7 @@ import org.koin.core.component.inject
 object GuildsModule : CordKoinComponent {
     val moduleManager: ModuleManager by inject()
     fun Application.guildModule() {
-        fun ApplicationCall.guildId(): Long? = parameters["gid"]?.toLongOrNull()
+        fun ApplicationCall.guildId(): ULong? = parameters["gid"]?.toULongOrNull()
         suspend fun ApplicationCall.checkGuildId(): Snowflake? {
             val id = guildId()
             if (id == null) {

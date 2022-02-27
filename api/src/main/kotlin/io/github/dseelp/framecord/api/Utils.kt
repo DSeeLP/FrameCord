@@ -26,16 +26,12 @@ package io.github.dseelp.framecord.api
 
 import de.dseelp.kommon.command.CommandDispatcher
 import de.dseelp.kommon.command.CommandNode
-import dev.kord.common.annotation.KordPreview
-import dev.kord.common.entity.*
+import dev.kord.common.entity.Permission
+import dev.kord.common.entity.Permissions
+import dev.kord.common.entity.Snowflake
 import dev.kord.core.entity.Member
 import dev.kord.core.entity.channel.TopGuildChannel
-import dev.kord.rest.builder.component.ActionRowBuilder
 import io.github.dseelp.framecord.api.command.Sender
-import io.github.dseelp.framecord.api.interactions.ButtonAction
-import io.github.dseelp.framecord.api.interactions.SelectionMenu
-import io.github.dseelp.framecord.api.interactions.SelectionMenuBuilder
-import io.github.dseelp.framecord.api.plugins.Plugin
 import io.github.dseelp.framecord.api.utils.koin.CordKoinContext
 import kotlinx.datetime.Instant
 import org.jetbrains.exposed.sql.Column
@@ -171,6 +167,9 @@ val String.asSnowflake
     get() = Snowflake(this)
 
 val Long.asSnowflake
+    get() = Snowflake(this)
+
+val ULong.asSnowflake
     get() = Snowflake(this)
 
 val Instant.asSnowflake

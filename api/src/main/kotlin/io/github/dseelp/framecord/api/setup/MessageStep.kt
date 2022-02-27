@@ -28,7 +28,7 @@ import dev.kord.common.annotation.KordPreview
 import dev.kord.common.entity.ButtonStyle
 import dev.kord.core.behavior.channel.createMessage
 import dev.kord.core.behavior.edit
-import dev.kord.core.behavior.interaction.edit
+import dev.kord.core.behavior.interaction.response.edit
 import dev.kord.core.entity.Member
 import dev.kord.core.entity.Message
 import dev.kord.core.entity.channel.GuildMessageChannel
@@ -36,10 +36,10 @@ import dev.kord.core.event.message.MessageCreateEvent
 import dev.kord.rest.builder.message.create.MessageCreateBuilder
 import dev.kord.rest.builder.message.create.actionRow
 import dev.kord.rest.builder.message.modify.actionRow
-import io.github.dseelp.framecord.api.utils.action
 import io.github.dseelp.framecord.api.event.EventHandle
 import io.github.dseelp.framecord.api.interactions.ButtonAction
 import io.github.dseelp.framecord.api.randomAlphanumeric
+import io.github.dseelp.framecord.api.utils.action
 import io.github.dseelp.framecord.api.utils.literal
 
 open class MessageStep(
@@ -63,7 +63,7 @@ open class MessageStep(
         if (this::channel.isInitialized || this::setup.isInitialized) throw IllegalStateException()
         buttonAction = setup.plugin.registerButtonAction(randomAlphanumeric(32), literal("") {
             execute {
-                val acknowledge = sender.interaction.acknowledgePublicDeferredMessageUpdate()
+                val acknowledge = sender.interaction.deferPublicMessageUpdate()
                 if (!checkAccess(sender.interaction.user.asMember(channel.guildId), channel)) return@execute
                 setup.plugin.unregisterButtonAction(buttonAction)
                 setup.cancelSetup()
@@ -102,7 +102,6 @@ open class MessageStep(
         editMessage()
     }
 
-    @OptIn(KordPreview::class)
     @EventHandle
     suspend fun onMessageReceived(event: MessageCreateEvent) {
         if (isDone) return

@@ -42,4 +42,10 @@ open class VarCharIdTable(maxIdLength: Int, name: String = "", columnName: Strin
 
 abstract class StringEntity(id: EntityID<String>) : Entity<String>(id)
 
-abstract class StringEntityClass<out E : StringEntity>(table: IdTable<String>, entityType: Class<E>? = null) : EntityClass<String, E>(table, entityType)
+abstract class StringEntityClass<out E : StringEntity>(table: IdTable<String>, entityType: Class<E>? = null) :
+    EntityClass<String, E>(table, entityType)
+
+abstract class ULongEntity(id: EntityID<ULong>) : Entity<ULong>(id)
+
+abstract class ULongEntityClass<out E : ULongEntity>(table: IdTable<ULong>, entityType: Class<E>? = null) :
+    EntityClass<ULong, E>(table, entityType)

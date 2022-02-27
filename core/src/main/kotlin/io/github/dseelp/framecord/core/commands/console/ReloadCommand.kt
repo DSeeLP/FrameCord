@@ -62,7 +62,6 @@ object ReloadCommand : Command<Sender>, PluginComponent<FakePlugin> {
         }
     }
 
-    @io.github.dseelp.framecord.api.InternalFrameCordApi
     override val plugin: FakePlugin
         get() = FakePlugin
 }

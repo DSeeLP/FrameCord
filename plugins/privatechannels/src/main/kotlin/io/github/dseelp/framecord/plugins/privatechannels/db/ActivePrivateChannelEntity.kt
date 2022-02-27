@@ -42,11 +42,13 @@ class ActivePrivateChannelEntity(id: EntityID<Long>) : LongEntity(id) {
     var userLimit by ActivePrivateChannelsTable.userLimit
 }
 
+@OptIn(ExperimentalUnsignedTypes::class)
 object ActivePrivateChannelsTable : LongIdTable() {
     val privateChannel = reference("privateChannel", PrivateChannelsTable)
-    val channelId = long("channelId")
-    val ownerId = long("ownerId")
-    val executiveId = long("executiveId").nullable()
+
+    val channelId = ulong("channelId")
+    val ownerId = ulong("ownerId")
+    val executiveId = ulong("executiveId").nullable()
     val customNameTemplate = varchar("customNameTemplate", 1000).nullable()
     val lastUpdated = long("lastUpdatedMillis").nullable()
     val locked = bool("locked").default(false)

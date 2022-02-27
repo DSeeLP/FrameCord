@@ -61,11 +61,11 @@ sealed interface DiscordSender<T : MessageChannel> : Sender {
         if (message.channel is GuildChannelBehavior) {
             val member = message.getAuthorAsMember()!!
             text = member.tag
-            icon = member.avatar.url
+            icon = member.avatar?.url
         } else {
             val author = message.author!!
             text = author.tag
-            icon = author.avatar.url
+            icon = author.avatar?.url
         }
     }
 }

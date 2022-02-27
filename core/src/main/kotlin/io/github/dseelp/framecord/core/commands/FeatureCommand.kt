@@ -26,11 +26,10 @@ package io.github.dseelp.framecord.core.commands
 
 import de.dseelp.kommon.command.CommandNode
 import dev.kord.common.Color
-import dev.kord.common.annotation.KordPreview
 import dev.kord.common.entity.ButtonStyle
 import dev.kord.common.entity.Permission
 import dev.kord.core.behavior.edit
-import dev.kord.core.behavior.interaction.edit
+import dev.kord.core.behavior.interaction.response.edit
 import dev.kord.core.entity.Message
 import dev.kord.core.entity.channel.GuildMessageChannel
 import dev.kord.rest.builder.component.ActionRowBuilder
@@ -65,7 +64,7 @@ class FeatureCommand : Command<GuildChannelSender<GuildMessageChannel>>, FakePlu
 
     override val description: String = "Used to enable/disable modules or features of the bot"
 
-    @OptIn(InternalFrameCordApi::class, KordPreview::class, kotlin.time.ExperimentalTime::class)
+    @OptIn(InternalFrameCordApi::class)
     override val node: CommandNode<GuildChannelSender<GuildMessageChannel>> = literal("modules") {
         checkAccess {
             sender.getMember().checkPermissions(Permission.ManageGuild)
@@ -77,7 +76,7 @@ class FeatureCommand : Command<GuildChannelSender<GuildMessageChannel>>, FakePlu
                 color = Color.red
                 description = "You need the ManageGuild Permission to use this command"
                 footer = sender.getMember().footer()
-            }.deleteAfter(seconds(10))
+            }.deleteAfter(10.seconds)
         }
         execute {
             val memberId = sender.getMember().id
@@ -98,6 +97,7 @@ class FeatureCommand : Command<GuildChannelSender<GuildMessageChannel>>, FakePlu
 
             fun generateStateBuilder(): SelectMenuBuilder {
                 return stateSelector!!.discordComponentBuilder().apply {
+                    this.disabled = disabled
                     if (state == State.NONE) return@apply
                     options.onEach {
                         it.default = false
@@ -113,6 +113,7 @@ class FeatureCommand : Command<GuildChannelSender<GuildMessageChannel>>, FakePlu
                         sender.getGuild().id
                     ) else false
                 return enabledSelector!!.discordComponentBuilder().apply {
+                    this.disabled = disabled
                     options.onEach {
                         it.default = false
                         if (it.value == "enabled" && value) it.default = true
@@ -124,6 +125,7 @@ class FeatureCommand : Command<GuildChannelSender<GuildMessageChannel>>, FakePlu
             var modulesSelector: SelectionMenu? = null
             fun generateModuleBuilder(): SelectMenuBuilder {
                 return modulesSelector!!.discordComponentBuilder().apply {
+                    this.disabled = disabled
                     if (selectedModule == null) return@apply
                     options.onEach {
                         it.default = false
@@ -136,7 +138,7 @@ class FeatureCommand : Command<GuildChannelSender<GuildMessageChannel>>, FakePlu
                     option(it.name, it.id) {
                         onClick {
                             selectedModule = it
-                            val acknowledge = interaction.acknowledgePublicDeferredMessageUpdate()
+                            val acknowledge = interaction.deferPublicMessageUpdate()
                             if (memberId != interaction.user.id) return@onClick
                             acknowledge.edit {
                                 components = mutableListOf()
@@ -159,7 +161,7 @@ class FeatureCommand : Command<GuildChannelSender<GuildMessageChannel>>, FakePlu
             }
             enabledSelector = FakePlugin.registerSelectionMenu {
                 val action: suspend SelectionOptionClickContext.(id: Boolean) -> Unit = { id ->
-                    val acknowledge = interaction.acknowledgePublicDeferredMessageUpdate()
+                    val acknowledge = interaction.deferPublicMessageUpdate()
                     if (memberId == interaction.user.id) {
                         if (id) {
                             selectedFeature?.enable(sender.getGuild().id)
@@ -239,14 +241,14 @@ class FeatureCommand : Command<GuildChannelSender<GuildMessageChannel>>, FakePlu
                 option("Modules", "modules") {
                     onClick {
                         if (memberId != interaction.user.id) return@onClick
-                        interaction.acknowledgePublicDeferredMessageUpdate()
+                        interaction.deferPublicMessageUpdate()
                         setState(State.MODULES)
                     }
                 }
                 option("Features", "features") {
                     onClick {
                         if (memberId != interaction.user.id) return@onClick
-                        interaction.acknowledgePublicDeferredMessageUpdate()
+                        interaction.deferPublicMessageUpdate()
                         setState(State.FEATURES)
                     }
                 }
@@ -265,8 +267,22 @@ class FeatureCommand : Command<GuildChannelSender<GuildMessageChannel>>, FakePlu
                             memberId == sender.interaction.user.id
                         }
                         execute {
-                            sender.interaction.acknowledgePublicDeferredMessageUpdate()
                             disabled = true
+                            sender.interaction.deferPublicMessageUpdate().edit {
+                                components = mutableListOf()
+                                actionRow {
+                                    components.add(generateStateBuilder())
+                                }
+                                actionRow {
+                                    components.add(generateModuleBuilder())
+                                }
+                                actionRow {
+                                    components.add(generateEnabledBuilder())
+                                }
+                                actionRow {
+                                    generateButton()
+                                }
+                            }
                             deleteAll()
                         }
                     }

@@ -39,6 +39,8 @@ open class GuildManagerImpl : GuildManager {
     }
 
     override fun setGuildInfo(info: GuildInfo): Unit = transaction {
+        val findInfo = findInfo(info.guildId)
+        findInfo
         findInfo(info.guildId).apply {
             prefix = info.prefix
         }

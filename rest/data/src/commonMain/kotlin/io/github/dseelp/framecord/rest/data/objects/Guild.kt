@@ -27,4 +27,4 @@ package io.github.dseelp.framecord.rest.data.objects
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class Guild(val id: Long, val owner: Long, val name: String, val iconHash: String?, val iconUrl: String?)
+data class Guild(val id: ULong, val owner: ULong, val name: String, val iconHash: String?, val iconUrl: String?)

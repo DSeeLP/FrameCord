@@ -76,12 +76,12 @@ object ModuleManagerImpl : ModuleManager {
         }
     }
 
-    override fun isFeatureEnabled(id: String, guildId: Long): Boolean = transaction {
+    override fun isFeatureEnabled(id: String, guildId: ULong): Boolean = transaction {
         val feature = DbFeature.findById(id.lowercase()) ?: return@transaction false
         feature.guilds.firstOrNull { it.id.value == guildId } != null
     }
 
-    override fun isModuleEnabled(id: String, guildId: Long): Boolean = transaction {
+    override fun isModuleEnabled(id: String, guildId: ULong): Boolean = transaction {
         val module = DbModule.findById(id.lowercase()) ?: return@transaction false
         module.guilds.firstOrNull { it.id.value == guildId } != null
     }

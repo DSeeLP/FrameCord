@@ -28,7 +28,7 @@ import dev.kord.common.annotation.KordPreview
 import dev.kord.common.entity.ButtonStyle
 import dev.kord.common.entity.DiscordPartialEmoji
 import dev.kord.core.behavior.channel.createMessage
-import dev.kord.core.behavior.interaction.edit
+import dev.kord.core.behavior.interaction.response.edit
 import dev.kord.core.entity.Member
 import dev.kord.core.entity.Message
 import dev.kord.core.entity.channel.GuildMessageChannel
@@ -36,13 +36,13 @@ import dev.kord.rest.builder.component.ActionRowBuilder
 import dev.kord.rest.builder.message.create.MessageCreateBuilder
 import dev.kord.rest.builder.message.create.actionRow
 import dev.kord.rest.builder.message.modify.actionRow
-import io.github.dseelp.framecord.api.utils.action
 import io.github.dseelp.framecord.api.interactions.ButtonAction
 import io.github.dseelp.framecord.api.interactions.SelectionMenu
 import io.github.dseelp.framecord.api.plugins.Plugin
 import io.github.dseelp.framecord.api.randomAlphanumeric
-import io.github.dseelp.framecord.api.utils.selectionMenu
+import io.github.dseelp.framecord.api.utils.action
 import io.github.dseelp.framecord.api.utils.literal
+import io.github.dseelp.framecord.api.utils.selectionMenu
 
 class SelectionMenuStep(
     val plugin: Plugin,
@@ -71,7 +71,7 @@ class SelectionMenuStep(
             execute {
                 if (isDone) return@execute
                 val acknowledge =
-                    sender.interaction.acknowledgePublicDeferredMessageUpdate()
+                    sender.interaction.deferPublicMessageUpdate()
                 val ch = sender.interaction.channel.asChannel()
                 if (ch !is GuildMessageChannel) return@execute
                 val member = sender.interaction.user.asMember(ch.guildId)
@@ -100,7 +100,7 @@ class SelectionMenuStep(
             }
             onMultipleOptionClick {
                 val acknowledge =
-                    interaction.acknowledgePublicDeferredMessageUpdate()
+                    interaction.deferPublicMessageUpdate()
                 if (isDone) return@onMultipleOptionClick
                 val ch = interaction.channel.asChannel()
                 if (ch !is GuildMessageChannel) return@onMultipleOptionClick
@@ -134,7 +134,6 @@ class SelectionMenuStep(
         }
     }
 
-    @OptIn(KordPreview::class)
     private fun actionRowBuilder(disabled: Boolean): ActionRowBuilder.() -> Unit = {
         action(buttonAction, ButtonStyle.Danger, "", "Cancel", disabled = disabled)
     }
