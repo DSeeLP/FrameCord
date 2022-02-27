@@ -429,7 +429,7 @@ class RoomCommand : Command<GuildSender> {
             }
         }
 
-        literal("unban") {
+        literal("unban", arrayOf("invite")) {
             userCheck()
             execute {
                 sender.message.deleteIgnoringNotFound()
@@ -455,7 +455,7 @@ class RoomCommand : Command<GuildSender> {
                                 activeChannel.ownerId == targetId || activeChannel.executiveId == targetId
                             }) {
                             channel.editMemberPermission(target.id) {
-                                denied -= Permission.Connect
+                                denied += Permission.Connect
                             }
                             sender.getChannel().createEmbed {
                                 title = "User unbanned"
